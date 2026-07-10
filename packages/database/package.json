@@ -1,0 +1,32 @@
+{
+  "name": "@repo/database",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "dev": "tsc --watch",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "push": "prisma db push",
+    "studio": "prisma studio",
+    "check-types": "tsc --noEmit",
+    "lint": "echo \"No lint configured for @repo/database\""
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.21",
+    "prisma": "^6.9.0",
+    "typescript": "^5.8.2"
+  }
+}

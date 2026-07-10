@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  LEAD_PASTOR
+  ADMIN
+  STATE_PASTOR
+  ZONAL_PASTOR
+  BRANCH_PASTOR
+  ADMIN_STAFF
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DEACTIVATED
+}
+
+enum OrgChangeType {
+  CREATE_STATE
+  CREATE_ZONE
+}
+
+enum OrgChangeStatus {
+  PENDING_LP_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum ReportStatus {
+  SUBMITTED
+  ZONE_REVIEWED
+  STATE_REVIEWED
+  HQ_REVIEWED
+}
+
+enum SummaryScopeType {
+  BRANCH
+  ZONE
+  STATE
+  HQ
+}
+
+enum MonthlySummaryStatus {
+  PENDING
+  PENDING_LP_APPROVAL
+  APPROVED
+}
+
+enum NotificationType {
+  FEEDBACK_RECEIVED
+  ONBOARDING
+  REPORT_MISSED
+  SUMMARY_APPROVED
+}
+
+model User {
+  id                     String     @id @default(cuid())
+  email                  String     @unique
+  phone                  String?
+  name                   String
+  passwordHash           String?
+  profilePicUrl          String?
+  role                   Role
+  status                 UserStatus @default(PENDING)
+  onboardingToken        String?    @unique
+  onboardingTokenExpiry  DateTime?
+
+  stateId   String?
+  zoneId    String?
+  branchId  String?
+  state     State?  @relation("UserState", fields: [stateId], references: [id])
+  zone      Zone?   @relation("UserZone", fields: [zoneId], references: [id])
+  branch    Branch? @relation("UserBranch", fields: [branchId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[] @relation("UserCreatedBy")
+
+  statePastorOf  State?  @relation("StatePastor")
+  zonalPastorOf  Zone?   @relation("ZonalPastor")
+  branchPastorOf Branch? @relation("BranchPastor")
+
+  submittedReports WeeklyReport[] @relation("ReportSubmittedBy")
+  feedbackSent     Feedback[]     @relation("FeedbackFrom")
+  feedbackReceived   Feedback[]     @relation("FeedbackTo")
+  notifications      Notification[]
+  orgChangeRequests  OrgChangeRequest[] @relation("OrgChangeRequestedBy")
+  orgChangeReviews   OrgChangeRequest[] @relation("OrgChangeReviewedBy")
+  summaryApprovals   MonthlySummary[]   @relation("SummaryApprovedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([status])
+  @@index([stateId])
+  @@index([zoneId])
+  @@index([branchId])
+}
+
+model State {
+  id             String @id @default(cuid())
+  name           String @unique
+  statePastorId  String? @unique
+  statePastor    User?   @relation("StatePastor", fields: [statePastorId], references: [id])
+
+  zones Zone[]
+  users User[] @relation("UserState")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Zone {
+  id            String @id @default(cuid())
+  name          String
+  stateId       String
+  state         State  @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  zonalPastorId String? @unique
+  zonalPastor   User?  @relation("ZonalPastor", fields: [zonalPastorId], references: [id])
+
+  branches Branch[]
+  users    User[]   @relation("UserZone")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stateId, name])
+}
+
+model Branch {
+  id             String @id @default(cuid())
+  name           String
+  address        String?
+  zoneId         String
+  zone           Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  branchPastorId String? @unique
+  branchPastor   User?  @relation("BranchPastor", fields: [branchPastorId], references: [id])
+
+  users         User[]         @relation("UserBranch")
+  weeklyReports WeeklyReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([zoneId, name])
+}
+
+model OrgChangeRequest {
+  id            String          @id @default(cuid())
+  type          OrgChangeType
+  payload       Json
+  status        OrgChangeStatus @default(PENDING_LP_APPROVAL)
+  requestedById String
+  requestedBy   User            @relation("OrgChangeRequestedBy", fields: [requestedById], references: [id])
+  reviewedById  String?
+  reviewedBy    User?           @relation("OrgChangeReviewedBy", fields: [reviewedById], references: [id])
+  reviewNote    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([status])
+}
+
+model WeeklyReport {
+  id            String       @id @default(cuid())
+  branchId      String
+  branch        Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  serviceDate   DateTime
+  weekOf        DateTime
+  status        ReportStatus @default(SUBMITTED)
+  submittedById String
+  submittedBy   User         @relation("ReportSubmittedBy", fields: [submittedById], references: [id])
+
+  attendance Attendance?
+  finance    Finance?
+  feedback   Feedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, weekOf])
+  @@index([status])
+  @@index([weekOf])
+}
+
+model Attendance {
+  id             String       @id @default(cuid())
+  reportId       String       @unique
+  report         WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  adultCount     Int          @default(0)
+  teenageCount   Int          @default(0)
+  childrenCount  Int          @default(0)
+}
+
+model Finance {
+  id       String       @id @default(cuid())
+  reportId String       @unique
+  report   WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  tithe    Decimal      @default(0) @db.Decimal(14, 2)
+  offering Decimal      @default(0) @db.Decimal(14, 2)
+  other    Decimal      @default(0) @db.Decimal(14, 2)
+  currency String       @default("NGN")
+}
+
+model Feedback {
+  id         String       @id @default(cuid())
+  reportId   String
+  report     WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User         @relation("FeedbackFrom", fields: [fromUserId], references: [id])
+  toUserId   String
+  toUser     User         @relation("FeedbackTo", fields: [toUserId], references: [id])
+  message    String
+  createdAt  DateTime     @default(now())
+
+  @@index([reportId])
+}
+
+model MonthlySummary {
+  id             String               @id @default(cuid())
+  scopeType      SummaryScopeType
+  scopeId        String
+  month          Int
+  year           Int
+  totalAdult     Int                  @default(0)
+  totalTeenage   Int                  @default(0)
+  totalChildren  Int                  @default(0)
+  totalTithe     Decimal              @default(0) @db.Decimal(14, 2)
+  totalOffering  Decimal              @default(0) @db.Decimal(14, 2)
+  totalOther     Decimal              @default(0) @db.Decimal(14, 2)
+  currency       String               @default("NGN")
+  status         MonthlySummaryStatus @default(PENDING)
+  approvedById   String?
+  approvedBy     User?                @relation("SummaryApprovedBy", fields: [approvedById], references: [id])
+  approvedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([scopeType, scopeId, month, year])
+  @@index([scopeType, scopeId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+}

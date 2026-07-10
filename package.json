@@ -1,0 +1,25 @@
+{
+  "name": "jnic-management",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "db:generate": "pnpm --filter @repo/database generate",
+    "db:migrate": "pnpm --filter @repo/database migrate",
+    "db:push": "pnpm --filter @repo/database push",
+    "db:studio": "pnpm --filter @repo/database studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20"
+  }
+}

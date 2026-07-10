@@ -1,0 +1,32 @@
+---
+description: JNLOP core project context — read AGENTS.md and context files first
+alwaysApply: true
+---
+
+# JNLOP Core Context
+
+This is the **JNLOP MVP** greenfield Turborepo for JNIC church operations.
+
+## Before coding
+
+1. Read `AGENTS.md`
+2. Read `context/progress-tracker.md` for current phase
+3. Read the relevant `context/feature-specs/` file for the active epic
+
+## Non-negotiables
+
+- RBAC enforced in NestJS guards — never UI-only
+- Active phase gating in `context/mvp-roadmap.md` — do not skip ahead
+- Shared enums in `packages/types` — no duplication
+- JNIC brand tokens from `context/ui-context.md` — no hardcoded hex
+- `jubilee-nation` is UX reference only — do not import its code
+
+## Role model
+
+`LEAD_PASTOR` > `ADMIN` > `STATE_PASTOR` > `ZONAL_PASTOR` > `BRANCH_PASTOR` > `ADMIN_STAFF`
+
+Admin and HQ Admin are the same `ADMIN` role.
+
+## After each feature unit
+
+Update `context/progress-tracker.md`.
