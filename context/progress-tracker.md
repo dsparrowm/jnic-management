@@ -4,9 +4,9 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-**Phase 1 — Auth + Onboarding (next)**
+**Phase 3 — Profiles + Pastor Directory (next)**
 
-Phase 0 scaffold is complete. Begin Epic 1 per `context/feature-specs/01-auth-onboarding.md`.
+Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
 
 ## Scope Decisions
 
@@ -31,10 +31,10 @@ Phase 0 scaffold is complete. Begin Epic 1 per `context/feature-specs/01-auth-on
 | 0 | Docker Compose (Postgres + Redis) | Done |
 | 0 | Prisma base schema + initial migration | Done |
 | 0 | `pnpm build` passes | Done |
-| 0 | API health endpoint (`GET /health`) | Done |
+| 0 | API deployed to Render (`GET /health`) | Done |
 | 0 | Web status page (localhost:3000) | Done |
-| 1 | Auth + onboarding (Epic 1) | Not started |
-| 2 | Org structure + LP approvals | Not started |
+| 1 | Auth + onboarding (Epic 1) | Done |
+| 2 | Org structure + LP approvals | Done |
 | 3 | Profiles + pastor directory (Epic 2) | Not started |
 | 4 | Weekly reports + attendance + finance | Not started |
 | 5 | Hierarchy views + feedback | Not started |
@@ -43,22 +43,43 @@ Phase 0 scaffold is complete. Begin Epic 1 per `context/feature-specs/01-auth-on
 
 ## Current Goal
 
-Implement Phase 1 — JWT auth, Admin onboarding flow, password setup via token.
+Implement Phase 3 — profile pictures (R2), pastor directory, default avatar.
 
 ## Milestone Status
 
 | Phase | Status |
 | ----- | ------ |
 | **0 — Context & Scaffold** | **Complete** |
-| **1 — Auth + Onboarding** | **Next (active)** |
-| 2 — Org + LP Approvals | Blocked until Phase 1 complete |
-| 3 — Profiles | Blocked |
+| **1 — Auth + Onboarding** | **Complete** |
+| **2 — Org + LP Approvals** | **Complete** |
+| **3 — Profiles** | **Next (active)** |
 | 4 — Weekly Reports | Blocked |
 | 5 — Hierarchy + Feedback | Blocked |
 | 6 — Monthly Aggregation | Blocked |
 | 7 — Hardening | Blocked |
 
 ## Completed
+
+### Phase 2 (2026-07-10)
+
+- NestJS `org` module — tree, branch CRUD, change-request propose/approve/reject
+- RBAC: Admin for org CRUD; Lead Pastor for approvals
+- Seed: Lagos State → Victoria Island → VI Main Campus; Lead Pastor (`lead@jnic.org`)
+- Web: `/admin/org`, `/approvals/org`, org selectors on onboard form
+- `pnpm build` passes
+
+### Phase 1 (2026-07-10)
+
+- JWT auth (login, refresh, logout) with `RefreshToken` table
+- Admin onboarding API — create pending user, 48h token, Resend email (sync)
+- Onboarding validate/complete endpoints with auto-login
+- Users API — `GET /users/me`, `GET /users`, deactivate
+- Global `JwtAuthGuard` + `@Public()` + `RolesGuard`
+- Seed admin user (`admin@jnic.org`)
+- Web: `/login`, `/onboard/[token]`, `/dashboard`, `/admin/onboard`, `/admin/users`
+- `pnpm build` passes
+
+**Deferred from Phase 1 spec:** BullMQ email queue (sync Resend used); reassign UI (API exists).
 
 ### Phase 0 (2026-07-10)
 
@@ -70,6 +91,7 @@ Implement Phase 1 — JWT auth, Admin onboarding flow, password setup via token.
 - NestJS API with `GET /health` on port 4000
 - Next.js 15 web with JNIC design tokens and API status page on port 3000
 - `.env.example`, root `README.md` with dev instructions
+- API deployed to Render via `scripts/render-build.sh`
 
 ### Context (2026-07-10)
 
@@ -77,23 +99,17 @@ Implement Phase 1 — JWT auth, Admin onboarding flow, password setup via token.
 
 ## Next Up
 
-1. NestJS `auth` module — JWT access + refresh tokens
-2. `onboarding` module — Admin creates pending user, email job stub
-3. Web: `/login`, `/onboard/[token]`, `/admin/onboard`
-4. Admin-only guards (API + UI)
+1. R2 presigned upload for profile pictures (Epic 2)
+2. Pastor directory with filters
+3. Profile page for all pastors
 
-**Prerequisite:** Run `docker compose up -d` then `pnpm db:migrate` before Phase 1 DB work.
+## Feature Unit Queue (Phase 3)
 
-## Feature Unit Queue (Phase 1)
-
-| Order | Unit | User story | Status |
-| ----- | ---- | ---------- | ------ |
-| 1 | NestJS auth module (JWT) | — | Not started |
-| 2 | Admin onboarding API + email job | US-1.1 | Not started |
-| 3 | Onboard token page + password set | US-1.1 | Not started |
-| 4 | Admin onboarding form UI | US-1.1 | Not started |
-| 5 | Admin-only guard (API + UI) | US-1.2 | Not started |
-| 6 | Deactivate / reassign users | US-1.3 | Not started |
+| Order | Unit | Status |
+| ----- | ---- | ------ |
+| 1 | R2 files module + presigned upload API | Not started |
+| 2 | Profile page + default avatar | Not started |
+| 3 | Admin pastor directory with filters | Not started |
 
 ## Architecture Decisions
 
@@ -102,6 +118,7 @@ Implement Phase 1 — JWT auth, Admin onboarding flow, password setup via token.
 - `packages/types` is single source for shared enums between web and API
 - API `tsconfig.build.json` is standalone (does not inherit broken `baseUrl` from shared nestjs config)
 - Web fonts use system stack in Phase 0 (no `next/font` Google fetch at build time)
+- New states/zones require LP approval; branches created directly by Admin
 
 ## Open Questions
 
@@ -114,4 +131,6 @@ Implement Phase 1 — JWT auth, Admin onboarding flow, password setup via token.
 
 - 2026-07-10: Plan confirmed — greenfield Turborepo; Admin = HQ Admin; Lead Pastor above Admin
 - 2026-07-10: Context files created
-- 2026-07-10: Phase 0 scaffold complete — monorepo builds, API health + web status page working
+- 2026-07-10: API deployed to Render — build via `scripts/render-build.sh`, health check live
+- 2026-07-10: Phase 1 auth + onboarding implemented; build passes
+- 2026-07-10: Phase 2 org module + web pages started

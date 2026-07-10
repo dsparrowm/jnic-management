@@ -74,11 +74,25 @@ packages/
 | Setting | Value |
 | ------- | ----- |
 | Root Directory | `.` (repo root — leave blank) |
-| Build Command | `bash scripts/render-build.sh` |
+| Build Command | `bash scripts/render-build.sh` (installs, runs `prisma migrate deploy`, builds API) |
 | Start Command | `node apps/api/dist/main.js` |
 | Health Check Path | `/health` |
 
 Or deploy via [`render.yaml`](render.yaml) Blueprint.
+
+## Local frontend → deployed API
+
+Use this when you run the web app locally but hit the Render API (no local `apps/api`).
+
+```bash
+cp apps/web/.env.local.example apps/web/.env.local
+# Edit apps/web/.env.local — set NEXT_PUBLIC_API_URL to your Render URL
+pnpm dev --filter @repo/web
+```
+
+On Render, set **`WEB_ORIGIN`** to allow your local dev server, e.g.
+`http://localhost:3000,http://localhost:3001,http://localhost:3002` (comma-separated).
+If unset locally, the API defaults to those three ports.
 
 ## UX reference
 

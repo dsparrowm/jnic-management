@@ -1,0 +1,41 @@
+import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { Role } from "@repo/types";
+import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { Roles } from "../common/decorators/roles.decorator";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../common/guards/roles.guard";
+import { AuthUser } from "../common/auth.types";
+import { ReassignUserDto } from "./dto/users.dto";
+import { UsersService } from "./users.service";
+
+@Controller("users")
+@UseGuards(JwtAuthGuard)
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get("me")
+  getMe(@CurrentUser() user: AuthUser) {
+    return this.usersService.getMe(user.id);
+  }
+
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  listUsers() {
+    return this.usersService.listUsers();
+  }
+
+  @Patch(":id/deactivate")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  deactivate(@Param("id") id: string) {
+    return this.usersService.deactivate(id);
+  }
+
+  @Patch(":id/reassign")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  reassign(@Param("id") id: string, @Body() dto: ReassignUserDto) {
+    return this.usersService.reassign(id, dto);
+  }
+}

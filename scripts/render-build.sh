@@ -10,4 +10,19 @@ else
 fi
 
 "${PNPM[@]}" install --frozen-lockfile
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "ERROR: DATABASE_URL must be set to run migrations on deploy."
+  exit 1
+fi
+
+echo "Applying database migrations..."
+"${PNPM[@]}" --filter @repo/database exec prisma migrate deploy
+
+if [ "${RUN_DB_SEED:-false}" = "true" ]; then
+  echo "Seeding database..."
+  "${PNPM[@]}" --filter @repo/database seed
+fi
+
+echo "Building API..."
 "${PNPM[@]}" turbo build --filter=@repo/api
