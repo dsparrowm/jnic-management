@@ -67,6 +67,19 @@ packages/
 | [`context/mvp-roadmap.md`](context/mvp-roadmap.md) | Phased build plan |
 | [`context/feature-specs/`](context/feature-specs/) | Per-epic implementation specs |
 
+## Deploy API to Render
+
+**Do not use `corepack enable`** — Render's build filesystem is read-only under `/usr/bin`.
+
+| Setting | Value |
+| ------- | ----- |
+| Root Directory | `.` (repo root — leave blank) |
+| Build Command | `bash scripts/render-build.sh` |
+| Start Command | `node apps/api/dist/main.js` |
+| Health Check Path | `/health` |
+
+Or deploy via [`render.yaml`](render.yaml) Blueprint.
+
 ## UX reference
 
 `/home/davies/jubilee-nation` — mock demo for layout patterns only (not imported).

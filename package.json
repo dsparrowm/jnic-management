@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:api": "turbo run build --filter=@repo/api",
+    "start:api": "node apps/api/dist/main.js",
     "start": "turbo run start",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
