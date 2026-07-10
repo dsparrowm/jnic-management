@@ -11,6 +11,9 @@ fi
 
 "${PNPM[@]}" install --frozen-lockfile
 
+echo "Building native dependencies (bcrypt, Prisma)..."
+"${PNPM[@]}" rebuild bcrypt @prisma/client
+
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "ERROR: DATABASE_URL must be set to run migrations on deploy."
   exit 1
