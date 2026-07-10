@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { User, UserStatus } from "@repo/database";
-import { Role } from "@repo/types";
+import { ONBOARDABLE_ROLES, Role } from "@repo/types";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 import { AuthService } from "../auth/auth.service";
@@ -16,14 +16,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CompleteOnboardingDto, CreateOnboardingUserDto } from "./dto/onboarding.dto";
 
 const ONBOARDING_HOURS = 48;
-const ASSIGNABLE_ROLES: Role[] = [
-  Role.LEAD_PASTOR,
-  Role.ADMIN,
-  Role.STATE_PASTOR,
-  Role.ZONAL_PASTOR,
-  Role.BRANCH_PASTOR,
-  Role.ADMIN_STAFF,
-];
 
 @Injectable()
 export class OnboardingService {
@@ -34,7 +26,7 @@ export class OnboardingService {
   ) {}
 
   async createUser(adminId: string, dto: CreateOnboardingUserDto) {
-    if (!ASSIGNABLE_ROLES.includes(dto.role)) {
+    if (!ONBOARDABLE_ROLES.includes(dto.role)) {
       throw new BadRequestException("Invalid role");
     }
 
