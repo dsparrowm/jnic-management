@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
 import { Role } from "@repo/types";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
+import { ListPastorsDto } from "./dto/list-pastors.dto";
 import { ReassignUserDto } from "./dto/users.dto";
 import { UsersService } from "./users.service";
 
@@ -16,6 +17,13 @@ export class UsersController {
   @Get("me")
   getMe(@CurrentUser() user: AuthUser) {
     return this.usersService.getMe(user.id);
+  }
+
+  @Get("pastors")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  listPastors(@Query() query: ListPastorsDto) {
+    return this.usersService.listPastors(query);
   }
 
   @Get()
