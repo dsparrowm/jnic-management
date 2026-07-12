@@ -20,7 +20,16 @@ export function getCorsOrigins(): string | string[] {
   return origins.length === 1 ? origins[0]! : origins;
 }
 
-/** Base URL for onboarding links (first origin in WEB_ORIGIN). */
+/** Public web app URL for links in emails (onboarding, etc.). */
+export function getWebAppUrl(): string {
+  const explicit = process.env.WEB_APP_URL?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, "");
+  }
+  return getPrimaryWebOrigin();
+}
+
+/** Base URL for onboarding links — first origin in WEB_ORIGIN. */
 export function getPrimaryWebOrigin(): string {
   const origins = parseOrigins(process.env.WEB_ORIGIN);
   return origins[0] ?? LOCAL_DEV_ORIGINS[0];

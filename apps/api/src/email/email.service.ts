@@ -77,7 +77,7 @@ export class EmailService {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown email error";
       this.logger.error(`Failed to send email to ${options.to}: ${message}`);
-      throw new InternalServerErrorException("Failed to send email");
+      throw new InternalServerErrorException(`Failed to send email: ${message}`);
     }
   }
 

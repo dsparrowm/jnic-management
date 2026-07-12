@@ -11,7 +11,7 @@ import { randomBytes } from "crypto";
 import { AuthService } from "../auth/auth.service";
 import { sanitizeUser } from "../common/user.mapper";
 import { EmailService } from "../email/email.service";
-import { getPrimaryWebOrigin } from "../common/web-origin";
+import { getWebAppUrl } from "../common/web-origin";
 import { PrismaService } from "../prisma/prisma.service";
 import { CompleteOnboardingDto, CreateOnboardingUserDto } from "./dto/onboarding.dto";
 
@@ -118,7 +118,7 @@ export class OnboardingService {
   }
 
   private async sendOnboardingEmail(user: User, token: string) {
-    const webOrigin = getPrimaryWebOrigin();
+    const webOrigin = getWebAppUrl();
     const link = `${webOrigin}/onboard/${token}`;
     await this.emailService.sendOnboardingEmail(user.email, user.name, link);
   }

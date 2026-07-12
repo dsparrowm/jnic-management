@@ -12,6 +12,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import { EmailService } from "../src/email/email.service";
 import { ConfigService } from "@nestjs/config";
+import { getWebAppUrl } from "../src/common/web-origin";
 
 config({ path: resolve(__dirname, "../../../.env") });
 config({ path: resolve(__dirname, "../.env") });
@@ -31,7 +32,7 @@ async function main() {
 
   const configService = new ConfigService(process.env);
   const emailService = new EmailService(configService);
-  const webOrigin = process.env.WEB_ORIGIN?.split(",")[0]?.trim() ?? "http://localhost:3000";
+  const webOrigin = getWebAppUrl();
   const link = `${webOrigin}/onboard/test-token-preview`;
 
   console.log(`Sending onboarding test email to ${testEmail}...`);
