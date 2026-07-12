@@ -1,4 +1,4 @@
-import { OrgChangeType, Role, UserStatus } from "@repo/types";
+import { BranchSubmissionState, OrgChangeType, ReportStatus, Role, UserStatus } from "@repo/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -11,6 +11,7 @@ export interface AuthUser {
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
+  profilePicUrl?: string | null;
 }
 
 export interface AuthResponse {
@@ -66,6 +67,126 @@ export interface PastorListResponse {
   page: number;
   perPage: number;
   summary: PastorListSummary;
+}
+
+export interface ProfilePicturePresignResponse {
+  uploadUrl: string;
+  key: string;
+  publicUrl: string;
+  expiresIn: number;
+}
+
+export interface WeeklyReportAttendance {
+  adultCount: number;
+  teenageCount: number;
+  childrenCount: number;
+}
+
+export interface WeeklyReportFinance {
+  tithe: number;
+  offering: number;
+  other: number;
+  currency: string;
+}
+
+export interface WeeklyReportRecord {
+  id: string;
+  branchId: string;
+  serviceDate: string;
+  weekOf: string;
+  status: ReportStatus;
+  submittedById: string;
+  branch: { id: string; name: string };
+  submittedBy: { id: string; name: string; email: string };
+  attendance: WeeklyReportAttendance | null;
+  finance: WeeklyReportFinance | null;
+  editable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyReportListResponse {
+  items: WeeklyReportRecord[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export interface WeeklyReportInput {
+  serviceDate: string;
+  adultCount: number;
+  teenageCount: number;
+  childrenCount: number;
+  tithe: number;
+  offering: number;
+  other: number;
+  currency?: string;
+}
+
+export interface ZoneReportBranchRow {
+  branch: { id: string; name: string };
+  report: WeeklyReportRecord | null;
+  submissionState: BranchSubmissionState;
+  missed: boolean;
+}
+
+export interface ReportCountSummary {
+  total: number;
+  submitted: number;
+  missed: number;
+  pending: number;
+}
+
+export interface ZoneSummaryResponse {
+  weekOf: string;
+  zone: { id: string; name: string };
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  branches: ZoneReportBranchRow[];
+  summary: ReportCountSummary;
+}
+
+export interface StateZoneSummary {
+  zone: { id: string; name: string };
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  branches: ZoneReportBranchRow[];
+  summary: ReportCountSummary;
+}
+
+export interface StateSummaryResponse {
+  weekOf: string;
+  state: { id: string; name: string };
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  zones: StateZoneSummary[];
+  summary: ReportCountSummary;
+}
+
+export interface NationalStateSummary {
+  state: { id: string; name: string };
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  zones: StateZoneSummary[];
+  summary: ReportCountSummary;
+}
+
+export interface NationalSummaryResponse {
+  weekOf: string;
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  states: NationalStateSummary[];
+  summary: ReportCountSummary;
 }
 
 export interface PastorFilters {
@@ -208,6 +329,21 @@ export const api = {
 
   getMe: (token: string) => request<UserRecord>("/users/me", {}, token),
 
+  presignProfilePicture: (
+    token: string,
+    data: { contentType: "image/jpeg" | "image/png"; fileSize: number },
+  ) =>
+    request<ProfilePicturePresignResponse>("/files/profile-picture/presign", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  updateProfilePicture: (token: string, data: { key: string }) =>
+    request<UserRecord>("/users/me/profile-picture", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
   listUsers: (token: string) => request<UserRecord[]>("/users", {}, token),
 
   listPastors: (token: string, filters: PastorFilters = {}) => {
@@ -292,6 +428,46 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ reviewNote }),
     }, token),
+
+  createWeeklyReport: (token: string, data: WeeklyReportInput) =>
+    request<WeeklyReportRecord>("/reports/weekly", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  updateWeeklyReport: (token: string, id: string, data: Partial<WeeklyReportInput>) =>
+    request<WeeklyReportRecord>(`/reports/weekly/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  listWeeklyReports: (
+    token: string,
+    filters: { weekOf?: string; page?: number; perPage?: number } = {},
+  ) => {
+    const params = new URLSearchParams();
+    if (filters.weekOf) params.set("weekOf", filters.weekOf);
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.perPage) params.set("perPage", String(filters.perPage));
+    const qs = params.toString();
+    return request<WeeklyReportListResponse>(`/reports/weekly${qs ? `?${qs}` : ""}`, {}, token);
+  },
+
+  getWeeklyReport: (token: string, id: string) =>
+    request<WeeklyReportRecord>(`/reports/weekly/${id}`, {}, token),
+
+  getZoneSummary: (token: string, weekOf: string) =>
+    request<ZoneSummaryResponse>(`/reports/zone/summary?weekOf=${encodeURIComponent(weekOf)}`, {}, token),
+
+  getStateSummary: (token: string, weekOf: string) =>
+    request<StateSummaryResponse>(`/reports/state/summary?weekOf=${encodeURIComponent(weekOf)}`, {}, token),
+
+  getNationalSummary: (token: string, weekOf: string) =>
+    request<NationalSummaryResponse>(
+      `/reports/national/summary?weekOf=${encodeURIComponent(weekOf)}`,
+      {},
+      token,
+    ),
 };
 
 export { ApiError };

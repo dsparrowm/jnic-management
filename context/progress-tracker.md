@@ -4,9 +4,9 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-**Phase 3 — Profiles + Pastor Directory (next)**
+**Phase 5 — Hierarchy views + feedback (in progress)**
 
-Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
+Phase 4 branch submit complete. Zone review queue shipped; state/national views and feedback next.
 
 ## Scope Decisions
 
@@ -35,15 +35,15 @@ Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
 | 0 | Web status page (localhost:3000) | Done |
 | 1 | Auth + onboarding (Epic 1) | Done |
 | 2 | Org structure + LP approvals | Done |
-| 3 | Profiles + pastor directory (Epic 2) | In progress |
-| 4 | Weekly reports + attendance + finance | Not started |
-| 5 | Hierarchy views + feedback | Not started |
+| 3 | Profiles + pastor directory (Epic 2) | Done |
+| 4 | Weekly reports + attendance + finance | Done |
+| 5 | Hierarchy views + feedback | In progress |
 | 6 | Monthly aggregation + LP summary approval | Not started |
 | 7 | Hardening, tests, deploy | Not started |
 
 ## Current Goal
 
-Phase 3 — Pastor directory live; next: R2 profile pictures and `/profile` page.
+Phase 5 — Feedback threads on reports (non-blocking).
 
 ## Milestone Status
 
@@ -52,13 +52,51 @@ Phase 3 — Pastor directory live; next: R2 profile pictures and `/profile` page
 | **0 — Context & Scaffold** | **Complete** |
 | **1 — Auth + Onboarding** | **Complete** |
 | **2 — Org + LP Approvals** | **Complete** |
-| **3 — Profiles** | **Next (active)** |
-| 4 — Weekly Reports | Blocked |
+| **3 — Profiles** | **Complete** |
+| **4 — Weekly Reports** | **Complete** |
+| **5 — Hierarchy + Feedback** | **In progress** |
 | 5 — Hierarchy + Feedback | Blocked |
 | 6 — Monthly Aggregation | Blocked |
 | 7 — Hardening | Blocked |
 
 ## Completed
+
+### Phase 5 state + national reports (2026-07-12)
+
+- `GET /reports/state/summary` — zones with branch drill-down, state totals, missed flags
+- `GET /reports/national/summary` — states → zones → branches for Lead Pastor / Admin
+- Status progression chain: Zonal → `ZONE_REVIEWED`, State → `STATE_REVIEWED`, HQ → `HQ_REVIEWED`
+- Web `/reports/state` and `/reports/national` with week picker, summary stats, detail sheet
+- Seed: `state@jnic.org` (State Pastor, Lagos State)
+- `pnpm build` passes
+
+### Phase 5 zone reports (2026-07-12)
+
+- Missed submission logic — computed at query time (Monday 23:59 Africa/Lagos)
+- `GET /reports/zone/summary` — branch rows, aggregates, missed/pending flags
+- Status progression — zonal pastor viewing report advances `SUBMITTED` → `ZONE_REVIEWED`
+- Web `/reports/zone` — summary stats, branch table, detail sheet
+- Seed: `zonal@jnic.org` + `branch@jnic.org` with org assignments
+- `pnpm build` passes
+
+### Phase 4 weekly report submit (2026-07-12)
+
+- Shared week utilities in `@repo/types` (Africa/Lagos, Sunday week end)
+- NestJS `reports` module — create/list/get/update weekly reports
+- Atomic create: `WeeklyReport` + `Attendance` + `Finance` in one transaction
+- RBAC: `BRANCH_PASTOR` and `ADMIN_STAFF` only; branch-scoped access
+- Edit lock when `status !== SUBMITTED`; only original submitter can edit
+- Web `/reports/submit` — unified attendance + finance form (jubilee-nation layout)
+- Nav + dashboard link for branch submitters
+- `pnpm build` passes
+
+### Phase 3 profile pictures (2026-07-12)
+
+- NestJS `files` module — R2 presigned upload (`POST /files/profile-picture/presign`)
+- `PATCH /users/me/profile-picture` — save `profilePicUrl` after upload
+- `/profile` page — account details, center-crop upload, default avatar fallback
+- Nav: Profile link for all roles; header avatar + profile menu item
+- `pnpm build` passes
 
 ### Phase 3 onboard slide-over (2026-07-10)
 
@@ -124,17 +162,20 @@ Phase 3 — Pastor directory live; next: R2 profile pictures and `/profile` page
 
 ## Next Up
 
-1. R2 presigned upload for profile pictures (Epic 2)
-2. Profile page for all pastors (`/profile`)
+1. Feedback API (`POST/GET /reports/:id/feedback`)
+2. Feedback thread UI on report detail sheet
+3. In-app + email notifications on feedback (Phase 5)
 
-## Feature Unit Queue (Phase 3)
+## Feature Unit Queue (Phase 5)
 
 | Order | Unit | Status |
 | ----- | ---- | ------ |
-| 0 | Rokswood-style app shell (sidebar, header, shadcn) | Done |
-| 1 | R2 files module + presigned upload API | Not started |
-| 2 | Profile page + default avatar | Not started |
-| 3 | Admin pastor directory with filters | Done |
+| 0 | Missed submission flags (query-time) | Done |
+| 1 | Zone summary API + status progression | Done |
+| 2 | `/reports/zone` page | Done |
+| 3 | State summary + `/reports/state` | Done |
+| 4 | National summary + `/reports/national` | Done |
+| 5 | Feedback API + UI | Not started |
 
 ## Architecture Decisions
 

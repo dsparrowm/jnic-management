@@ -83,8 +83,12 @@ export class EmailService {
 
   async sendOnboardingEmail(to: string, name: string, link: string): Promise<void> {
     if (!this.isConfigured()) {
-      this.logger.warn(`RESEND_API_KEY not set — onboarding link for ${to}: ${link}`);
-      return;
+      const message = `RESEND_API_KEY not set — onboarding link for ${to}: ${link}`;
+      if (process.env.NODE_ENV === "development") {
+        this.logger.warn(message);
+        return;
+      }
+      throw new InternalServerErrorException("Email service is not configured");
     }
 
     const html = await render(

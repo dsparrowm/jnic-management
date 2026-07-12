@@ -3,7 +3,7 @@
 Phased delivery plan for the JNLOP MVP. Derived from confirmed user stories (Epics 1–4)
 and architecture design.
 
-**Active phase: Phase 3.** Do not start later phases until the current phase completion
+**Active phase: Phase 5.** Do not start later phases until the current phase completion
 criteria are met and `context/progress-tracker.md` is updated.
 
 ## Development Methodology

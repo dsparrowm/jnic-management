@@ -8,17 +8,26 @@ async function ensureUser(
   password: string,
   name: string,
   role: Role,
+  org?: { stateId?: string; zoneId?: string; branchId?: string },
 ) {
   const existingForRole = await prisma.user.findFirst({
     where: { role, status: { not: UserStatus.DEACTIVATED } },
   });
-  if (existingForRole) {
+  if (existingForRole && !org) {
     console.log(`${role} account already exists (${existingForRole.email}), skipping`);
     return existingForRole;
   }
 
   const existingForEmail = await prisma.user.findUnique({ where: { email } });
   if (existingForEmail) {
+    if (org) {
+      const updated = await prisma.user.update({
+        where: { id: existingForEmail.id },
+        data: org,
+      });
+      console.log(`Updated org assignment for ${email}`);
+      return updated;
+    }
     console.log(`Email already in use (${email}), skipping ${role} creation`);
     return existingForEmail;
   }
@@ -31,6 +40,7 @@ async function ensureUser(
       role,
       status: UserStatus.ACTIVE,
       passwordHash,
+      ...org,
     },
   });
   console.log(`Created ${role} account: ${email}`);
@@ -62,7 +72,7 @@ async function main() {
     create: { name: "Victoria Island", stateId: state.id },
   });
 
-  await prisma.branch.upsert({
+  const branch = await prisma.branch.upsert({
     where: { zoneId_name: { zoneId: zone.id, name: "VI Main Campus" } },
     update: {},
     create: {
@@ -72,7 +82,52 @@ async function main() {
     },
   });
 
+  const zonalEmail = process.env.SEED_ZONAL_EMAIL ?? "zonal@jnic.org";
+  const zonalPassword = process.env.SEED_ZONAL_PASSWORD ?? "ChangeMe123!";
+  const zonalName = process.env.SEED_ZONAL_NAME ?? "Zonal Pastor";
+
+  const zonalPastor = await ensureUser(zonalEmail, zonalPassword, zonalName, Role.ZONAL_PASTOR, {
+    stateId: state.id,
+    zoneId: zone.id,
+  });
+
+  await prisma.zone.update({
+    where: { id: zone.id },
+    data: { zonalPastorId: zonalPastor.id },
+  });
+
+  const branchEmail = process.env.SEED_BRANCH_EMAIL ?? "branch@jnic.org";
+  const branchPassword = process.env.SEED_BRANCH_PASSWORD ?? "ChangeMe123!";
+  const branchName = process.env.SEED_BRANCH_NAME ?? "Branch Pastor";
+
+  const branchPastor = await ensureUser(branchEmail, branchPassword, branchName, Role.BRANCH_PASTOR, {
+    stateId: state.id,
+    zoneId: zone.id,
+    branchId: branch.id,
+  });
+
+  await prisma.branch.update({
+    where: { id: branch.id },
+    data: { branchPastorId: branchPastor.id },
+  });
+
+  const stateEmail = process.env.SEED_STATE_EMAIL ?? "state@jnic.org";
+  const statePassword = process.env.SEED_STATE_PASSWORD ?? "ChangeMe123!";
+  const stateName = process.env.SEED_STATE_NAME ?? "State Pastor";
+
+  const statePastor = await ensureUser(stateEmail, statePassword, stateName, Role.STATE_PASTOR, {
+    stateId: state.id,
+  });
+
+  await prisma.state.update({
+    where: { id: state.id },
+    data: { statePastorId: statePastor.id },
+  });
+
   console.log("Seeded org hierarchy: Lagos State → Victoria Island → VI Main Campus");
+  console.log(
+    `Zonal pastor: ${zonalEmail} | Branch pastor: ${branchEmail} | State pastor: ${stateEmail}`,
+  );
 }
 
 main()

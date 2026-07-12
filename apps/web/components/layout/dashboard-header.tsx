@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { AuthUser, api } from "@/lib/api";
 import { clearSession, getRefreshToken } from "@/lib/auth";
-import { formatRole, getUserInitials } from "@/lib/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { formatRole } from "@/lib/navigation";
+import { UserAvatar } from "@/components/profile/user-avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +26,6 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user, title, subtitle, onMenuClick }: DashboardHeaderProps) {
   const router = useRouter();
-  const initials = getUserInitials(user.name);
 
   async function handleLogout() {
     const refresh = getRefreshToken();
@@ -95,11 +95,12 @@ export function DashboardHeader({ user, title, subtitle, onMenuClick }: Dashboar
                   <p className="text-sm font-medium text-foreground">{user.name}</p>
                   <p className="text-xs text-muted-foreground">{formatRole(user.role)}</p>
                 </div>
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={user.name}
+                  profilePicUrl={user.profilePicUrl}
+                  className="h-9 w-9"
+                  fallbackClassName="bg-primary text-primary-foreground"
+                />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -109,6 +110,10 @@ export function DashboardHeader({ user, title, subtitle, onMenuClick }: Dashboar
                   <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/profile">Profile</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"

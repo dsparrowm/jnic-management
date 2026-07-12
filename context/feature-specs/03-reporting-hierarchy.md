@@ -16,25 +16,25 @@ feedback, notifications, and monthly aggregation with Lead Pastor national appro
 
 ### US-3.1 — Branch submit
 
-- [ ] Unified form with attendance + finance (see `04-attendance-finance.md`)
-- [ ] Tied to service date and week
-- [ ] Status = SUBMITTED (pending zone review) on create
-- [ ] Editable only before `status >= ZONE_REVIEWED`
+- [x] Unified form with attendance + finance (see `04-attendance-finance.md`)
+- [x] Tied to service date and week
+- [x] Status = SUBMITTED (pending zone review) on create
+- [x] Editable only before `status >= ZONE_REVIEWED`
 
 ### US-3.2 — Zonal review
 
-- [ ] View all branch reports in zone with drill-down
+- [x] View all branch reports in zone with drill-down
 - [ ] Leave feedback on branch report
-- [ ] Zone aggregate auto-computed regardless of feedback
+- [x] Zone aggregate auto-computed regardless of feedback
 
 ### US-3.3 — State view
 
-- [ ] All zones in state with drill-down to branch
+- [x] All zones in state with drill-down to branch
 - [ ] State Pastor can leave feedback on zone or branch reports
 
 ### US-3.4 — National dashboard
 
-- [ ] Totals by state, zone, branch with drill-down
+- [x] Totals by state, zone, branch with drill-down
 - [ ] Lead Pastor and Admin can leave feedback at any level
 
 ### US-3.5 — Feedback

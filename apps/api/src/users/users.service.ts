@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma, UserStatus } from "@repo/database";
+import { FilesService } from "../files/files.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { sanitizeUser } from "../common/user.mapper";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
@@ -53,7 +54,10 @@ function buildPastorWhere(
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -142,6 +146,23 @@ export class UsersService {
         zoneId: dto.zoneId === undefined ? user.zoneId : dto.zoneId,
         branchId: dto.branchId === undefined ? user.branchId : dto.branchId,
       },
+    });
+    return sanitizeUser(updated);
+  }
+
+  async updateProfilePicture(userId: string, key: string) {
+    this.filesService.assertProfilePictureKeyForUser(key, userId);
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const profilePicUrl = this.filesService.buildPublicUrl(key);
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profilePicUrl },
     });
     return sanitizeUser(updated);
   }

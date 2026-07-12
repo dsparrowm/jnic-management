@@ -9,6 +9,7 @@ export interface AuthUser {
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
+  profilePicUrl: string | null;
 }
 
 export interface TokenPair {

@@ -6,6 +6,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
+import { UpdateProfilePictureDto } from "./dto/update-profile-picture.dto";
 import { ReassignUserDto } from "./dto/users.dto";
 import { UsersService } from "./users.service";
 
@@ -17,6 +18,14 @@ export class UsersController {
   @Get("me")
   getMe(@CurrentUser() user: AuthUser) {
     return this.usersService.getMe(user.id);
+  }
+
+  @Patch("me/profile-picture")
+  updateProfilePicture(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateProfilePictureDto,
+  ) {
+    return this.usersService.updateProfilePicture(user.id, dto.key);
   }
 
   @Get("pastors")

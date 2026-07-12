@@ -12,6 +12,7 @@ export function toAuthUser(user: User): AuthUser {
     stateId: user.stateId,
     zoneId: user.zoneId,
     branchId: user.branchId,
+    profilePicUrl: user.profilePicUrl,
   };
 }
 

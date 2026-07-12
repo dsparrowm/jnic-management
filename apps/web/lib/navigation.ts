@@ -2,8 +2,10 @@ import { Role } from "@repo/types";
 import {
   Building2,
   CheckSquare,
+  ClipboardList,
   LayoutDashboard,
   type LucideIcon,
+  UserCircle,
   UsersRound,
 } from "lucide-react";
 
@@ -35,6 +37,20 @@ export const navSections: NavSection[] = [
         icon: LayoutDashboard,
         roles: ALL_ROLES,
       },
+      {
+        id: "profile",
+        label: "Profile",
+        href: "/profile",
+        icon: UserCircle,
+        roles: ALL_ROLES,
+      },
+      {
+        id: "submit-report",
+        label: "Submit Report",
+        href: "/reports/submit",
+        icon: ClipboardList,
+        roles: [Role.BRANCH_PASTOR, Role.ADMIN_STAFF],
+      },
     ],
   },
   {
@@ -61,6 +77,27 @@ export const navSections: NavSection[] = [
     id: "leadership",
     label: "Leadership",
     items: [
+      {
+        id: "zone-reports",
+        label: "Zone Reports",
+        href: "/reports/zone",
+        icon: ClipboardList,
+        roles: [Role.ZONAL_PASTOR],
+      },
+      {
+        id: "state-reports",
+        label: "State Reports",
+        href: "/reports/state",
+        icon: ClipboardList,
+        roles: [Role.STATE_PASTOR],
+      },
+      {
+        id: "national-reports",
+        label: "National Reports",
+        href: "/reports/national",
+        icon: ClipboardList,
+        roles: [Role.LEAD_PASTOR, Role.ADMIN],
+      },
       {
         id: "org-approvals",
         label: "Org Approvals",
@@ -95,6 +132,11 @@ export function getUserInitials(name: string): string {
 export function getPageTitle(pathname: string): string {
   const titles: Record<string, string> = {
     "/dashboard": "Dashboard",
+    "/profile": "Profile",
+    "/reports/submit": "Submit Report",
+    "/reports/zone": "Zone Reports",
+    "/reports/state": "State Reports",
+    "/reports/national": "National Reports",
     "/admin/pastors": "Pastors",
     "/admin/org": "Organisation",
     "/approvals/org": "Org Approvals",

@@ -16,20 +16,20 @@ Implemented as part of the weekly report entity — not separate standalone form
 
 ### US-4.1 — Attendance
 
-- [ ] Numeric fields: `adultCount`, `teenageCount`, `childrenCount`
-- [ ] Tied to service date and branch via parent `WeeklyReport`
+- [x] Numeric fields: `adultCount`, `teenageCount`, `childrenCount`
+- [x] Tied to service date and branch via parent `WeeklyReport`
 
 ### US-4.2 — Finance
 
-- [ ] Fields: `tithe`, `offering`, `other`
-- [ ] `currency` defaults to `NGN`; stored on record for future configurability
-- [ ] Submitted together with attendance in one weekly report
+- [x] Fields: `tithe`, `offering`, `other`
+- [x] `currency` defaults to `NGN`; stored on record for future configurability
+- [x] Submitted together with attendance in one weekly report
 
 ### US-4.3 — Aggregates + missed flags
 
-- [ ] Summary totals for branches under Zonal/State pastor
-- [ ] Detail drill-down to individual branch submissions
-- [ ] Visual flag if branch has not submitted for the period
+- [x] Summary totals for branches under Zonal/State pastor
+- [x] Detail drill-down to individual branch submissions
+- [x] Visual flag if branch has not submitted for the period
 
 ## Data Model
 
@@ -80,7 +80,7 @@ Roll up attendance and finance sums when building zone/state/national summary vi
 
 ## Acceptance
 
-- [ ] Submit creates report + attendance + finance atomically
-- [ ] Aggregates match sum of branch submissions
-- [ ] Missed branches flagged in zone/state views
+- [x] Submit creates report + attendance + finance atomically
+- [x] Aggregates match sum of branch submissions
+- [x] Missed branches flagged in zone/state views
 - [ ] `progress-tracker.md` updated

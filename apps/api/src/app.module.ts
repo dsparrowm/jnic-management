@@ -2,10 +2,12 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthModule } from "./auth/auth.module";
+import { FilesModule } from "./files/files.module";
 import { HealthModule } from "./health/health.module";
 import { OnboardingModule } from "./onboarding/onboarding.module";
 import { OrgModule } from "./org/org.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { ReportsModule } from "./reports/reports.module";
 import { UsersModule } from "./users/users.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
@@ -17,6 +19,8 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
     AuthModule,
     OnboardingModule,
     OrgModule,
+    FilesModule,
+    ReportsModule,
     UsersModule,
   ],
   providers: [

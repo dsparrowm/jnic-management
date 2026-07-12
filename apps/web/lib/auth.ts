@@ -28,6 +28,12 @@ export function saveSession(data: AuthResponse) {
   localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 }
 
+export function updateStoredUserProfilePic(profilePicUrl: string | null) {
+  const user = getStoredUser();
+  if (!user) return;
+  localStorage.setItem(USER_KEY, JSON.stringify({ ...user, profilePicUrl }));
+}
+
 export function clearSession() {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
@@ -40,4 +46,20 @@ export function isAdmin(user: AuthUser | null): boolean {
 
 export function isLeadPastor(user: AuthUser | null): boolean {
   return user?.role === "LEAD_PASTOR";
+}
+
+export function isBranchSubmitter(user: AuthUser | null): boolean {
+  return user?.role === "BRANCH_PASTOR" || user?.role === "ADMIN_STAFF";
+}
+
+export function isZonalPastor(user: AuthUser | null): boolean {
+  return user?.role === "ZONAL_PASTOR";
+}
+
+export function isStatePastor(user: AuthUser | null): boolean {
+  return user?.role === "STATE_PASTOR";
+}
+
+export function isHqViewer(user: AuthUser | null): boolean {
+  return user?.role === "LEAD_PASTOR" || user?.role === "ADMIN";
 }

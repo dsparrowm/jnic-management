@@ -15,10 +15,10 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 
 ### US-2.1 — Profile picture
 
-- [ ] Pastor can upload JPG or PNG
-- [ ] Max file size enforced (e.g. 2MB)
-- [ ] Optional basic crop on client before upload
-- [ ] Default placeholder avatar when no picture
+- [x] Pastor can upload JPG or PNG
+- [x] Max file size enforced (e.g. 2MB)
+- [x] Optional basic crop on client before upload
+- [x] Default placeholder avatar when no picture
 
 ### US-2.2 — Pastor directory
 
@@ -54,6 +54,6 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 
 ## Acceptance
 
-- [ ] Upload flow works end-to-end via presigned URL
-- [ ] Directory filters return correct subsets
-- [ ] `progress-tracker.md` updated
+- [x] Upload flow works end-to-end via presigned URL
+- [x] Directory filters return correct subsets
+- [x] `progress-tracker.md` updated

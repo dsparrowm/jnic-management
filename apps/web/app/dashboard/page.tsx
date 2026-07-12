@@ -1,37 +1,51 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, ClipboardList, Users } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { formatRole } from "@/lib/navigation";
-import { getAccessToken, getStoredUser, isAdmin, isLeadPastor } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isAdmin, isBranchSubmitter, isHqViewer, isLeadPastor, isStatePastor, isZonalPastor } from "@/lib/auth";
 
 function StatCard({
   label,
   value,
   hint,
   icon: Icon,
+  href,
 }: {
   label: string;
   value: string;
   hint: string;
   icon: React.ComponentType<{ className?: string }>;
+  href?: string;
 }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-        </div>
-        <div className="rounded-lg bg-muted p-2 text-muted-foreground">
-          <Icon className="h-5 w-5" />
-        </div>
+  const content = (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      </div>
+      <div className="rounded-lg bg-muted p-2 text-muted-foreground">
+        <Icon className="h-5 w-5" />
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block rounded-lg border border-border bg-card p-5 shadow-sm transition-colors hover:bg-muted/40"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="rounded-lg border border-border bg-card p-5 shadow-sm">{content}</div>;
 }
 
 export default function DashboardPage() {
@@ -77,6 +91,24 @@ export default function DashboardPage() {
               icon={Building2}
             />
           )}
+          {isStatePastor(user) && (
+            <StatCard
+              label="State reports"
+              value="Review"
+              hint="Zone drill-down, missed flags, and state totals"
+              icon={ClipboardList}
+              href="/reports/state"
+            />
+          )}
+          {isHqViewer(user) && (
+            <StatCard
+              label="National reports"
+              value="Overview"
+              hint="Nationwide branch submissions and totals"
+              icon={ClipboardList}
+              href="/reports/national"
+            />
+          )}
           {isLeadPastor(user) && (
             <StatCard
               label="Approvals"
@@ -85,11 +117,29 @@ export default function DashboardPage() {
               icon={ClipboardList}
             />
           )}
-          {!isAdmin(user) && !isLeadPastor(user) && (
+          {!isAdmin(user) && !isLeadPastor(user) && isBranchSubmitter(user) && (
+            <StatCard
+              label="Weekly report"
+              value="Submit"
+              hint="Record attendance and finance for your branch"
+              icon={ClipboardList}
+              href="/reports/submit"
+            />
+          )}
+          {isZonalPastor(user) && (
+            <StatCard
+              label="Zone reports"
+              value="Review"
+              hint="Branch submissions, missed flags, and zone totals"
+              icon={ClipboardList}
+              href="/reports/zone"
+            />
+          )}
+          {!isAdmin(user) && !isLeadPastor(user) && !isBranchSubmitter(user) && !isZonalPastor(user) && !isStatePastor(user) && (
             <StatCard
               label="Weekly reports"
-              value="Phase 4"
-              hint="Attendance and finance submission coming next"
+              value="Phase 5"
+              hint="Hierarchy views arrive in the next phase"
               icon={ClipboardList}
             />
           )}
