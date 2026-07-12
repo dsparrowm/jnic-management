@@ -92,7 +92,7 @@ jnic_management/
 
 ### User
 
-- `role`: `LEAD_PASTOR | ADMIN | STATE_PASTOR | ZONAL_PASTOR | BRANCH_PASTOR | ADMIN_STAFF`
+- `role`: `LEAD_PASTOR | ADMIN | STATE_PASTOR | ZONAL_PASTOR | BRANCH_PASTOR`
 - `status`: `PENDING | ACTIVE | DEACTIVATED`
 - `onboardingToken`, `onboardingTokenExpiry`
 - Org FKs: `stateId`, `zoneId`, `branchId` (nullable per role)

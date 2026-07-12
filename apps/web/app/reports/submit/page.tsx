@@ -13,7 +13,7 @@ import {
 } from "@/components/reports/weekly-report-form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, WeeklyReportRecord } from "@/lib/api";
-import { getAccessToken, getStoredUser, isBranchSubmitter } from "@/lib/auth";
+import { getAccessToken, getStoredUser, canSubmitWeeklyReportsForUser } from "@/lib/auth";
 
 export default function SubmitWeeklyReportPage() {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function SubmitWeeklyReportPage() {
       router.replace("/login");
       return;
     }
-    if (!isBranchSubmitter(sessionUser)) {
+    if (!canSubmitWeeklyReportsForUser(sessionUser)) {
       router.replace("/dashboard");
       return;
     }

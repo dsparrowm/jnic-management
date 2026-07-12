@@ -5,7 +5,6 @@ export enum Role {
   STATE_PASTOR = "STATE_PASTOR",
   ZONAL_PASTOR = "ZONAL_PASTOR",
   BRANCH_PASTOR = "BRANCH_PASTOR",
-  ADMIN_STAFF = "ADMIN_STAFF",
 }
 
 /** Roles assignable via admin pastor onboarding (excludes ADMIN and LEAD_PASTOR) */
@@ -13,7 +12,6 @@ export const ONBOARDABLE_ROLES: Role[] = [
   Role.STATE_PASTOR,
   Role.ZONAL_PASTOR,
   Role.BRANCH_PASTOR,
-  Role.ADMIN_STAFF,
 ];
 
 export enum UserStatus {
@@ -79,3 +77,14 @@ export {
   parseReportDate,
 } from "./week";
 export type { BranchSubmissionState } from "./week";
+export {
+  allowsOptionalBranch,
+  allowsOptionalZone,
+  canSubmitWeeklyReports,
+  requiresBranchId,
+  requiresStateId,
+  requiresZoneId,
+  validateOrgAssignmentStructure,
+  WEEKLY_REPORT_SUBMITTER_ROLES,
+} from "./org-assignment";
+export type { OrgAssignmentInput, ResolvedOrgAssignment } from "./org-assignment";

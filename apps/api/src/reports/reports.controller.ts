@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import { Role } from "@repo/types";
+import { Role, WEEKLY_REPORT_SUBMITTER_ROLES } from "@repo/types";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
@@ -18,14 +18,14 @@ export class ReportsController {
 
   @Post("weekly")
   @UseGuards(RolesGuard)
-  @Roles(Role.BRANCH_PASTOR, Role.ADMIN_STAFF)
+  @Roles(...WEEKLY_REPORT_SUBMITTER_ROLES)
   createWeeklyReport(@CurrentUser() user: AuthUser, @Body() dto: CreateWeeklyReportDto) {
     return this.reportsService.createWeeklyReport(user, dto);
   }
 
   @Patch("weekly/:id")
   @UseGuards(RolesGuard)
-  @Roles(Role.BRANCH_PASTOR, Role.ADMIN_STAFF)
+  @Roles(...WEEKLY_REPORT_SUBMITTER_ROLES)
   updateWeeklyReport(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
@@ -36,7 +36,7 @@ export class ReportsController {
 
   @Get("weekly")
   @UseGuards(RolesGuard)
-  @Roles(Role.BRANCH_PASTOR, Role.ADMIN_STAFF)
+  @Roles(...WEEKLY_REPORT_SUBMITTER_ROLES)
   listWeeklyReports(@CurrentUser() user: AuthUser, @Query() query: ListWeeklyReportsDto) {
     return this.reportsService.listWeeklyReports(user, query);
   }
@@ -65,8 +65,7 @@ export class ReportsController {
   @Get("weekly/:id")
   @UseGuards(RolesGuard)
   @Roles(
-    Role.BRANCH_PASTOR,
-    Role.ADMIN_STAFF,
+    ...WEEKLY_REPORT_SUBMITTER_ROLES,
     Role.ZONAL_PASTOR,
     Role.STATE_PASTOR,
     Role.LEAD_PASTOR,

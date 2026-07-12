@@ -9,6 +9,8 @@ import { Prisma, ReportStatus as PrismaReportStatus } from "@repo/database";
 import {
   ReportStatus,
   Role,
+  WEEKLY_REPORT_SUBMITTER_ROLES,
+  canSubmitWeeklyReports,
   computeWeekOf,
   getBranchSubmissionState,
   parseReportDate,
@@ -20,7 +22,7 @@ import { UpdateWeeklyReportDto } from "./dto/update-weekly-report.dto";
 import { CreateWeeklyReportDto } from "./dto/weekly-report.dto";
 import { toWeeklyReportView, weeklyReportInclude } from "./reports.mapper";
 
-const SUBMITTER_ROLES = new Set<Role>([Role.BRANCH_PASTOR, Role.ADMIN_STAFF]);
+const SUBMITTER_ROLES = new Set<Role>(WEEKLY_REPORT_SUBMITTER_ROLES);
 const HQ_VIEW_ROLES = new Set<Role>([Role.LEAD_PASTOR, Role.ADMIN]);
 
 type WeeklyReportWithRelations = Prisma.WeeklyReportGetPayload<{
@@ -45,14 +47,11 @@ type CountSummary = {
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private assertBranchSubmitter(user: AuthUser): string {
-    if (!SUBMITTER_ROLES.has(user.role)) {
+  private assertWeeklyReportSubmitter(user: AuthUser): string {
+    if (!canSubmitWeeklyReports(user.role, user.branchId)) {
       throw new ForbiddenException("Insufficient permissions");
     }
-    if (!user.branchId) {
-      throw new BadRequestException("No branch assigned to your account");
-    }
-    return user.branchId;
+    return user.branchId!;
   }
 
   private assertZonalPastor(user: AuthUser): string {
@@ -82,7 +81,7 @@ export class ReportsService {
   }
 
   private buildBranchScope(user: AuthUser): Prisma.WeeklyReportWhereInput {
-    const branchId = this.assertBranchSubmitter(user);
+    const branchId = this.assertWeeklyReportSubmitter(user);
     return { branchId };
   }
 
@@ -207,7 +206,7 @@ export class ReportsService {
   }
 
   async createWeeklyReport(user: AuthUser, dto: CreateWeeklyReportDto) {
-    const branchId = this.assertBranchSubmitter(user);
+    const branchId = this.assertWeeklyReportSubmitter(user);
     const serviceDate = parseReportDate(dto.serviceDate);
     const weekOf = parseReportDate(computeWeekOf(dto.serviceDate));
     const currency = dto.currency ?? "NGN";
@@ -259,7 +258,7 @@ export class ReportsService {
   }
 
   async updateWeeklyReport(user: AuthUser, reportId: string, dto: UpdateWeeklyReportDto) {
-    this.assertBranchSubmitter(user);
+    this.assertWeeklyReportSubmitter(user);
 
     const report = await this.prisma.weeklyReport.findUnique({
       where: { id: reportId },

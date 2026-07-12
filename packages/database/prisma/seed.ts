@@ -89,6 +89,7 @@ async function main() {
   const zonalPastor = await ensureUser(zonalEmail, zonalPassword, zonalName, Role.ZONAL_PASTOR, {
     stateId: state.id,
     zoneId: zone.id,
+    branchId: branch.id,
   });
 
   await prisma.zone.update({
@@ -126,7 +127,7 @@ async function main() {
 
   console.log("Seeded org hierarchy: Lagos State → Victoria Island → VI Main Campus");
   console.log(
-    `Zonal pastor: ${zonalEmail} | Branch pastor: ${branchEmail} | State pastor: ${stateEmail}`,
+    `Zonal pastor (dual-scope): ${zonalEmail} | Branch pastor: ${branchEmail} | State pastor: ${stateEmail}`,
   );
 }
 

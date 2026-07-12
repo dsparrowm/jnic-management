@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { formatWeekEndingLabel, getTodayInLagos, computeWeekOf } from "@repo/types";
@@ -16,7 +16,7 @@ import { getAccessToken, getStoredUser, isHqViewer } from "@/lib/auth";
 
 export default function NationalReportsPage() {
   const router = useRouter();
-  const sessionUser = getStoredUser();
+  const [sessionUser, setSessionUser] = useState(() => getStoredUser());
   const [ready, setReady] = useState(false);
   const [weekOf, setWeekOf] = useState(computeWeekOf(getTodayInLagos()));
   const [data, setData] = useState<NationalSummaryResponse | null>(null);
@@ -26,40 +26,58 @@ export default function NationalReportsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<WeeklyReportRecord | null>(null);
 
-  const loadSummary = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) return;
-
-    setLoading(true);
-    setError(undefined);
-    try {
-      const response = await api.getNationalSummary(token, weekOf);
-      setData(response);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        router.replace("/login");
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Could not load national reports");
-    } finally {
-      setLoading(false);
-    }
-  }, [router, weekOf]);
-
   useEffect(() => {
     const token = getAccessToken();
-    if (!token || !sessionUser) {
+    const user = getStoredUser();
+    if (!token || !user) {
       router.replace("/login");
       return;
     }
-    if (!isHqViewer(sessionUser)) {
+    if (!isHqViewer(user)) {
       router.replace("/dashboard");
       return;
     }
-
+    setSessionUser(user);
     setReady(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
+
+    const token = getAccessToken();
+    if (!token) return;
+
+    let cancelled = false;
+
+    async function loadSummary() {
+      setLoading(true);
+      setError(undefined);
+      try {
+        const response = await api.getNationalSummary(token!, weekOf);
+        if (!cancelled) {
+          setData(response);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          if (err instanceof ApiError && err.status === 401) {
+            router.replace("/login");
+            return;
+          }
+          setError(err instanceof Error ? err.message : "Could not load national reports");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
     void loadSummary();
-  }, [loadSummary, router, sessionUser]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, weekOf, router]);
 
   async function handleViewReport(reportId: string) {
     const token = getAccessToken();
@@ -72,7 +90,8 @@ export default function NationalReportsPage() {
     try {
       const report = await api.getWeeklyReport(token, reportId);
       setSelectedReport(report);
-      void loadSummary();
+      const summary = await api.getNationalSummary(token, weekOf);
+      setData(summary);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load report");
       setDetailOpen(false);

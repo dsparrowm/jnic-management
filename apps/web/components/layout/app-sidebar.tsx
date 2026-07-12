@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
   role: Role;
+  branchId?: string | null;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   mobileOpen: boolean;
@@ -18,13 +19,14 @@ interface AppSidebarProps {
 
 export function AppSidebar({
   role,
+  branchId,
   collapsed,
   onCollapsedChange,
   mobileOpen,
   onMobileOpenChange,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const sections = getNavSectionsForRole(role);
+  const sections = getNavSectionsForRole(role, branchId);
 
   const sidebarContent = (
     <aside

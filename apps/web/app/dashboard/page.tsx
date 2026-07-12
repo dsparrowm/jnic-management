@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Building2, ClipboardList, Users } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { formatRole } from "@/lib/navigation";
-import { getAccessToken, getStoredUser, isAdmin, isBranchSubmitter, isHqViewer, isLeadPastor, isStatePastor, isZonalPastor } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isAdmin, canSubmitWeeklyReportsForUser, isHqViewer, isLeadPastor, isStatePastor, isZonalPastor } from "@/lib/auth";
 
 function StatCard({
   label,
@@ -117,7 +117,7 @@ export default function DashboardPage() {
               icon={ClipboardList}
             />
           )}
-          {!isAdmin(user) && !isLeadPastor(user) && isBranchSubmitter(user) && (
+          {canSubmitWeeklyReportsForUser(user) && (
             <StatCard
               label="Weekly report"
               value="Submit"
@@ -135,7 +135,7 @@ export default function DashboardPage() {
               href="/reports/zone"
             />
           )}
-          {!isAdmin(user) && !isLeadPastor(user) && !isBranchSubmitter(user) && !isZonalPastor(user) && !isStatePastor(user) && (
+          {!isAdmin(user) && !isLeadPastor(user) && !canSubmitWeeklyReportsForUser(user) && !isZonalPastor(user) && !isStatePastor(user) && (
             <StatCard
               label="Weekly reports"
               value="Phase 5"

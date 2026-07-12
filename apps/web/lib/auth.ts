@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthResponse, AuthUser } from "./api";
+import { Role, canSubmitWeeklyReports } from "@repo/types";
 
 const ACCESS_KEY = "jnlop:access";
 const REFRESH_KEY = "jnlop:refresh";
@@ -48,8 +49,9 @@ export function isLeadPastor(user: AuthUser | null): boolean {
   return user?.role === "LEAD_PASTOR";
 }
 
-export function isBranchSubmitter(user: AuthUser | null): boolean {
-  return user?.role === "BRANCH_PASTOR" || user?.role === "ADMIN_STAFF";
+export function canSubmitWeeklyReportsForUser(user: AuthUser | null): boolean {
+  if (!user) return false;
+  return canSubmitWeeklyReports(user.role as Role, user.branchId);
 }
 
 export function isZonalPastor(user: AuthUser | null): boolean {

@@ -4,7 +4,9 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma, UserStatus } from "@repo/database";
+import { ONBOARDABLE_ROLES, Role } from "@repo/types";
 import { FilesService } from "../files/files.service";
+import { resolveAndValidateOrgAssignment } from "../common/org-assignment";
 import { PrismaService } from "../prisma/prisma.service";
 import { sanitizeUser } from "../common/user.mapper";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
@@ -138,13 +140,30 @@ export class UsersService {
       throw new NotFoundException("User not found");
     }
 
+    const targetRole = (dto.role ?? user.role) as Role;
+
+    let stateId = dto.stateId === undefined ? user.stateId : dto.stateId;
+    let zoneId = dto.zoneId === undefined ? user.zoneId : dto.zoneId;
+    let branchId = dto.branchId === undefined ? user.branchId : dto.branchId;
+
+    if (ONBOARDABLE_ROLES.includes(targetRole)) {
+      const org = await resolveAndValidateOrgAssignment(this.prisma, targetRole, {
+        stateId,
+        zoneId,
+        branchId,
+      });
+      stateId = org.stateId;
+      zoneId = org.zoneId;
+      branchId = org.branchId;
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        role: dto.role ?? user.role,
-        stateId: dto.stateId === undefined ? user.stateId : dto.stateId,
-        zoneId: dto.zoneId === undefined ? user.zoneId : dto.zoneId,
-        branchId: dto.branchId === undefined ? user.branchId : dto.branchId,
+        role: targetRole,
+        stateId,
+        zoneId,
+        branchId,
       },
     });
     return sanitizeUser(updated);

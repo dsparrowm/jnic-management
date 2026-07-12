@@ -23,7 +23,7 @@ This is the **JNLOP MVP** greenfield Turborepo for JNIC church operations.
 
 ## Role model
 
-`LEAD_PASTOR` > `ADMIN` > `STATE_PASTOR` > `ZONAL_PASTOR` > `BRANCH_PASTOR` > `ADMIN_STAFF`
+`LEAD_PASTOR` > `ADMIN` > `STATE_PASTOR` > `ZONAL_PASTOR` > `BRANCH_PASTOR`
 
 Admin and HQ Admin are the same `ADMIN` role.
 

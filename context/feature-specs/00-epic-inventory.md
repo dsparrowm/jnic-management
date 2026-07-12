@@ -49,8 +49,8 @@ Cross-cutting: **Phase 2** (org structure + Lead Pastor approvals) supports Epic
 | US-3.5 | Feedback threads + notifications (non-blocking) | 5 |
 | US-3.6 | Monthly auto-aggregated summaries | 6 |
 
-**Roles involved:** `BRANCH_PASTOR`, `ADMIN_STAFF`, `ZONAL_PASTOR`, `STATE_PASTOR`,
-`LEAD_PASTOR`, `ADMIN`
+**Roles involved:** `BRANCH_PASTOR`, `ZONAL_PASTOR`, `STATE_PASTOR`,
+`LEAD_PASTOR`, `ADMIN` (dual-scope: `STATE_PASTOR` / `ZONAL_PASTOR` with optional `branchId` may submit)
 
 ---
 
@@ -62,7 +62,7 @@ Cross-cutting: **Phase 2** (org structure + Lead Pastor approvals) supports Epic
 | US-4.2 | Finance: tithe, offering, other + currency | 4 |
 | US-4.3 | Aggregates + missed submission flags | 4, 5 |
 
-**Roles involved:** `BRANCH_PASTOR`, `ADMIN_STAFF` (submit); `ZONAL_PASTOR`,
+**Roles involved:** `BRANCH_PASTOR`, `STATE_PASTOR`, `ZONAL_PASTOR` (submit when `branchId` assigned); `ZONAL_PASTOR`,
 `STATE_PASTOR` (aggregate views)
 
 ---

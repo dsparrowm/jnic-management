@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { Role, ONBOARDABLE_ROLES } from "@repo/types";
+import {
+  Role,
+  ONBOARDABLE_ROLES,
+  allowsOptionalBranch,
+  allowsOptionalZone,
+  requiresBranchId,
+  requiresStateId,
+  requiresZoneId,
+  validateOrgAssignmentStructure,
+} from "@repo/types";
 import { ErrorText } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +63,18 @@ function FormSection({
   );
 }
 
+function findBranchInTree(orgTree: OrgState[], branchId: string) {
+  for (const state of orgTree) {
+    for (const zone of state.zones) {
+      const branch = zone.branches.find((b) => b.id === branchId);
+      if (branch) {
+        return { stateId: state.id, zoneId: zone.id, branchId: branch.id };
+      }
+    }
+  }
+  return null;
+}
+
 export function OnboardPastorSheet({
   open,
   onOpenChange,
@@ -74,19 +95,50 @@ export function OnboardPastorSheet({
     }
   }, [open]);
 
-  const needsState = [Role.STATE_PASTOR, Role.ZONAL_PASTOR, Role.BRANCH_PASTOR, Role.ADMIN_STAFF].includes(
-    form.role,
-  );
-  const needsZone = [Role.ZONAL_PASTOR, Role.BRANCH_PASTOR, Role.ADMIN_STAFF].includes(form.role);
-  const needsBranch = [Role.BRANCH_PASTOR, Role.ADMIN_STAFF].includes(form.role);
+  const showState = requiresStateId(form.role);
+  const showZone = requiresZoneId(form.role) || allowsOptionalZone(form.role);
+  const zoneRequired = requiresZoneId(form.role);
+  const showBranchRequired = requiresBranchId(form.role);
+  const showBranchOptional = allowsOptionalBranch(form.role);
 
   const zonesForState = orgTree.find((s) => s.id === form.stateId)?.zones ?? [];
   const branchesForZone = zonesForState.find((z) => z.id === form.zoneId)?.branches ?? [];
+  const branchesForState = zonesForState.flatMap((z) => z.branches);
+  const branchOptions =
+    form.role === Role.STATE_PASTOR && !form.zoneId ? branchesForState : branchesForZone;
+
+  function handleBranchChange(branchId: string) {
+    if (!branchId) {
+      setForm((f) => ({ ...f, branchId: "" }));
+      return;
+    }
+    const resolved = findBranchInTree(orgTree, branchId);
+    if (resolved) {
+      setForm((f) => ({
+        ...f,
+        branchId: resolved.branchId,
+        zoneId: resolved.zoneId,
+        stateId: resolved.stateId,
+      }));
+    } else {
+      setForm((f) => ({ ...f, branchId }));
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const token = getAccessToken();
     if (!token) return;
+
+    const structuralError = validateOrgAssignmentStructure(form.role, {
+      stateId: form.stateId || null,
+      zoneId: form.zoneId || null,
+      branchId: form.branchId || null,
+    });
+    if (structuralError) {
+      setError(structuralError);
+      return;
+    }
 
     setLoading(true);
     setError(undefined);
@@ -214,7 +266,7 @@ export function OnboardPastorSheet({
                   </Select>
                 </div>
 
-                {needsState && (
+                {showState && (
                   <div className="space-y-2">
                     <Label htmlFor="onboard-state">State</Label>
                     <Select
@@ -240,19 +292,21 @@ export function OnboardPastorSheet({
                   </div>
                 )}
 
-                {needsZone && (
+                {showZone && (
                   <div className="space-y-2">
-                    <Label htmlFor="onboard-zone">Zone</Label>
+                    <Label htmlFor="onboard-zone">
+                      Zone{zoneRequired ? "" : " (optional)"}
+                    </Label>
                     <Select
                       id="onboard-zone"
-                      required
+                      required={zoneRequired}
                       value={form.zoneId}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, zoneId: e.target.value, branchId: "" }))
                       }
                       disabled={!form.stateId}
                     >
-                      <option value="">Select zone</option>
+                      <option value="">{zoneRequired ? "Select zone" : "No zone"}</option>
                       {zonesForState.map((z) => (
                         <option key={z.id} value={z.id}>
                           {z.name}
@@ -262,14 +316,14 @@ export function OnboardPastorSheet({
                   </div>
                 )}
 
-                {needsBranch && (
+                {showBranchRequired && (
                   <div className="space-y-2">
                     <Label htmlFor="onboard-branch">Branch</Label>
                     <Select
                       id="onboard-branch"
                       required
                       value={form.branchId}
-                      onChange={(e) => setForm((f) => ({ ...f, branchId: e.target.value }))}
+                      onChange={(e) => handleBranchChange(e.target.value)}
                       disabled={!form.zoneId}
                     >
                       <option value="">Select branch</option>
@@ -279,6 +333,28 @@ export function OnboardPastorSheet({
                         </option>
                       ))}
                     </Select>
+                  </div>
+                )}
+
+                {showBranchOptional && (
+                  <div className="space-y-2">
+                    <Label htmlFor="onboard-branch-optional">Home campus (optional)</Label>
+                    <Select
+                      id="onboard-branch-optional"
+                      value={form.branchId}
+                      onChange={(e) => handleBranchChange(e.target.value)}
+                      disabled={!form.stateId}
+                    >
+                      <option value="">No home campus</option>
+                      {branchOptions.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Optional home campus — enables weekly report submission.
+                    </p>
                   </div>
                 )}
               </FormSection>

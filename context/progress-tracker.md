@@ -16,7 +16,8 @@ Phase 4 branch submit complete. Zone review queue shipped; state/national views 
 | Admin vs HQ Admin | **Same role** (`ADMIN`) |
 | Lead Pastor | Separate role above Admin — org approvals + national summary sign-off |
 | Hierarchy | Branch → Zone → State → HQ |
-| Admin Staff | Same weekly submission rights as Branch Pastor |
+| Admin Staff | Removed — only pastors (+ platform ADMIN) use JNLOP |
+| Dual-scope pastors | STATE/ZONAL pastors may optionally have one home `branchId` for weekly submit |
 | Currency | NGN default; `currency` field stored on finance records |
 | Multi-branch pastors | 1:1 for MVP |
 | Report cutoff | Sunday week end; missed flag Monday 23:59 Africa/Lagos |
@@ -61,6 +62,16 @@ Phase 5 — Feedback threads on reports (non-blocking).
 
 ## Completed
 
+### Dual-scope pastor onboarding + remove ADMIN_STAFF (2026-07-13)
+
+- Removed `ADMIN_STAFF` role from Prisma, shared types, API, web, and docs
+- `packages/types/src/org-assignment.ts` — shared org FK rules + `canSubmitWeeklyReports`
+- API validates/normalizes org assignments on onboard + reassign
+- Onboard UI: optional home campus for State/Zonal pastors
+- Weekly submit gated by `branchId` + pastor role (dual-scope supported)
+- Seed: `zonal@jnic.org` dual-scope with `branchId` on VI Main Campus
+- `pnpm build` passes
+
 ### Phase 5 state + national reports (2026-07-12)
 
 - `GET /reports/state/summary` — zones with branch drill-down, state totals, missed flags
@@ -84,7 +95,7 @@ Phase 5 — Feedback threads on reports (non-blocking).
 - Shared week utilities in `@repo/types` (Africa/Lagos, Sunday week end)
 - NestJS `reports` module — create/list/get/update weekly reports
 - Atomic create: `WeeklyReport` + `Attendance` + `Finance` in one transaction
-- RBAC: `BRANCH_PASTOR` and `ADMIN_STAFF` only; branch-scoped access
+- RBAC: pastors with `branchId` (`STATE_PASTOR`, `ZONAL_PASTOR`, `BRANCH_PASTOR`); branch-scoped access
 - Edit lock when `status !== SUBMITTED`; only original submitter can edit
 - Web `/reports/submit` — unified attendance + finance form (jubilee-nation layout)
 - Nav + dashboard link for branch submitters

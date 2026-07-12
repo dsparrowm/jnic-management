@@ -28,6 +28,7 @@ export function DashboardShell({ children, user, title, subtitle }: DashboardShe
     <div className="flex h-screen bg-muted/40">
       <AppSidebar
         role={user.role as Role}
+        branchId={user.branchId}
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
         mobileOpen={mobileOpen}

@@ -1,4 +1,4 @@
-import { Role } from "@repo/types";
+import { Role, canSubmitWeeklyReports } from "@repo/types";
 import {
   Building2,
   CheckSquare,
@@ -49,7 +49,7 @@ export const navSections: NavSection[] = [
         label: "Submit Report",
         href: "/reports/submit",
         icon: ClipboardList,
-        roles: [Role.BRANCH_PASTOR, Role.ADMIN_STAFF],
+        roles: [Role.STATE_PASTOR, Role.ZONAL_PASTOR, Role.BRANCH_PASTOR],
       },
     ],
   },
@@ -109,11 +109,16 @@ export const navSections: NavSection[] = [
   },
 ];
 
-export function getNavSectionsForRole(role: Role): NavSection[] {
+export function getNavSectionsForRole(role: Role, branchId?: string | null): NavSection[] {
   return navSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => item.roles.includes(role)),
+      items: section.items.filter((item) => {
+        if (item.id === "submit-report") {
+          return canSubmitWeeklyReports(role, branchId);
+        }
+        return item.roles.includes(role);
+      }),
     }))
     .filter((section) => section.items.length > 0);
 }

@@ -41,10 +41,9 @@ context file before continuing.
 | ---- | --------------- |
 | `LEAD_PASTOR` | National visibility, feedback anywhere, approves new states/zones and national monthly summaries |
 | `ADMIN` | Onboard/deactivate/reassign users, org CRUD (state/zone creation pending LP approval), pastor directory |
-| `STATE_PASTOR` | State-wide reports, zone drill-down, feedback |
-| `ZONAL_PASTOR` | Zone reports, branch drill-down, feedback |
+| `STATE_PASTOR` | State-wide reports, zone drill-down, feedback; optional branch → weekly submit |
+| `ZONAL_PASTOR` | Zone reports, branch drill-down, feedback; optional branch → weekly submit |
 | `BRANCH_PASTOR` | Submit/edit weekly reports (until zone review), own branch |
-| `ADMIN_STAFF` | Submit weekly reports (same as Branch Pastor) |
 
 RBAC is enforced in **NestJS guards** and mirrored in the web UI — never UI-only.
 

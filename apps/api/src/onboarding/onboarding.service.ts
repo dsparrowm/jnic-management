@@ -12,6 +12,7 @@ import { AuthService } from "../auth/auth.service";
 import { sanitizeUser } from "../common/user.mapper";
 import { EmailService } from "../email/email.service";
 import { getWebAppUrl } from "../common/web-origin";
+import { resolveAndValidateOrgAssignment } from "../common/org-assignment";
 import { PrismaService } from "../prisma/prisma.service";
 import { CompleteOnboardingDto, CreateOnboardingUserDto } from "./dto/onboarding.dto";
 
@@ -35,6 +36,12 @@ export class OnboardingService {
       throw new ConflictException("Email already in use");
     }
 
+    const org = await resolveAndValidateOrgAssignment(this.prisma, dto.role, {
+      stateId: dto.stateId,
+      zoneId: dto.zoneId,
+      branchId: dto.branchId,
+    });
+
     const token = randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + ONBOARDING_HOURS * 60 * 60 * 1000);
 
@@ -45,9 +52,9 @@ export class OnboardingService {
         phone: dto.phone,
         role: dto.role,
         status: UserStatus.PENDING,
-        stateId: dto.stateId,
-        zoneId: dto.zoneId,
-        branchId: dto.branchId,
+        stateId: org.stateId,
+        zoneId: org.zoneId,
+        branchId: org.branchId,
         onboardingToken: token,
         onboardingTokenExpiry: expiry,
         createdById: adminId,

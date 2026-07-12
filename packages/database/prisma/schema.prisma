@@ -13,7 +13,6 @@ enum Role {
   STATE_PASTOR
   ZONAL_PASTOR
   BRANCH_PASTOR
-  ADMIN_STAFF
 }
 
 enum UserStatus {
