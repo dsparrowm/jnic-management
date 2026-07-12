@@ -22,8 +22,9 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 
 ### US-2.2 — Pastor directory
 
-- [ ] Admin sees all pastors with photo, role, assigned location
-- [ ] Filterable by state, zone, branch, role
+- [x] Admin sees all pastors with photo, role, assigned location
+- [x] Filterable by state, zone, branch, role
+- [x] Table and card views; resend onboarding and deactivate on same page
 
 ## API Endpoints
 
@@ -39,6 +40,8 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 | ----- | -------- |
 | `/profile` | All pastors |
 | `/admin/pastors` | Admin |
+
+**Note:** `/admin/pastors` also hosts US-1.3 admin actions (resend onboarding, deactivate). `/admin/users` redirects here.
 
 ## Data Model
 

@@ -1,4 +1,4 @@
-import { OrgChangeType, Role } from "@repo/types";
+import { OrgChangeType, Role, UserStatus } from "@repo/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -26,11 +26,57 @@ export interface UserRecord {
   phone: string | null;
   role: Role;
   status: string;
+  profilePicUrl: string | null;
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
   onboardingTokenExpiry: string | null;
   createdAt: string;
+}
+
+export interface PastorOrgRef {
+  id: string;
+  name: string;
+}
+
+export interface PastorRecord {
+  id: string;
+  email: string;
+  name: string;
+  phone: string | null;
+  role: Role;
+  status: string;
+  profilePicUrl: string | null;
+  createdAt: string;
+  state: PastorOrgRef | null;
+  zone: PastorOrgRef | null;
+  branch: PastorOrgRef | null;
+}
+
+export interface PastorListSummary {
+  total: number;
+  active: number;
+  pending: number;
+  deactivated: number;
+}
+
+export interface PastorListResponse {
+  items: PastorRecord[];
+  total: number;
+  page: number;
+  perPage: number;
+  summary: PastorListSummary;
+}
+
+export interface PastorFilters {
+  search?: string;
+  stateId?: string;
+  zoneId?: string;
+  branchId?: string;
+  role?: Role;
+  status?: UserStatus;
+  page?: number;
+  perPage?: number;
 }
 
 export interface OrgBranch {
@@ -73,7 +119,7 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(
+async function rawRequest<T>(
   path: string,
   options: RequestInit = {},
   token?: string | null,
@@ -94,6 +140,51 @@ async function request<T>(
     return undefined as T;
   }
   return res.json() as Promise<T>;
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const { clearSession, getRefreshToken, saveSession } = await import("./auth");
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const session = await rawRequest<AuthResponse>("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    });
+    saveSession(session);
+    return session.accessToken;
+  } catch {
+    clearSession();
+    return null;
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  token?: string | null,
+  retried = false,
+): Promise<T> {
+  try {
+    return await rawRequest<T>(path, options, token);
+  } catch (err) {
+    if (
+      err instanceof ApiError &&
+      err.status === 401 &&
+      token &&
+      !retried &&
+      !path.startsWith("/auth/")
+    ) {
+      const nextToken = await refreshAccessToken();
+      if (nextToken) {
+        return request<T>(path, options, nextToken, true);
+      }
+    }
+    throw err;
+  }
 }
 
 export const api = {
@@ -118,6 +209,20 @@ export const api = {
   getMe: (token: string) => request<UserRecord>("/users/me", {}, token),
 
   listUsers: (token: string) => request<UserRecord[]>("/users", {}, token),
+
+  listPastors: (token: string, filters: PastorFilters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.set("search", filters.search);
+    if (filters.stateId) params.set("stateId", filters.stateId);
+    if (filters.zoneId) params.set("zoneId", filters.zoneId);
+    if (filters.branchId) params.set("branchId", filters.branchId);
+    if (filters.role) params.set("role", filters.role);
+    if (filters.status) params.set("status", filters.status);
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.perPage) params.set("perPage", String(filters.perPage));
+    const qs = params.toString();
+    return request<PastorListResponse>(`/users/pastors${qs ? `?${qs}` : ""}`, {}, token);
+  },
 
   createOnboardingUser: (
     token: string,

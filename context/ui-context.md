@@ -1,40 +1,37 @@
 # UI Context
 
-Design tokens for JNLOP — JNIC brand (navy sidebar, gold accent).
+Design tokens for JNLOP — JNIC brand accents on a **Rokswood-style** light enterprise shell.
 
-Extracted from the `jubilee-nation` mock demo (`src/styles.css`). Use semantic CSS
-variables only; never hardcode hex in components.
+**UX reference:** `rokswood-hive-web` (`/home/davies/rokswood-hive-web`) for app shell layout,
+navigation, and dense dashboard patterns. Borrow `jubilee-nation` only for report form field
+structure (Phase 4+), not sidebar chrome.
+
+Use semantic CSS variables only; never hardcode hex in components.
 
 ## Theme
 
-Light mode dashboard. Enterprise church operations UI — light gray page background,
-white cards, navy sidebar, gold primary accent.
+Light mode enterprise portal — soft gray page background (`--bg-base`), white sidebar and
+header surfaces, JNIC gold as primary CTA/accent. Compact, high-information layouts.
 
 ## Colors
 
-All components use CSS custom properties defined in `apps/web/app/globals.css` (once
-scaffolded).
+All components use CSS custom properties in `apps/web/app/globals.css`.
 
 | Role | CSS Variable | Value |
 | ---- | ------------ | ----- |
 | Page background | `--bg-base` | `#F4F6FB` |
-| Surface / Card | `--bg-surface` | `#FFFFFF` |
-| Elevated surface | `--bg-elevated` | `#FFFFFF` |
-| Muted surface | `--bg-subtle` | `#EEF1F8` |
-| Sidebar background | `--bg-sidebar` | `#0D1B3E` |
-| Sidebar surface | `--bg-sidebar-surface` | `#162548` |
-| Primary text | `--text-primary` | `#111827` |
-| Muted text | `--text-muted` | `#6B7280` |
-| Sidebar text | `--text-sidebar` | `#E5E9F2` |
-| Sidebar muted text | `--text-sidebar-muted` | `#8A96B0` |
-| Primary accent (gold) | `--accent-primary` | `#C9A050` |
+| Surface / Card | `--bg-surface` / `--card` | `#FFFFFF` |
+| Muted surface | `--bg-subtle` / `--muted` | `#EEF1F8` / `#F3F4F6` |
+| Brand navy (accents, charts) | `--bg-brand-navy` | `#0D1B3E` |
+| Primary text | `--text-primary` / `--foreground` | `#111827` |
+| Muted text | `--text-muted` / `--muted-foreground` | `#6B7280` |
+| Primary accent (gold) | `--accent-primary` / `--primary` | `#C9A050` |
 | Accent hover | `--accent-hover` | `#B8903A` |
-| Accent foreground | `--accent-foreground` | `#FFFFFF` |
-| Border default | `--border-default` | `#E5E7EB` |
-| Border sidebar | `--border-sidebar` | `#1E2F55` |
+| Accent foreground | `--accent-foreground` / `--primary-foreground` | `#FFFFFF` |
+| Border default | `--border-default` / `--border` | `#E5E7EB` |
 | Success | `--state-success` | `#16A34A` |
 | Warning | `--state-warning` | `#D97706` |
-| Error | `--state-error` | `#DC2626` |
+| Error | `--state-error` / `--destructive` | `#DC2626` |
 | Info | `--state-info` | `#2563EB` |
 
 ### Chart palette
@@ -49,14 +46,14 @@ scaffolded).
 
 ### Auth pages (login, onboard)
 
-Reuse dashboard tokens. Auth cards on `--bg-surface` over `--bg-base` page background.
-Primary buttons use `--accent-primary` with `--accent-foreground` text.
+Auth cards on `--bg-surface` over `--bg-base` page background. Primary buttons use
+`--accent-primary` with `--accent-foreground` text.
 
 ## Typography
 
 | Role | Font | Usage |
 | ---- | ---- | ----- |
-| UI text | Inter (`next/font/google`) | Body, tables, forms |
+| UI text | Inter (system stack) | Body, tables, forms |
 | Display | Plus Jakarta Sans | Page titles, headings |
 | Mono | JetBrains Mono | IDs, codes, timestamps |
 
@@ -64,40 +61,46 @@ Primary buttons use `--accent-primary` with `--accent-foreground` text.
 
 | Usage | Classes |
 | ----- | ------- |
-| Page title | `text-2xl font-semibold font-display` |
-| Page subtitle | `text-sm text-[--text-muted]` |
-| Section label | `text-xs uppercase tracking-wide text-[--text-muted]` |
+| Page title | `text-xl font-bold` (header) / `text-2xl font-semibold` (in-page) |
+| Page subtitle | `text-sm text-muted-foreground` |
+| Section label | `text-xs uppercase tracking-wider text-muted-foreground` |
 | Nav item | `text-sm` |
-| Table header | `text-sm font-medium text-[--text-muted]` |
-| Metric value | `text-3xl font-semibold` |
-| Stat label | `text-sm text-[--text-muted]` |
+| Table header | `text-sm font-medium text-muted-foreground` |
+| Metric value | `text-2xl font-semibold` |
+| Stat label | `text-sm text-muted-foreground` |
 
 ## Layout
 
 | Element | Value |
 | ------- | ----- |
-| Sidebar width | `260px` (`--sidebar-width`) |
-| Header height | `64px` |
-| Page padding | `p-6` |
-| Card radius | `rounded-xl` |
+| Sidebar width (expanded) | `240px` (`w-60`) |
+| Sidebar width (collapsed) | `80px` (`w-20`) |
+| Header height | ~`56px` |
+| Page padding | `p-4 lg:p-6` |
+| Card radius | `rounded-lg` |
 | Button / input radius | `rounded-lg` (`--radius`) |
 | Base radius token | `0.625rem` |
 
-## App Shell
+## App Shell (Rokswood pattern)
 
-- **Sidebar** — Navy gradient (`sidebar-gradient`), JNIC logo, role-filtered nav groups
-- **Header** — Page title, notifications bell, user avatar menu
-- **Main** — Scrollable content on `--bg-base`
-- **Cards** — White surface, subtle shadow (`--shadow-card-token`), optional `card-hover`
+- **Sidebar** — White (`bg-background`), right border, collapsible, grouped nav sections
+  (Core / Administration / Leadership), Lucide icons, `bg-muted` active state
+- **Header** — White bar with page title, disabled search placeholder, notifications bell
+  (Phase 5), user avatar dropdown with logout
+- **Main** — Scrollable content on `bg-muted/40` over `--bg-base`
+- **Cards** — White surface, `border-border`, subtle `shadow-sm`
 
 ## Buttons
 
+Use shared `Button` from `components/ui/button.tsx`.
+
 | Variant | Style |
 | ------- | ----- |
-| Primary | `bg-[--accent-primary] text-[--accent-foreground] hover:bg-[--accent-hover]` |
-| Secondary | `border border-[--border-default] bg-white` |
-| Ghost | `text-[--text-muted] hover:bg-[--bg-subtle]` |
-| Destructive | `bg-[--state-error] text-white` |
+| Primary (default) | `bg-primary text-primary-foreground hover:bg-primary/90` |
+| Outline | `border border-border bg-background` |
+| Secondary | `bg-secondary text-secondary-foreground` |
+| Ghost | `text-muted-foreground hover:bg-muted` |
+| Destructive | `bg-destructive text-white` |
 
 ## Status Badges (Reports)
 
@@ -110,24 +113,24 @@ Primary buttons use `--accent-primary` with `--accent-foreground` text.
 
 ## Icons
 
-Lucide React. Inline `h-4 w-4`, nav `h-[18px] w-[18px]`.
+Lucide React. Inline `h-4 w-4`, nav `h-4 w-4`.
 
 ## Data Display Patterns
 
-Borrow from `jubilee-nation` mock:
+Borrow from **Rokswood** for shell and cards; **jubilee-nation** for report forms only:
 
-- **Stat cards** — metric value + label + optional trend
+- **Stat cards** — metric value + label + icon chip in muted box
 - **Data tables** — sortable columns, status badges, row actions
 - **Drill-down** — State → Zone → Branch breadcrumb navigation
-- **Report form** — Unified attendance + finance sections in one submit
-- **Feedback thread** — Comment list below report detail (informational, no blocking UI)
-- **Missed submission flag** — Warning badge on branch rows in aggregate views
+- **Report form** — Unified attendance + finance sections (Phase 4)
+- **Feedback thread** — Comment list below report detail (Phase 5)
+- **Missed submission flag** — Warning badge on branch rows
 
 ## Responsive
 
-Mobile-first. Sidebar collapses to sheet/drawer below `lg` breakpoint.
+Mobile-first. Sidebar hidden below `lg`; hamburger opens slide-over drawer with backdrop.
 
 ## shadcn/ui
 
-Map semantic tokens to shadcn variables in `globals.css` (same pattern as jubilee-nation).
-Do not modify `components/ui/*` primitives — customise via `className` and CSS variables.
+Primitives in `components/ui/*` — do not modify generated files. Map JNIC tokens to shadcn
+variables in `globals.css`. Customise via `className` and CSS variables.

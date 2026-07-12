@@ -65,6 +65,9 @@ export default function OrgApprovalsPage() {
 
   if (!ready) return null;
 
+  const user = getStoredUser();
+  if (!user) return null;
+
   const pending = requests.filter((r) => r.status === "PENDING_LP_APPROVAL");
 
   function describeRequest(req: OrgChangeRequest) {
@@ -76,7 +79,7 @@ export default function OrgApprovalsPage() {
   }
 
   return (
-    <DashboardShell>
+    <DashboardShell user={user}>
       <div
         className="rounded-xl border"
         style={{ background: "var(--bg-surface)", borderColor: "var(--border-default)" }}

@@ -14,8 +14,8 @@ completion criteria in `context/mvp-roadmap.md` are met and `context/progress-tr
 is updated.
 
 **Reference only:** `/home/davies/jubilee-nation` is a mock TanStack Start demo — borrow
-UX patterns (report forms, dashboard cards, sidebar) but do **not** copy its mock-store,
-roles, or stack.
+weekly report form patterns only. App shell layout follows `rokswood-hive-web` (see
+`context/ui-context.md`).
 
 ## Read First
 

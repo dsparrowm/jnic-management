@@ -20,7 +20,7 @@ Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
 | Currency | NGN default; `currency` field stored on finance records |
 | Multi-branch pastors | 1:1 for MVP |
 | Report cutoff | Sunday week end; missed flag Monday 23:59 Africa/Lagos |
-| UX reference | `jubilee-nation` mock demo (patterns only, not code) |
+| UX reference | `rokswood-hive-web` shell (patterns only); `jubilee-nation` for report forms only |
 
 ## Phase Completion Checklist
 
@@ -35,7 +35,7 @@ Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
 | 0 | Web status page (localhost:3000) | Done |
 | 1 | Auth + onboarding (Epic 1) | Done |
 | 2 | Org structure + LP approvals | Done |
-| 3 | Profiles + pastor directory (Epic 2) | Not started |
+| 3 | Profiles + pastor directory (Epic 2) | In progress |
 | 4 | Weekly reports + attendance + finance | Not started |
 | 5 | Hierarchy views + feedback | Not started |
 | 6 | Monthly aggregation + LP summary approval | Not started |
@@ -43,7 +43,7 @@ Phase 2 complete. Begin Epic 2 per `context/feature-specs/` (profiles spec TBD).
 
 ## Current Goal
 
-Implement Phase 3 — profile pictures (R2), pastor directory, default avatar.
+Phase 3 — Pastor directory live; next: R2 profile pictures and `/profile` page.
 
 ## Milestone Status
 
@@ -59,6 +59,25 @@ Implement Phase 3 — profile pictures (R2), pastor directory, default avatar.
 | 7 — Hardening | Blocked |
 
 ## Completed
+
+### Phase 3 onboard slide-over (2026-07-10)
+
+- Onboard pastor form moved to slide-over on `/admin/pastors` (removed from sidebar)
+- Premium sectioned form: personal details + role/org assignment
+- `/admin/onboard` redirects to `/admin/pastors?onboard=1`
+
+### Phase 3 pastors directory (2026-07-10)
+
+- `GET /users/pastors` — paginated directory with org joins, filters, summary counts
+- Premium `/admin/pastors` — table + card views, filter bar, resend/deactivate actions
+- Nav: Users → Pastors; `/admin/users` redirects to `/admin/pastors`
+
+### Phase 3 shell (2026-07-10)
+
+- Rokswood-style app shell — white collapsible sidebar, top header, role-filtered nav
+- shadcn/ui primitives: `Button`, `Avatar`, `DropdownMenu`
+- Updated `context/ui-context.md` — Rokswood shell reference, JNIC gold primary
+- All authenticated pages migrated to new `DashboardShell`
 
 ### Phase 2 (2026-07-10)
 
@@ -79,7 +98,13 @@ Implement Phase 3 — profile pictures (R2), pastor directory, default avatar.
 - Web: `/login`, `/onboard/[token]`, `/dashboard`, `/admin/onboard`, `/admin/users`
 - `pnpm build` passes
 
-**Deferred from Phase 1 spec:** BullMQ email queue (sync Resend used); reassign UI (API exists).
+**Deferred from Phase 1 spec:** BullMQ email queue; reassign UI (API exists).
+
+### Onboarding email service (2026-07-12)
+
+- Upgraded `EmailService` — Resend + React Email template (nexgen pattern)
+- JNIC-branded onboarding invite with gold CTA, 48h expiry notice, dev link fallback
+- `pnpm --filter @repo/api test:email` script for manual delivery tests
 
 ### Phase 0 (2026-07-10)
 
@@ -100,16 +125,16 @@ Implement Phase 3 — profile pictures (R2), pastor directory, default avatar.
 ## Next Up
 
 1. R2 presigned upload for profile pictures (Epic 2)
-2. Pastor directory with filters
-3. Profile page for all pastors
+2. Profile page for all pastors (`/profile`)
 
 ## Feature Unit Queue (Phase 3)
 
 | Order | Unit | Status |
 | ----- | ---- | ------ |
+| 0 | Rokswood-style app shell (sidebar, header, shadcn) | Done |
 | 1 | R2 files module + presigned upload API | Not started |
 | 2 | Profile page + default avatar | Not started |
-| 3 | Admin pastor directory with filters | Not started |
+| 3 | Admin pastor directory with filters | Done |
 
 ## Architecture Decisions
 

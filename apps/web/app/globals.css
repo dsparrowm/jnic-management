@@ -3,18 +3,40 @@
 @theme inline {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 :root {
   --radius: 0.625rem;
+
+  /* JNIC semantic tokens */
   --bg-base: #f4f6fb;
   --bg-surface: #ffffff;
   --bg-subtle: #eef1f8;
-  --bg-sidebar: #0d1b3e;
-  --bg-sidebar-surface: #162548;
+  --bg-brand-navy: #0d1b3e;
   --text-primary: #111827;
   --text-muted: #6b7280;
-  --text-sidebar: #e5e9f2;
   --accent-primary: #c9a050;
   --accent-hover: #b8903a;
   --accent-foreground: #ffffff;
@@ -24,16 +46,36 @@
   --state-error: #dc2626;
   --state-info: #2563eb;
   --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.04), 0 8px 24px rgba(17, 24, 39, 0.06);
+
+  /* shadcn tokens — Rokswood-style light shell, JNIC gold primary */
+  --background: #ffffff;
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: #ffffff;
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
+  --primary-foreground: var(--accent-foreground);
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--text-primary);
+  --muted: #f3f4f6;
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-subtle);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--state-error);
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--accent-primary);
 }
 
 @layer base {
   * {
-    border-color: var(--border-default);
+    border-color: var(--border);
   }
 
   body {
     background-color: var(--bg-base);
-    color: var(--text-primary);
+    color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }

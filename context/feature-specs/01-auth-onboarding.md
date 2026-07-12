@@ -59,8 +59,9 @@ reassignment. Foundation for all other features.
 | ----- | -------- |
 | `/login` | All |
 | `/onboard/[token]` | Pending users |
-| `/admin/onboard` | Admin |
-| `/admin/users` | Admin |
+| `/admin/pastors` | Admin — onboard slide-over, directory, deactivate/resend |
+
+**Note:** `/admin/onboard` redirects to `/admin/pastors?onboard=1`. Onboarding form is not in the sidebar.
 
 ## Data Model
 

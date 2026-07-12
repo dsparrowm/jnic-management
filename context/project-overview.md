@@ -80,10 +80,8 @@ rejects → entity created on approval.
 | `/login` | All | Auth |
 | `/onboard/[token]` | Pending users | US-1.1 |
 | `/dashboard` | All roles | Role-scoped home |
-| `/admin/onboard` | Admin | US-1.1 |
-| `/admin/users` | Admin | US-1.3 |
+| `/admin/pastors` | Admin | US-1.1 (onboard sheet), US-1.3, US-2.2 |
 | `/admin/org` | Admin | Org CRUD |
-| `/admin/pastors` | Admin | US-2.2 |
 | `/approvals/org` | Lead Pastor | Org change approval |
 | `/approvals/summaries` | Lead Pastor | National summary approval |
 | `/reports/submit` | Branch Pastor, Admin Staff | US-3.1, US-4.1, US-4.2 |
@@ -145,8 +143,8 @@ persistence:
 
 Borrow layout and interaction patterns from `jubilee-nation` where helpful:
 
-- Navy sidebar + gold accent (`context/ui-context.md`)
-- Weekly report form structure
-- Dashboard stat cards and data tables
+- Navy sidebar + gold accent for **brand tokens only** (`context/ui-context.md`)
+- Weekly report form structure (from `jubilee-nation`, Phase 4+)
+- Dashboard stat cards and data tables (Rokswood-style shell)
 
 Do not port mock data, TanStack Start routing, or demo role switcher.

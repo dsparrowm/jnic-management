@@ -112,12 +112,15 @@ export default function AdminOrgPage() {
 
   if (!ready) return null;
 
+  const user = getStoredUser();
+  if (!user) return null;
+
   const allZones = tree.flatMap((s) =>
     s.zones.map((z) => ({ ...z, stateName: s.name })),
   );
 
   return (
-    <DashboardShell>
+    <DashboardShell user={user}>
       <div className="space-y-6">
         <div
           className="rounded-xl border p-6"
