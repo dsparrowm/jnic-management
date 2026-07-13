@@ -47,10 +47,6 @@ export function allowsOptionalBranch(role: Role): boolean {
   return role === Role.STATE_PASTOR || role === Role.ZONAL_PASTOR;
 }
 
-export function allowsOptionalZone(role: Role): boolean {
-  return role === Role.STATE_PASTOR;
-}
-
 /** Client-side structural validation before API call. */
 export function validateOrgAssignmentStructure(
   role: Role,

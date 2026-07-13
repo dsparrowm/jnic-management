@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { OnboardOrgSelectors } from "@/components/onboarding/onboard-org-selectors";
+import {
+  OnboardOrgSelectors,
+  adaptOrgFieldsForRole,
+} from "@/components/onboarding/onboard-org-selectors";
 import {
   Sheet,
   SheetContent,
@@ -203,13 +206,14 @@ export function OnboardPastorSheet({
                     id="onboard-role"
                     value={form.role}
                     onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        role: e.target.value as Role,
-                        stateId: "",
-                        zoneId: "",
-                        branchId: "",
-                      }))
+                      setForm((f) => {
+                        const role = e.target.value as Role;
+                        return {
+                          ...f,
+                          role,
+                          ...adaptOrgFieldsForRole(f, role, orgTree),
+                        };
+                      })
                     }
                   >
                     {ONBOARDABLE_ROLES.map((role) => (

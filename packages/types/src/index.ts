@@ -86,7 +86,6 @@ export {
 export type { BranchSubmissionState } from "./week";
 export {
   allowsOptionalBranch,
-  allowsOptionalZone,
   canSubmitWeeklyReports,
   requiresBranchId,
   requiresStateId,
