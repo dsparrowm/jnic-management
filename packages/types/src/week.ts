@@ -66,6 +66,29 @@ export function formatWeekEndingLabel(weekOf: string): string {
   }).format(date);
 }
 
+/** Short label for chart axes, e.g. "5 Jul". */
+export function formatWeekChartLabel(weekOf: string): string {
+  const date = parseReportDate(weekOf);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: REPORT_TIMEZONE,
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
+/**
+ * Returns `weeks` consecutive week-ending Sundays ending at `anchorWeekOf`.
+ * Oldest first.
+ */
+export function listWeekRange(anchorWeekOf: string, weeks: number): string[] {
+  const count = Math.max(1, Math.floor(weeks));
+  const result: string[] = [];
+  for (let i = count - 1; i >= 0; i -= 1) {
+    result.push(addDays(anchorWeekOf, -7 * i));
+  }
+  return result;
+}
+
 export type BranchSubmissionState = "SUBMITTED" | "MISSED" | "PENDING";
 
 /** Monday 23:59:59 Africa/Lagos (UTC+1) after the Sunday `weekOf`. */

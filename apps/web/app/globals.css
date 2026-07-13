@@ -45,6 +45,11 @@
   --state-warning: #d97706;
   --state-error: #dc2626;
   --state-info: #2563eb;
+  --chart-gold: #c9a050;
+  --chart-navy: #0d1b3e;
+  --chart-info: #2563eb;
+  --chart-success: #16a34a;
+  --chart-warning: #d97706;
   --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.04), 0 8px 24px rgba(17, 24, 39, 0.06);
 
   /* shadcn tokens — Rokswood-style light shell, JNIC gold primary */

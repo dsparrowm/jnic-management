@@ -64,10 +64,11 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 
 ### Admin dashboard overview redesign (2026-07-13)
 
-- `/dashboard` for `ADMIN` and `LEAD_PASTOR` — live overview with org, pastor, and weekly reporting KPIs
-- Panels: organisation coverage, weekly reporting, attention-needed branches, recent notifications, quick actions
-- Wired to existing APIs (`/org/tree`, `/users/pastors`, `/reports/national/summary`, `/notifications`)
-- Jubilee-nation HQ overview patterns adapted; Rokswood shell retained
+- `/dashboard` for `ADMIN` and `LEAD_PASTOR` — live overview with org and weekly reporting KPIs
+- **Attendance trend** (12-week multi-line chart) + **Finance by state** (stacked horizontal bars + summary table)
+- `GET /reports/national/analytics` — aggregates all branch weekly reports (not forward-gated)
+- Week picker drives chart anchor week; `recharts` + JNIC chart tokens
+- Trimmed redundant panels (org list, notifications, quick actions) to prioritize charts
 - Other roles keep role-scoped shortcut cards on `/dashboard`
 - `pnpm build` passes
 

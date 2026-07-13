@@ -18,7 +18,9 @@ import {
   WEEKLY_REPORT_SUBMITTER_ROLES,
   canSubmitWeeklyReports,
   computeWeekOf,
+  formatWeekChartLabel,
   getBranchSubmissionState,
+  listWeekRange,
   parseReportDate,
   formatReportDate,
   formatWeekEndingLabel,
@@ -880,6 +882,178 @@ export class ReportsService {
       },
       states: stateSummaries,
       summary: this.countSummary(allBranches),
+    };
+  }
+
+  async getNationalAnalytics(user: AuthUser, weekOf: string, weeks = 12) {
+    this.assertHqViewer(user);
+    const weekRange = listWeekRange(weekOf, weeks);
+    const weekDates = weekRange.map((w) => parseReportDate(w));
+    const anchorWeekDate = parseReportDate(weekOf);
+
+    const states = await this.prisma.state.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        zones: {
+          include: {
+            branches: true,
+          },
+        },
+      },
+    });
+
+    const branchCountByState = new Map<string, number>();
+    const stateMeta = new Map(states.map((state) => [state.id, { id: state.id, name: state.name }]));
+    for (const state of states) {
+      const branchCount = state.zones.reduce(
+        (count, zone) => count + zone.branches.length,
+        0,
+      );
+      branchCountByState.set(state.id, branchCount);
+    }
+
+    const reports = await this.prisma.weeklyReport.findMany({
+      where: {
+        weekOf: { in: weekDates },
+      },
+      include: {
+        attendance: true,
+        finance: true,
+        branch: {
+          include: {
+            zone: {
+              include: {
+                state: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    type StateAttendance = {
+      stateId: string;
+      stateName: string;
+      adultCount: number;
+      teenageCount: number;
+      childrenCount: number;
+      total: number;
+    };
+
+    const attendanceByWeekAndState = new Map<string, Map<string, StateAttendance>>();
+
+    for (const weekKey of weekRange) {
+      attendanceByWeekAndState.set(weekKey, new Map());
+    }
+
+    const financeByState = new Map<
+      string,
+      {
+        stateId: string;
+        stateName: string;
+        tithe: number;
+        offering: number;
+        other: number;
+        total: number;
+        currency: string;
+        branchesSubmitted: number;
+        branchesTotal: number;
+      }
+    >();
+
+    for (const state of states) {
+      financeByState.set(state.id, {
+        stateId: state.id,
+        stateName: state.name,
+        tithe: 0,
+        offering: 0,
+        other: 0,
+        total: 0,
+        currency: "NGN",
+        branchesSubmitted: 0,
+        branchesTotal: branchCountByState.get(state.id) ?? 0,
+      });
+    }
+
+    const financeBranchesByState = new Map<string, Set<string>>();
+
+    for (const report of reports) {
+      const stateId = report.branch.zone.stateId;
+      const stateInfo = stateMeta.get(stateId);
+      if (!stateInfo) continue;
+
+      const reportWeekKey = formatReportDate(report.weekOf);
+      const weekMap = attendanceByWeekAndState.get(reportWeekKey);
+      if (weekMap && report.attendance) {
+        const existing = weekMap.get(stateId) ?? {
+          stateId,
+          stateName: stateInfo.name,
+          adultCount: 0,
+          teenageCount: 0,
+          childrenCount: 0,
+          total: 0,
+        };
+        existing.adultCount += report.attendance.adultCount;
+        existing.teenageCount += report.attendance.teenageCount;
+        existing.childrenCount += report.attendance.childrenCount;
+        existing.total =
+          existing.adultCount + existing.teenageCount + existing.childrenCount;
+        weekMap.set(stateId, existing);
+      }
+
+      if (report.weekOf.getTime() === anchorWeekDate.getTime() && report.finance) {
+        const financeRow = financeByState.get(stateId);
+        if (!financeRow) continue;
+
+        financeRow.tithe += Number(report.finance.tithe);
+        financeRow.offering += Number(report.finance.offering);
+        financeRow.other += Number(report.finance.other);
+        financeRow.total = financeRow.tithe + financeRow.offering + financeRow.other;
+        financeRow.currency = report.finance.currency;
+
+        const branchSet = financeBranchesByState.get(stateId) ?? new Set<string>();
+        branchSet.add(report.branchId);
+        financeBranchesByState.set(stateId, branchSet);
+      }
+    }
+
+    for (const [stateId, branchSet] of financeBranchesByState) {
+      const financeRow = financeByState.get(stateId);
+      if (financeRow) {
+        financeRow.branchesSubmitted = branchSet.size;
+      }
+    }
+
+    const attendanceTrend = weekRange.map((weekKey) => {
+      const weekMap = attendanceByWeekAndState.get(weekKey) ?? new Map();
+      const byState = states
+        .map((state) => {
+          const row = weekMap.get(state.id);
+          return (
+            row ?? {
+              stateId: state.id,
+              stateName: state.name,
+              adultCount: 0,
+              teenageCount: 0,
+              childrenCount: 0,
+              total: 0,
+            }
+          );
+        })
+        .filter((row) => row.total > 0);
+
+      return {
+        weekOf: weekKey,
+        weekLabel: formatWeekChartLabel(weekKey),
+        byState,
+      };
+    });
+
+    return {
+      weekOf,
+      weeks: weekRange.length,
+      attendanceTrend,
+      financeByState: states.map((state) => financeByState.get(state.id)!),
     };
   }
 

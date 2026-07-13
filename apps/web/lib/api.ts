@@ -200,6 +200,38 @@ export interface NationalSummaryResponse {
   summary: ReportCountSummary;
 }
 
+export interface NationalAttendanceTrendPoint {
+  weekOf: string;
+  weekLabel: string;
+  byState: Array<{
+    stateId: string;
+    stateName: string;
+    adultCount: number;
+    teenageCount: number;
+    childrenCount: number;
+    total: number;
+  }>;
+}
+
+export interface NationalFinanceByState {
+  stateId: string;
+  stateName: string;
+  tithe: number;
+  offering: number;
+  other: number;
+  total: number;
+  currency: string;
+  branchesSubmitted: number;
+  branchesTotal: number;
+}
+
+export interface NationalAnalyticsResponse {
+  weekOf: string;
+  weeks: number;
+  attendanceTrend: NationalAttendanceTrendPoint[];
+  financeByState: NationalFinanceByState[];
+}
+
 export interface FeedbackRecord {
   id: string;
   reportId: string;
@@ -580,6 +612,13 @@ export const api = {
   getNationalSummary: (token: string, weekOf: string) =>
     request<NationalSummaryResponse>(
       `/reports/national/summary?weekOf=${encodeURIComponent(weekOf)}`,
+      {},
+      token,
+    ),
+
+  getNationalAnalytics: (token: string, weekOf: string, weeks = 12) =>
+    request<NationalAnalyticsResponse>(
+      `/reports/national/analytics?weekOf=${encodeURIComponent(weekOf)}&weeks=${weeks}`,
       {},
       token,
     ),

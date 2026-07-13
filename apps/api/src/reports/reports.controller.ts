@@ -8,6 +8,7 @@ import { AuthUser } from "../common/auth.types";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { ListWeeklyReportsDto } from "./dto/list-weekly-reports.dto";
 import { WeekSummaryQueryDto } from "./dto/week-summary-query.dto";
+import { WeekSummaryAnalyticsQueryDto } from "./dto/week-summary-analytics-query.dto";
 import { UpdateWeeklyReportDto } from "./dto/update-weekly-report.dto";
 import { CreateWeeklyReportDto } from "./dto/weekly-report.dto";
 import { ReportsService } from "./reports.service";
@@ -90,6 +91,16 @@ export class ReportsController {
   @Roles(Role.LEAD_PASTOR, Role.ADMIN)
   getNationalSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
     return this.reportsService.getNationalSummary(user, query.weekOf);
+  }
+
+  @Get("national/analytics")
+  @UseGuards(RolesGuard)
+  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  getNationalAnalytics(
+    @CurrentUser() user: AuthUser,
+    @Query() query: WeekSummaryAnalyticsQueryDto,
+  ) {
+    return this.reportsService.getNationalAnalytics(user, query.weekOf, query.weeks ?? 12);
   }
 
   @Get("weekly/:id")

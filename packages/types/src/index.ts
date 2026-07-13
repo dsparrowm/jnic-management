@@ -76,11 +76,13 @@ export {
   REPORT_TIMEZONE,
   computeWeekOf,
   formatReportDate,
+  formatWeekChartLabel,
   formatWeekEndingLabel,
   getBranchSubmissionState,
   getSubmissionDeadlineUtc,
   getTodayInLagos,
   isSubmissionDeadlinePassed,
+  listWeekRange,
   parseReportDate,
 } from "./week";
 export type { BranchSubmissionState } from "./week";

@@ -82,7 +82,7 @@ jnic_management/
 | `users` | Profile, deactivate, reassign, pastor directory |
 | `onboarding` | Admin creates pending user, token, resend, email job |
 | `org` | States, zones, branches; `OrgChangeRequest` workflow |
-| `reports` | Weekly report CRUD, status progression, edit lock |
+| `reports` | Weekly report CRUD, status progression, edit lock, national analytics |
 | `feedback` | Create/list feedback on reports |
 | `summaries` | Monthly aggregation reads + HQ approval workflow |
 | `notifications` | In-app list + email dispatch via queue |
@@ -118,6 +118,12 @@ jnic_management/
 - **MonthlySummary** — `scopeType` (BRANCH/ZONE/STATE/HQ), `scopeId`, `month`, `year`,
   attendance/finance totals; HQ scope includes `PENDING_LP_APPROVAL` status
 - **Notification** — in-app + email queue payload
+
+### HQ dashboard analytics
+
+- `GET /reports/national/analytics?weekOf=&weeks=` — `ADMIN` and `LEAD_PASTOR` only
+- Aggregates **all branch weekly reports** nationally (attendance + finance), regardless of zone/state forward status
+- National summary list views (`/reports/national/summary`) remain forward-gated; charts use broader data for operational visibility
 
 ### Visibility Rule
 
