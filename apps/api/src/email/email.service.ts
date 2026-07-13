@@ -4,7 +4,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { createElement } from "react";
 import { SendEmailOptions } from "./email.types";
-import { OnboardingEmailTemplate } from "./templates";
+import { OnboardingEmailTemplate, FeedbackEmailTemplate } from "./templates";
 
 @Injectable()
 export class EmailService {
@@ -103,6 +103,46 @@ export class EmailService {
     await this.sendEmail({
       to,
       subject: "Welcome to JNLOP — set your password",
+      html,
+    });
+  }
+
+  async sendFeedbackNotification(
+    to: string,
+    recipientName: string,
+    senderName: string,
+    branchName: string,
+    weekOf: string,
+    message: string,
+    reportUrl: string,
+  ): Promise<void> {
+    const preview =
+      message.length > 280 ? `${message.slice(0, 277).trimEnd()}…` : message;
+
+    if (!this.isConfigured()) {
+      const logMessage = `RESEND_API_KEY not set — feedback notification for ${to}: ${preview}`;
+      if (process.env.NODE_ENV === "development") {
+        this.logger.warn(logMessage);
+        return;
+      }
+      throw new InternalServerErrorException("Email service is not configured");
+    }
+
+    const html = await render(
+      createElement(FeedbackEmailTemplate, {
+        recipientName,
+        senderName,
+        branchName,
+        weekOf,
+        messagePreview: preview,
+        reportUrl,
+        supportEmail: this.getSupportEmail(),
+      }),
+    );
+
+    await this.sendEmail({
+      to,
+      subject: `Feedback on your ${branchName} weekly report`,
       html,
     });
   }

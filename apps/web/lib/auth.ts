@@ -54,6 +54,16 @@ export function canSubmitWeeklyReportsForUser(user: AuthUser | null): boolean {
   return canSubmitWeeklyReports(user.role as Role, user.branchId);
 }
 
+export function canLeaveFeedback(user: AuthUser | null): boolean {
+  if (!user) return false;
+  return (
+    user.role === "ZONAL_PASTOR" ||
+    user.role === "STATE_PASTOR" ||
+    user.role === "LEAD_PASTOR" ||
+    user.role === "ADMIN"
+  );
+}
+
 export function isZonalPastor(user: AuthUser | null): boolean {
   return user?.role === "ZONAL_PASTOR";
 }

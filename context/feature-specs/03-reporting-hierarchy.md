@@ -24,24 +24,24 @@ feedback, notifications, and monthly aggregation with Lead Pastor national appro
 ### US-3.2 — Zonal review
 
 - [x] View all branch reports in zone with drill-down
-- [ ] Leave feedback on branch report
+- [x] Leave feedback on branch report
 - [x] Zone aggregate auto-computed regardless of feedback
 
 ### US-3.3 — State view
 
 - [x] All zones in state with drill-down to branch
-- [ ] State Pastor can leave feedback on zone or branch reports
+- [x] State Pastor can leave feedback on zone or branch reports
 
 ### US-3.4 — National dashboard
 
 - [x] Totals by state, zone, branch with drill-down
-- [ ] Lead Pastor and Admin can leave feedback at any level
+- [x] Lead Pastor and Admin can leave feedback at any level
 
 ### US-3.5 — Feedback
 
-- [ ] Feedback tied to report; visible as thread
-- [ ] Notification on new feedback (in-app + email)
-- [ ] Feedback does not block status progression
+- [x] Feedback tied to report; visible as thread
+- [x] Notification on new feedback (in-app + email)
+- [x] Feedback does not block status progression
 
 ### US-3.6 — Monthly summary
 
@@ -63,7 +63,7 @@ report advances or marks the corresponding status.
 
 | Method | Path | Role | Purpose |
 | ------ | ---- | ---- | ------- |
-| POST | `/reports/weekly` | Branch Pastor, Admin Staff | Create report |
+| POST | `/reports/weekly` | Pastor with `branchId` | Create report |
 | PATCH | `/reports/weekly/:id` | Submitter (if unlocked) | Edit report |
 | GET | `/reports/weekly` | Scoped by role | List reports |
 | GET | `/reports/weekly/:id` | Scoped by role | Report detail |
@@ -79,7 +79,7 @@ report advances or marks the corresponding status.
 
 | Route | Audience |
 | ----- | -------- |
-| `/reports/submit` | Branch Pastor, Admin Staff |
+| `/reports/submit` | Pastor with `branchId` |
 | `/reports/zone` | Zonal Pastor |
 | `/reports/state` | State Pastor |
 | `/reports/national` | Lead Pastor, Admin |

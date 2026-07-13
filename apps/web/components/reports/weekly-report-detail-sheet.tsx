@@ -1,6 +1,7 @@
 "use client";
 
 import { WeeklyReportRecord } from "@/lib/api";
+import { FeedbackThread } from "@/components/reports/feedback-thread";
 import {
   Sheet,
   SheetContent,
@@ -42,6 +43,7 @@ interface WeeklyReportDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loading?: boolean;
+  canLeaveFeedback?: boolean;
 }
 
 export function WeeklyReportDetailSheet({
@@ -49,6 +51,7 @@ export function WeeklyReportDetailSheet({
   open,
   onOpenChange,
   loading,
+  canLeaveFeedback = false,
 }: WeeklyReportDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -107,6 +110,8 @@ export function WeeklyReportDetailSheet({
                 />
               </dl>
             </section>
+
+            <FeedbackThread reportId={report.id} canLeaveFeedback={canLeaveFeedback} />
           </div>
         )}
       </SheetContent>

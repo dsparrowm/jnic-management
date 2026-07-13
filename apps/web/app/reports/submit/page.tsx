@@ -7,6 +7,7 @@ import { Check } from "lucide-react";
 import { computeWeekOf, formatWeekEndingLabel, getTodayInLagos } from "@repo/types";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ErrorText } from "@/components/auth/auth-card";
+import { FeedbackThread } from "@/components/reports/feedback-thread";
 import {
   WeeklyReportForm,
   WeeklyReportFormValues,
@@ -135,14 +136,22 @@ export default function SubmitWeeklyReportPage() {
         {loadError && <ErrorText message={loadError} />}
 
         {!loadError && (
-          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-            <WeeklyReportForm
-              existingReport={existingReport}
-              defaultServiceDate={defaultServiceDate}
-              loading={loading}
-              error={submitError}
-              onSubmit={handleSubmit}
-            />
+          <div className="space-y-6">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+              <WeeklyReportForm
+                existingReport={existingReport}
+                defaultServiceDate={defaultServiceDate}
+                loading={loading}
+                error={submitError}
+                onSubmit={handleSubmit}
+              />
+            </div>
+
+            {existingReport && (
+              <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+                <FeedbackThread reportId={existingReport.id} canLeaveFeedback={false} />
+              </div>
+            )}
           </div>
         )}
       </div>

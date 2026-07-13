@@ -135,16 +135,18 @@ Example: Zonal Pastor queries reports where `branch.zoneId = user.zoneId`.
 
 ## RBAC Matrix (API-enforced)
 
-| Action | Lead Pastor | Admin | State | Zonal | Branch | Admin Staff |
-| ------ | :---------: | :---: | :---: | :---: | :----: | :---------: |
-| Onboard / deactivate / reassign | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Approve org changes | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Approve national monthly summary | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Submit weekly report | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| View national dashboard | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| View state reports | ✓ | ✓ | ✓ (own) | ✗ | ✗ | ✗ |
-| View zone reports | ✓ | ✓ | ✓ | ✓ (own) | ✗ | ✗ |
-| Leave feedback | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Action | Lead Pastor | Admin | State | Zonal | Branch |
+| ------ | :---------: | :---: | :---: | :---: | :----: |
+| Onboard / deactivate / reassign | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Approve org changes | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Approve national monthly summary | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Submit weekly report | ✗ | ✗ | ✓* | ✓* | ✓ |
+| View national dashboard | ✓ | ✓ | ✗ | ✗ | ✗ |
+| View state reports | ✓ | ✓ | ✓ (own) | ✗ | ✗ |
+| View zone reports | ✓ | ✓ | ✓ | ✓ (own) | ✗ |
+| Leave feedback | ✓ | ✓ | ✓ | ✓ | ✗ |
+
+\* Dual-scope pastors only when `branchId` is assigned.
 
 ## Component Boundaries (Web)
 

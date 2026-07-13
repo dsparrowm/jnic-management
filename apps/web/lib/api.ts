@@ -1,4 +1,4 @@
-import { BranchSubmissionState, OrgChangeType, ReportStatus, Role, UserStatus } from "@repo/types";
+import { BranchSubmissionState, NotificationType, OrgChangeType, ReportStatus, Role, UserStatus } from "@repo/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -187,6 +187,34 @@ export interface NationalSummaryResponse {
   };
   states: NationalStateSummary[];
   summary: ReportCountSummary;
+}
+
+export interface FeedbackRecord {
+  id: string;
+  reportId: string;
+  message: string;
+  createdAt: string;
+  fromUser: { id: string; name: string };
+  toUser: { id: string; name: string };
+}
+
+export interface FeedbackListResponse {
+  items: FeedbackRecord[];
+}
+
+export interface NotificationRecord {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  readAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  items: NotificationRecord[];
+  unreadCount: number;
 }
 
 export interface PastorFilters {
@@ -468,6 +496,23 @@ export const api = {
       {},
       token,
     ),
+
+  listReportFeedback: (token: string, reportId: string) =>
+    request<FeedbackListResponse>(`/reports/${reportId}/feedback`, {}, token),
+
+  createReportFeedback: (token: string, reportId: string, message: string) =>
+    request<FeedbackRecord>(`/reports/${reportId}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }, token),
+
+  listNotifications: (token: string) =>
+    request<NotificationListResponse>("/notifications", {}, token),
+
+  markNotificationRead: (token: string, notificationId: string) =>
+    request<{ id: string; readAt: string }>(`/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    }, token),
 };
 
 export { ApiError };

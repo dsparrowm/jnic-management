@@ -15,7 +15,7 @@ import { ZoneReportsTable } from "@/components/reports/zone-reports-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, ApiError, WeeklyReportRecord, ZoneSummaryResponse } from "@/lib/api";
-import { getAccessToken, getStoredUser, isZonalPastor } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isZonalPastor, canLeaveFeedback } from "@/lib/auth";
 
 function SummaryStat({
   label,
@@ -225,6 +225,7 @@ export default function ZoneReportsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         loading={detailLoading}
+        canLeaveFeedback={canLeaveFeedback(sessionUser)}
       />
     </DashboardShell>
   );

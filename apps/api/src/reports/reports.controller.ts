@@ -5,11 +5,27 @@ import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
+import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { ListWeeklyReportsDto } from "./dto/list-weekly-reports.dto";
 import { WeekSummaryQueryDto } from "./dto/week-summary-query.dto";
 import { UpdateWeeklyReportDto } from "./dto/update-weekly-report.dto";
 import { CreateWeeklyReportDto } from "./dto/weekly-report.dto";
 import { ReportsService } from "./reports.service";
+
+const FEEDBACK_VIEW_ROLES = [
+  ...WEEKLY_REPORT_SUBMITTER_ROLES,
+  Role.ZONAL_PASTOR,
+  Role.STATE_PASTOR,
+  Role.LEAD_PASTOR,
+  Role.ADMIN,
+] as const;
+
+const FEEDBACK_LEAVE_ROLES = [
+  Role.ZONAL_PASTOR,
+  Role.STATE_PASTOR,
+  Role.LEAD_PASTOR,
+  Role.ADMIN,
+] as const;
 
 @Controller("reports")
 @UseGuards(JwtAuthGuard)
@@ -73,5 +89,23 @@ export class ReportsController {
   )
   getWeeklyReport(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.reportsService.getWeeklyReport(user, id);
+  }
+
+  @Get(":reportId/feedback")
+  @UseGuards(RolesGuard)
+  @Roles(...FEEDBACK_VIEW_ROLES)
+  listFeedback(@CurrentUser() user: AuthUser, @Param("reportId") reportId: string) {
+    return this.reportsService.listFeedback(user, reportId);
+  }
+
+  @Post(":reportId/feedback")
+  @UseGuards(RolesGuard)
+  @Roles(...FEEDBACK_LEAVE_ROLES)
+  createFeedback(
+    @CurrentUser() user: AuthUser,
+    @Param("reportId") reportId: string,
+    @Body() dto: CreateFeedbackDto,
+  ) {
+    return this.reportsService.createFeedback(user, reportId, dto);
   }
 }

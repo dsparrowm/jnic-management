@@ -9,21 +9,33 @@ import { Prisma, ReportStatus as PrismaReportStatus } from "@repo/database";
 import {
   ReportStatus,
   Role,
+  NotificationType,
   WEEKLY_REPORT_SUBMITTER_ROLES,
   canSubmitWeeklyReports,
   computeWeekOf,
   getBranchSubmissionState,
   parseReportDate,
+  formatReportDate,
 } from "@repo/types";
 import { AuthUser } from "../common/auth.types";
+import { EmailService } from "../email/email.service";
+import { getWebAppUrl } from "../common/web-origin";
 import { PrismaService } from "../prisma/prisma.service";
 import { ListWeeklyReportsDto } from "./dto/list-weekly-reports.dto";
 import { UpdateWeeklyReportDto } from "./dto/update-weekly-report.dto";
 import { CreateWeeklyReportDto } from "./dto/weekly-report.dto";
+import { CreateFeedbackDto } from "./dto/create-feedback.dto";
+import { toFeedbackView } from "./feedback.mapper";
 import { toWeeklyReportView, weeklyReportInclude } from "./reports.mapper";
 
 const SUBMITTER_ROLES = new Set<Role>(WEEKLY_REPORT_SUBMITTER_ROLES);
 const HQ_VIEW_ROLES = new Set<Role>([Role.LEAD_PASTOR, Role.ADMIN]);
+const FEEDBACK_ROLES = new Set<Role>([
+  Role.ZONAL_PASTOR,
+  Role.STATE_PASTOR,
+  Role.LEAD_PASTOR,
+  Role.ADMIN,
+]);
 
 type WeeklyReportWithRelations = Prisma.WeeklyReportGetPayload<{
   include: typeof weeklyReportInclude;
@@ -45,7 +57,10 @@ type CountSummary = {
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   private assertWeeklyReportSubmitter(user: AuthUser): string {
     if (!canSubmitWeeklyReports(user.role, user.branchId)) {
@@ -112,6 +127,27 @@ export class ReportsService {
     }
 
     throw new ForbiddenException("Insufficient permissions");
+  }
+
+  private assertCanLeaveFeedback(user: AuthUser): void {
+    if (!FEEDBACK_ROLES.has(user.role)) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+  }
+
+  private async getReportForAccess(
+    user: AuthUser,
+    reportId: string,
+  ): Promise<WeeklyReportWithRelations> {
+    const report = await this.prisma.weeklyReport.findUnique({
+      where: { id: reportId },
+      include: weeklyReportInclude,
+    });
+    if (!report) {
+      throw new NotFoundException("Report not found");
+    }
+    this.assertCanViewReport(user, report);
+    return report;
   }
 
   private async maybeAdvanceReportStatus(
@@ -547,5 +583,71 @@ export class ReportsService {
       states: stateSummaries,
       summary: this.countSummary(allBranches),
     };
+  }
+
+  async listFeedback(user: AuthUser, reportId: string) {
+    await this.getReportForAccess(user, reportId);
+
+    const items = await this.prisma.feedback.findMany({
+      where: { reportId },
+      include: {
+        fromUser: { select: { id: true, name: true } },
+        toUser: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return { items: items.map(toFeedbackView) };
+  }
+
+  async createFeedback(user: AuthUser, reportId: string, dto: CreateFeedbackDto) {
+    this.assertCanLeaveFeedback(user);
+    const report = await this.getReportForAccess(user, reportId);
+
+    const feedback = await this.prisma.feedback.create({
+      data: {
+        reportId,
+        fromUserId: user.id,
+        toUserId: report.submittedById,
+        message: dto.message.trim(),
+      },
+      include: {
+        fromUser: { select: { id: true, name: true } },
+        toUser: { select: { id: true, name: true } },
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: report.submittedById,
+        type: NotificationType.FEEDBACK_RECEIVED,
+        title: `Feedback on ${report.branch.name}`,
+        body: `${user.name} left feedback on your weekly report.`,
+        metadata: {
+          reportId: report.id,
+          feedbackId: feedback.id,
+          branchId: report.branchId,
+        },
+      },
+    });
+
+    const weekLabel = formatReportDate(report.weekOf);
+    const reportUrl = `${getWebAppUrl()}/reports/submit`;
+
+    void this.emailService
+      .sendFeedbackNotification(
+        report.submittedBy.email,
+        report.submittedBy.name,
+        user.name,
+        report.branch.name,
+        weekLabel,
+        feedback.message,
+        reportUrl,
+      )
+      .catch(() => {
+        // Email failures should not roll back feedback creation.
+      });
+
+    return toFeedbackView(feedback);
   }
 }

@@ -30,8 +30,8 @@ visibility and feedback, and attendance/finance tracking.
 | ---- | ----------- |
 | `LEAD_PASTOR` | Top leadership — national visibility, org approvals, national summary sign-off |
 | `ADMIN` | Platform administration — onboarding, user management, org CRUD |
-| `STATE_PASTOR` | Oversees zones within a state; may optionally pastor one home campus |
-| `ZONAL_PASTOR` | Oversees branches within a zone; may optionally pastor one home campus |
+| `STATE_PASTOR` | Oversees zones within a state; may optionally pastor one home branch |
+| `ZONAL_PASTOR` | Oversees branches within a zone; may optionally pastor one home branch |
 | `BRANCH_PASTOR` | Submits weekly reports for assigned branch |
 
 **Confirmed:** `ADMIN` and HQ Admin are the **same role**. `LEAD_PASTOR` is a separate

@@ -338,14 +338,14 @@ export function OnboardPastorSheet({
 
                 {showBranchOptional && (
                   <div className="space-y-2">
-                    <Label htmlFor="onboard-branch-optional">Home campus (optional)</Label>
+                    <Label htmlFor="onboard-branch-optional">Home branch (optional)</Label>
                     <Select
                       id="onboard-branch-optional"
                       value={form.branchId}
                       onChange={(e) => handleBranchChange(e.target.value)}
                       disabled={!form.stateId}
                     >
-                      <option value="">No home campus</option>
+                      <option value="">No home branch</option>
                       {branchOptions.map((b) => (
                         <option key={b.id} value={b.id}>
                           {b.name}
@@ -353,7 +353,7 @@ export function OnboardPastorSheet({
                       ))}
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Optional home campus — enables weekly report submission.
+                      Optional home branch — enables weekly report submission.
                     </p>
                   </div>
                 )}

@@ -6,7 +6,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 **Phase 5 — Hierarchy views + feedback (in progress)**
 
-Phase 4 branch submit complete. Zone review queue shipped; state/national views and feedback next.
+Hierarchy views complete. Feedback threads and notifications shipped; Phase 5 completion pending final verification.
 
 ## Scope Decisions
 
@@ -44,7 +44,7 @@ Phase 4 branch submit complete. Zone review queue shipped; state/national views 
 
 ## Current Goal
 
-Phase 5 — Feedback threads on reports (non-blocking).
+Phase 5 — Final verification of feedback + hierarchy flows.
 
 ## Milestone Status
 
@@ -62,12 +62,21 @@ Phase 5 — Feedback threads on reports (non-blocking).
 
 ## Completed
 
+### Phase 5 feedback threads + notifications (2026-07-13)
+
+- `POST/GET /reports/:id/feedback` — scoped by report visibility; Zonal/State/LP/Admin can leave feedback
+- In-app `Notification` records + `GET /notifications`, `PATCH /notifications/:id/read`
+- Email notification to report submitter via Resend (dev-safe when unconfigured)
+- `FeedbackThread` on report detail sheet (zone/state/national) and submit page (read-only for submitters)
+- Header notification bell with unread badge
+- `pnpm build` passes
+
 ### Dual-scope pastor onboarding + remove ADMIN_STAFF (2026-07-13)
 
 - Removed `ADMIN_STAFF` role from Prisma, shared types, API, web, and docs
 - `packages/types/src/org-assignment.ts` — shared org FK rules + `canSubmitWeeklyReports`
 - API validates/normalizes org assignments on onboard + reassign
-- Onboard UI: optional home campus for State/Zonal pastors
+- Onboard UI: optional home branch for State/Zonal pastors
 - Weekly submit gated by `branchId` + pastor role (dual-scope supported)
 - Seed: `zonal@jnic.org` dual-scope with `branchId` on VI Main Campus
 - `pnpm build` passes
@@ -173,9 +182,8 @@ Phase 5 — Feedback threads on reports (non-blocking).
 
 ## Next Up
 
-1. Feedback API (`POST/GET /reports/:id/feedback`)
-2. Feedback thread UI on report detail sheet
-3. In-app + email notifications on feedback (Phase 5)
+1. Phase 5 completion sign-off (hierarchy + feedback acceptance)
+2. Phase 6 — Monthly aggregation job + scoped summaries
 
 ## Feature Unit Queue (Phase 5)
 
@@ -186,7 +194,7 @@ Phase 5 — Feedback threads on reports (non-blocking).
 | 2 | `/reports/zone` page | Done |
 | 3 | State summary + `/reports/state` | Done |
 | 4 | National summary + `/reports/national` | Done |
-| 5 | Feedback API + UI | Not started |
+| 5 | Feedback API + UI | Done |
 
 ## Architecture Decisions
 

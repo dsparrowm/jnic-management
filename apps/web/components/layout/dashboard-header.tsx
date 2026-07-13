@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { LogOut, Menu, Search } from "lucide-react";
 import { AuthUser, api } from "@/lib/api";
 import { clearSession, getRefreshToken } from "@/lib/auth";
 import { formatRole } from "@/lib/navigation";
 import { UserAvatar } from "@/components/profile/user-avatar";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -74,16 +75,7 @@ export function DashboardHeader({ user, title, subtitle, onMenuClick }: Dashboar
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            disabled
-            aria-label="Notifications (coming soon)"
-            title="Notifications arrive in Phase 5"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

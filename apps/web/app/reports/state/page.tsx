@@ -12,7 +12,7 @@ import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
 import { api, ApiError, StateSummaryResponse, WeeklyReportRecord } from "@/lib/api";
-import { getAccessToken, getStoredUser, isStatePastor } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isStatePastor, canLeaveFeedback } from "@/lib/auth";
 
 export default function StateReportsPage() {
   const router = useRouter();
@@ -151,6 +151,7 @@ export default function StateReportsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         loading={detailLoading}
+        canLeaveFeedback={canLeaveFeedback(sessionUser)}
       />
     </DashboardShell>
   );

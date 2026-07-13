@@ -12,7 +12,7 @@ import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
 import { api, ApiError, NationalSummaryResponse, WeeklyReportRecord } from "@/lib/api";
-import { getAccessToken, getStoredUser, isHqViewer } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isHqViewer, canLeaveFeedback } from "@/lib/auth";
 
 export default function NationalReportsPage() {
   const router = useRouter();
@@ -168,6 +168,7 @@ export default function NationalReportsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         loading={detailLoading}
+        canLeaveFeedback={canLeaveFeedback(sessionUser)}
       />
     </DashboardShell>
   );
