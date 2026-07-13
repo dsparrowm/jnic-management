@@ -26,6 +26,13 @@ export function getWebAppUrl(): string {
   if (explicit) {
     return explicit.replace(/\/$/, "");
   }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "WEB_APP_URL is required in production so onboarding emails contain a valid invitation link.",
+    );
+  }
+
   return getPrimaryWebOrigin();
 }
 

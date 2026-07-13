@@ -1,4 +1,5 @@
 import { Role } from "@repo/types";
+import { Transform } from "class-transformer";
 import {
   IsEmail,
   IsEnum,
@@ -36,6 +37,7 @@ export class CreateOnboardingUserDto {
 }
 
 export class CompleteOnboardingDto {
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   token!: string;
 

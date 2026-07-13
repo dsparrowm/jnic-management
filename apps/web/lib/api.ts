@@ -469,13 +469,13 @@ export const api = {
 
   validateOnboarding: (onboardingToken: string) =>
     request<{ valid: boolean; email: string; name: string; expiresAt: string }>(
-      `/onboarding/validate/${onboardingToken}`,
+      `/onboarding/validate/${encodeURIComponent(onboardingToken.trim())}`,
     ),
 
   completeOnboarding: (onboardingToken: string, password: string) =>
     request<AuthResponse>("/onboarding/complete", {
       method: "POST",
-      body: JSON.stringify({ token: onboardingToken, password }),
+      body: JSON.stringify({ token: onboardingToken.trim(), password }),
     }),
 
   deactivateUser: (token: string, userId: string) =>

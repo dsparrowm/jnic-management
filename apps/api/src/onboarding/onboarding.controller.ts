@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { Role } from "@repo/types";
 import { Public } from "../common/decorators/public.decorator";
+import { sanitizeOnboardingToken } from "../common/onboarding-token";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
@@ -30,7 +31,7 @@ export class OnboardingController {
   @Public()
   @Get("validate/:token")
   validate(@Param("token") token: string) {
-    return this.onboardingService.validateToken(token);
+    return this.onboardingService.validateToken(sanitizeOnboardingToken(token));
   }
 
   @Public()

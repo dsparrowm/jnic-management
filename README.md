@@ -90,8 +90,12 @@ cp apps/web/.env.local.example apps/web/.env.local
 pnpm dev --filter @repo/web
 ```
 
-On Render, set **`WEB_APP_URL`** to the public URL of your Next.js app (the link pastors open from email).
-Set **`WEB_ORIGIN`** for CORS, e.g. `https://your-app.vercel.app,http://localhost:3000`.
+On Render, set **`WEB_APP_URL`** to the public URL of your **Next.js web app** (not the API URL).
+Pastors open invitation links on this host, e.g. `https://your-app.vercel.app`.
+
+Set **`WEB_ORIGIN`** on the API for CORS to the same web origin(s), e.g. `https://your-app.vercel.app,http://localhost:3000`.
+
+On your web host (e.g. Vercel), set **`NEXT_PUBLIC_API_URL`** to your Render API URL at build time.
 
 ## UX reference
 

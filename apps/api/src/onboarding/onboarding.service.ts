@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { User, UserStatus } from "@repo/database";
@@ -9,6 +10,7 @@ import { ONBOARDABLE_ROLES, Role } from "@repo/types";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 import { AuthService } from "../auth/auth.service";
+import { sanitizeOnboardingToken } from "../common/onboarding-token";
 import { sanitizeUser } from "../common/user.mapper";
 import { EmailService } from "../email/email.service";
 import { getWebAppUrl } from "../common/web-origin";
@@ -20,6 +22,8 @@ const ONBOARDING_HOURS = 48;
 
 @Injectable()
 export class OnboardingService {
+  private readonly logger = new Logger(OnboardingService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
@@ -114,7 +118,8 @@ export class OnboardingService {
   }
 
   private async findByToken(token: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { onboardingToken: token } });
+    const normalized = sanitizeOnboardingToken(token);
+    const user = await this.prisma.user.findUnique({ where: { onboardingToken: normalized } });
     if (!user || !user.onboardingTokenExpiry) {
       throw new NotFoundException("Invalid onboarding link");
     }
@@ -126,7 +131,8 @@ export class OnboardingService {
 
   private async sendOnboardingEmail(user: User, token: string) {
     const webOrigin = getWebAppUrl();
-    const link = `${webOrigin}/onboard/${token}`;
+    const link = `${webOrigin}/onboard/${encodeURIComponent(token)}`;
+    this.logger.log(`Sending onboarding invite to ${user.email} (link base: ${webOrigin})`);
     await this.emailService.sendOnboardingEmail(user.email, user.name, link);
   }
 }

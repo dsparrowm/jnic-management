@@ -1,9 +1,11 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { assertProductionConfig } from "./common/production-config";
 import { getCorsOrigins } from "./common/web-origin";
 
 async function bootstrap() {
+  assertProductionConfig();
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(

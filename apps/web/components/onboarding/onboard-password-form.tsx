@@ -41,7 +41,23 @@ export function OnboardPasswordForm({ token }: { token: string }) {
         setExpiresAt(data.expiresAt);
       })
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : "Invalid or expired invitation link");
+        if (err instanceof ApiError) {
+          if (err.status === 404) {
+            setError(
+              "This invitation link is invalid. It may have been replaced by a newer invite — check your email for the latest message, or ask your administrator to resend.",
+            );
+            return;
+          }
+          if (err.status === 400) {
+            setError(err.message);
+            return;
+          }
+          setError(err.message);
+          return;
+        }
+        setError(
+          "Could not verify this invitation link. The app may be unable to reach the server — try again or contact your administrator.",
+        );
       })
       .finally(() => setValidating(false));
   }, [token]);
