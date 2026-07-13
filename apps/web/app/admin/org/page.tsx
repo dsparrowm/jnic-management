@@ -76,6 +76,7 @@ export default function AdminOrgPage() {
       <CreateStateSheet
         open={activeSheet === "state"}
         onOpenChange={(open) => !open && setActiveSheet(null)}
+        orgTree={orgTree}
         onSuccess={(name) => handleSuccess("State", name)}
       />
 

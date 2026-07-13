@@ -95,3 +95,5 @@ export {
   WEEKLY_REPORT_SUBMITTER_ROLES,
 } from "./org-assignment";
 export type { OrgAssignmentInput, ResolvedOrgAssignment } from "./org-assignment";
+export { NIGERIAN_STATES } from "./nigerian-states";
+export type { NigerianStateName } from "./nigerian-states";
