@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Send } from "lucide-react";
 import { formatWeekEndingLabel, getTodayInLagos, computeWeekOf } from "@repo/types";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ErrorText } from "@/components/auth/auth-card";
 import { ReportTotalsCard } from "@/components/reports/report-totals-card";
 import { SummaryStat } from "@/components/reports/summary-stat";
+import { RollupStatusBadge } from "@/components/reports/rollup-status-badge";
+import { Button } from "@/components/ui/button";
 import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
@@ -25,6 +27,7 @@ export default function StateReportsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<WeeklyReportRecord | null>(null);
+  const [forwarding, setForwarding] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -100,6 +103,22 @@ export default function StateReportsPage() {
     }
   }
 
+  async function handleForward() {
+    const token = getAccessToken();
+    if (!token) return;
+
+    setForwarding(true);
+    setError(undefined);
+    try {
+      const response = await api.forwardStateReport(token, weekOf);
+      setData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not forward state report");
+    } finally {
+      setForwarding(false);
+    }
+  }
+
   if (!ready || !sessionUser) {
     return null;
   }
@@ -112,7 +131,34 @@ export default function StateReportsPage() {
     >
       <div className="space-y-6">
         <WeekPicker weekOf={weekOf} onWeekOfChange={setWeekOf} />
+
+        {data?.rollup.status === "STALE" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            A zone report was updated after your last forward. Review the changes and re-forward
+            to HQ.
+          </div>
+        )}
+
         {error && <ErrorText message={error} />}
+
+        {data && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm font-medium text-foreground">State report status</p>
+              <RollupStatusBadge rollup={data.rollup} />
+            </div>
+            <Button onClick={() => void handleForward()} disabled={forwarding}>
+              <Send className="mr-2 h-4 w-4" />
+              {data.rollup.status === "FORWARDED" || data.rollup.status === "STALE"
+                ? forwarding
+                  ? "Re-forwarding…"
+                  : "Re-forward to HQ"
+                : forwarding
+                  ? "Forwarding…"
+                  : "Forward to HQ"}
+            </Button>
+          </div>
+        )}
 
         {data && (
           <>
@@ -137,6 +183,8 @@ export default function StateReportsPage() {
                     zoneName={zone.zone.name}
                     branches={zone.branches}
                     summary={zone.summary}
+                    forwarded={zone.forwarded}
+                    rollup={zone.rollup}
                     onViewReport={(id) => void handleViewReport(id)}
                   />
                 ))}

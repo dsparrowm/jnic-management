@@ -45,6 +45,12 @@ export enum SummaryScopeType {
   HQ = "HQ",
 }
 
+export enum RollupStatus {
+  IN_REVIEW = "IN_REVIEW",
+  FORWARDED = "FORWARDED",
+  STALE = "STALE",
+}
+
 export enum MonthlySummaryStatus {
   PENDING = "PENDING",
   PENDING_LP_APPROVAL = "PENDING_LP_APPROVAL",
@@ -56,6 +62,7 @@ export enum NotificationType {
   ONBOARDING = "ONBOARDING",
   REPORT_MISSED = "REPORT_MISSED",
   SUMMARY_APPROVED = "SUMMARY_APPROVED",
+  ROLLUP_FORWARDED = "ROLLUP_FORWARDED",
 }
 
 /** API health check response */

@@ -62,6 +62,17 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 
 ## Completed
 
+### Cascading bundle report flow (2026-07-13)
+
+- `HierarchyWeeklyRollup` entity — zone/state bundles with `IN_REVIEW` / `FORWARDED` / `STALE`
+- `POST /reports/zone/:weekOf/forward` — zonal pastor forwards zone report to state
+- `POST /reports/state/:weekOf/forward` — state pastor forwards state report to HQ
+- Visibility gated: state sees branches only after zone forward; HQ sees states only after state forward
+- Late branch submissions mark parent rollup `STALE`; re-forward pushes updates upward
+- Removed auto-advance-on-view; status progresses on explicit forward
+- Web: forward CTAs on zone/state pages; rollup status badges; national empty state
+- `pnpm build` passes
+
 ### Phase 5 feedback threads + notifications (2026-07-13)
 
 - `POST/GET /reports/:id/feedback` — scoped by report visibility; Zonal/State/LP/Admin can leave feedback

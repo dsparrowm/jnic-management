@@ -64,11 +64,25 @@ export class ReportsController {
     return this.reportsService.getZoneSummary(user, query.weekOf);
   }
 
+  @Post("zone/:weekOf/forward")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ZONAL_PASTOR)
+  forwardZoneReport(@CurrentUser() user: AuthUser, @Param("weekOf") weekOf: string) {
+    return this.reportsService.forwardZoneReport(user, weekOf);
+  }
+
   @Get("state/summary")
   @UseGuards(RolesGuard)
   @Roles(Role.STATE_PASTOR)
   getStateSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
     return this.reportsService.getStateSummary(user, query.weekOf);
+  }
+
+  @Post("state/:weekOf/forward")
+  @UseGuards(RolesGuard)
+  @Roles(Role.STATE_PASTOR)
+  forwardStateReport(@CurrentUser() user: AuthUser, @Param("weekOf") weekOf: string) {
+    return this.reportsService.forwardStateReport(user, weekOf);
   }
 
   @Get("national/summary")

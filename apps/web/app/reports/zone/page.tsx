@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Send } from "lucide-react";
 import {
   computeWeekOf,
   formatWeekEndingLabel,
@@ -12,8 +12,10 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ErrorText } from "@/components/auth/auth-card";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsTable } from "@/components/reports/zone-reports-table";
-import { Input } from "@/components/ui/input";
+import { RollupStatusBadge } from "@/components/reports/rollup-status-badge";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { api, ApiError, WeeklyReportRecord, ZoneSummaryResponse } from "@/lib/api";
 import { getAccessToken, getStoredUser, isZonalPastor, canLeaveFeedback } from "@/lib/auth";
 
@@ -63,6 +65,7 @@ export default function ZoneReportsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState<WeeklyReportRecord | null>(null);
+  const [forwarding, setForwarding] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -138,6 +141,22 @@ export default function ZoneReportsPage() {
     }
   }
 
+  async function handleForward() {
+    const token = getAccessToken();
+    if (!token) return;
+
+    setForwarding(true);
+    setError(undefined);
+    try {
+      const response = await api.forwardZoneReport(token, weekOf);
+      setData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not forward zone report");
+    } finally {
+      setForwarding(false);
+    }
+  }
+
   if (!ready || !sessionUser) {
     return null;
   }
@@ -168,7 +187,33 @@ export default function ZoneReportsPage() {
           )}
         </div>
 
+        {data?.rollup.status === "STALE" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            New branch submissions arrived after your last forward. Review the updates and
+            re-forward to state.
+          </div>
+        )}
+
         {error && <ErrorText message={error} />}
+
+        {data && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm font-medium text-foreground">Zone report status</p>
+              <RollupStatusBadge rollup={data.rollup} />
+            </div>
+            <Button onClick={() => void handleForward()} disabled={forwarding}>
+              <Send className="mr-2 h-4 w-4" />
+              {data.rollup.status === "FORWARDED" || data.rollup.status === "STALE"
+                ? forwarding
+                  ? "Re-forwarding…"
+                  : "Re-forward to State"
+                : forwarding
+                  ? "Forwarding…"
+                  : "Forward to State"}
+            </Button>
+          </div>
+        )}
 
         {data && (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

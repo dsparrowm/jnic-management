@@ -53,11 +53,35 @@ feedback, notifications, and monthly aggregation with Lead Pastor national appro
 ## Report Status Flow
 
 ```
-SUBMITTED → ZONE_REVIEWED → STATE_REVIEWED → HQ_REVIEWED
+SUBMITTED → ZONE_REVIEWED → HQ_REVIEWED
 ```
 
-Progression is automatic (not gated on feedback). Zone/State/Lead Pastor viewing the
-report advances or marks the corresponding status.
+Progression is triggered by **explicit forward actions** at zone and state level — not on passive view.
+
+| Handoff | Action | Branch status after |
+| ------- | ------ | ------------------- |
+| Branch → Zone | Branch submits | `SUBMITTED` |
+| Zone → State | Zonal Pastor forwards zone report | `ZONE_REVIEWED` |
+| State → HQ | State Pastor forwards state report | `HQ_REVIEWED` |
+
+## Visibility Gates
+
+| Viewer | Sees branch reports when |
+| ------ | ------------------------ |
+| Zonal Pastor | Branch submits (always in their zone) |
+| State Pastor | Zone has **forwarded** for that week |
+| Lead Pastor / Admin | State has **forwarded** for that week |
+
+Missed branches are flagged in bundles. Zone/State can forward anytime after reviewing.
+Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards to push updates upward.
+
+## Rollup Entity
+
+`HierarchyWeeklyRollup` — one per zone/state per `weekOf`:
+
+- `IN_REVIEW` — not yet sent upstream
+- `FORWARDED` — visible to next level
+- `STALE` — child data changed after forward; needs re-forward
 
 ## API Endpoints
 
@@ -68,8 +92,10 @@ report advances or marks the corresponding status.
 | GET | `/reports/weekly` | Scoped by role | List reports |
 | GET | `/reports/weekly/:id` | Scoped by role | Report detail |
 | GET | `/reports/zone/summary` | Zonal Pastor+ | Zone aggregates |
-| GET | `/reports/state/summary` | State Pastor+ | State aggregates |
-| GET | `/reports/national/summary` | Lead Pastor, Admin | National aggregates |
+| **POST** | **`/reports/zone/:weekOf/forward`** | **Zonal Pastor** | **Forward zone bundle to state** |
+| GET | `/reports/state/summary` | State Pastor+ | State aggregates (gated by zone forward) |
+| **POST** | **`/reports/state/:weekOf/forward`** | **State Pastor** | **Forward state bundle to HQ** |
+| GET | `/reports/national/summary` | Lead Pastor, Admin | National aggregates (gated by state forward) |
 | POST | `/reports/:id/feedback` | Zonal+, State+, LP, Admin | Add feedback |
 | GET | `/reports/:id/feedback` | Scoped | List feedback thread |
 | GET | `/summaries/monthly` | Scoped | Monthly summaries |

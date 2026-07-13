@@ -11,6 +11,7 @@ import { SummaryStat } from "@/components/reports/summary-stat";
 import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
+import { RollupStatusBadge } from "@/components/reports/rollup-status-badge";
 import { api, ApiError, NationalSummaryResponse, WeeklyReportRecord } from "@/lib/api";
 import { getAccessToken, getStoredUser, isHqViewer, canLeaveFeedback } from "@/lib/auth";
 
@@ -133,13 +134,20 @@ export default function NationalReportsPage() {
 
             {loading ? (
               <p className="text-sm text-muted-foreground">Loading national reports…</p>
+            ) : data.states.length === 0 ? (
+              <p className="rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+                No state reports have been forwarded to HQ for this week yet.
+              </p>
             ) : (
               <div className="space-y-8">
                 {data.states.map((state) => (
                   <div key={state.state.id} className="space-y-4">
                     <div className="flex flex-wrap items-end justify-between gap-3">
                       <div>
-                        <h2 className="text-lg font-semibold text-foreground">{state.state.name}</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-semibold text-foreground">{state.state.name}</h2>
+                          <RollupStatusBadge rollup={state.rollup} />
+                        </div>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {state.summary.submitted} submitted · {state.summary.pending} pending ·{" "}
                           {state.summary.missed} missed
@@ -152,6 +160,8 @@ export default function NationalReportsPage() {
                         zoneName={zone.zone.name}
                         branches={zone.branches}
                         summary={zone.summary}
+                        forwarded={zone.forwarded}
+                        rollup={zone.rollup}
                         onViewReport={(id) => void handleViewReport(id)}
                       />
                     ))}

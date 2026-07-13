@@ -137,9 +137,16 @@ export interface ReportCountSummary {
   pending: number;
 }
 
+export interface RollupInfo {
+  status: "IN_REVIEW" | "FORWARDED" | "STALE";
+  version: number;
+  forwardedAt: string | null;
+}
+
 export interface ZoneSummaryResponse {
   weekOf: string;
   zone: { id: string; name: string };
+  rollup: RollupInfo;
   totals: {
     attendance: WeeklyReportAttendance;
     finance: WeeklyReportFinance;
@@ -150,6 +157,8 @@ export interface ZoneSummaryResponse {
 
 export interface StateZoneSummary {
   zone: { id: string; name: string };
+  rollup: RollupInfo;
+  forwarded: boolean;
   totals: {
     attendance: WeeklyReportAttendance;
     finance: WeeklyReportFinance;
@@ -161,6 +170,7 @@ export interface StateZoneSummary {
 export interface StateSummaryResponse {
   weekOf: string;
   state: { id: string; name: string };
+  rollup: RollupInfo;
   totals: {
     attendance: WeeklyReportAttendance;
     finance: WeeklyReportFinance;
@@ -171,6 +181,7 @@ export interface StateSummaryResponse {
 
 export interface NationalStateSummary {
   state: { id: string; name: string };
+  rollup: RollupInfo;
   totals: {
     attendance: WeeklyReportAttendance;
     finance: WeeklyReportFinance;
@@ -487,8 +498,14 @@ export const api = {
   getZoneSummary: (token: string, weekOf: string) =>
     request<ZoneSummaryResponse>(`/reports/zone/summary?weekOf=${encodeURIComponent(weekOf)}`, {}, token),
 
+  forwardZoneReport: (token: string, weekOf: string) =>
+    request<ZoneSummaryResponse>(`/reports/zone/${encodeURIComponent(weekOf)}/forward`, { method: "POST" }, token),
+
   getStateSummary: (token: string, weekOf: string) =>
     request<StateSummaryResponse>(`/reports/state/summary?weekOf=${encodeURIComponent(weekOf)}`, {}, token),
+
+  forwardStateReport: (token: string, weekOf: string) =>
+    request<StateSummaryResponse>(`/reports/state/${encodeURIComponent(weekOf)}/forward`, { method: "POST" }, token),
 
   getNationalSummary: (token: string, weekOf: string) =>
     request<NationalSummaryResponse>(
