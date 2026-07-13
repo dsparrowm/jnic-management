@@ -35,6 +35,10 @@ export function updateStoredUserProfilePic(profilePicUrl: string | null) {
   localStorage.setItem(USER_KEY, JSON.stringify({ ...user, profilePicUrl }));
 }
 
+export function updateStoredUser(user: AuthUser) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function clearSession() {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);

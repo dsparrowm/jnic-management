@@ -132,7 +132,7 @@ export function WeeklyReportForm({
         </p>
         {existingReport && locked && (
           <p className="mt-2 text-sm text-amber-700">
-            This report is locked after zone review and can no longer be edited.
+            This report is locked after your zone forwarded it and can no longer be edited.
           </p>
         )}
       </div>

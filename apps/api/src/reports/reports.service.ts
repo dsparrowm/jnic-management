@@ -381,7 +381,7 @@ export class ReportsService {
       throw new ForbiddenException("Only the original submitter can edit this report");
     }
     if (report.status !== ReportStatus.SUBMITTED) {
-      throw new BadRequestException("Report is locked after zone review");
+      throw new BadRequestException("Report is locked after zone forward");
     }
 
     const serviceDate = dto.serviceDate ? parseReportDate(dto.serviceDate) : undefined;
