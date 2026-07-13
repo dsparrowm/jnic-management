@@ -1,6 +1,21 @@
 import { OrgChangeType } from "@repo/types";
 import { IsEnum, IsObject, IsOptional, IsString, MinLength } from "class-validator";
 
+export class CreateStateDto {
+  @IsString()
+  @MinLength(2)
+  name!: string;
+}
+
+export class CreateZoneDto {
+  @IsString()
+  @MinLength(2)
+  name!: string;
+
+  @IsString()
+  stateId!: string;
+}
+
 export class CreateBranchDto {
   @IsString()
   @MinLength(2)

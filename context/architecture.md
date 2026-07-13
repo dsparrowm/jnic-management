@@ -104,8 +104,9 @@ jnic_management/
 - **State** — `name`, `statePastorId`
 - **Zone** — `name`, `stateId`, `zonalPastorId`
 - **Branch** — `name`, `zoneId`, `address`, `branchPastorId`
-- **OrgChangeRequest** — `type` (CREATE_STATE, CREATE_ZONE), `payload`, `status`
-  (PENDING_LP_APPROVAL, APPROVED, REJECTED), `requestedById`, `reviewedById`
+- **OrgChangeRequest** — *(Legacy)* `type` (CREATE_STATE, CREATE_ZONE), `payload`, `status`
+  (PENDING_LP_APPROVAL, APPROVED, REJECTED), `requestedById`, `reviewedById`. Retained for
+  historical data; new org creates use direct `POST /org/states` and `POST /org/zones`.
 
 ### Reporting
 

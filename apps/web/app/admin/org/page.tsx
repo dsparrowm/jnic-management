@@ -1,37 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { OrgChangeType } from "@repo/types";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { CreateBranchSheet } from "@/components/org/create-branch-sheet";
+import { CreateStateSheet } from "@/components/org/create-state-sheet";
+import { CreateZoneSheet } from "@/components/org/create-zone-sheet";
+import { OrgHierarchyPanel } from "@/components/org/org-hierarchy-panel";
+import { OrgPageHeader } from "@/components/org/org-page-header";
+import { ErrorText } from "@/components/auth/auth-card";
 import { api, ApiError, OrgState } from "@/lib/api";
 import { getAccessToken, getStoredUser, isAdmin } from "@/lib/auth";
-import {
-  ErrorText,
-  Field,
-  inputClass,
-  inputStyle,
-  PrimaryButton,
-} from "@/components/auth/auth-card";
+
+type SheetType = "state" | "zone" | "branch" | null;
 
 export default function AdminOrgPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [tree, setTree] = useState<OrgState[]>([]);
+  const [orgTree, setOrgTree] = useState<OrgState[]>([]);
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState<string>();
-  const [loading, setLoading] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<SheetType>(null);
 
-  const [branchForm, setBranchForm] = useState({ name: "", zoneId: "", address: "" });
-  const [stateName, setStateName] = useState("");
-  const [zoneForm, setZoneForm] = useState({ name: "", stateId: "" });
-
-  async function loadTree() {
+  const loadTree = useCallback(async () => {
     const token = getAccessToken();
     if (!token) return;
     const data = await api.getOrgTree(token);
-    setTree(data);
-  }
+    setOrgTree(data);
+  }, []);
 
   useEffect(() => {
     const user = getStoredUser();
@@ -41,73 +37,16 @@ export default function AdminOrgPage() {
     }
     setReady(true);
     loadTree().catch((err) => {
-      setError(err instanceof ApiError ? err.message : "Failed to load org tree");
+      setError(err instanceof ApiError ? err.message : "Failed to load organisation");
     });
-  }, [router]);
+  }, [router, loadTree]);
 
-  async function handleCreateBranch(e: React.FormEvent) {
-    e.preventDefault();
-    const token = getAccessToken();
-    if (!token) return;
-    setLoading(true);
+  function handleSuccess(entityType: string, name: string) {
+    setSuccess(`${entityType} "${name}" created successfully.`);
     setError(undefined);
-    setSuccess(undefined);
-    try {
-      await api.createBranch(token, {
-        name: branchForm.name,
-        zoneId: branchForm.zoneId,
-        address: branchForm.address || undefined,
-      });
-      setSuccess(`Branch "${branchForm.name}" created.`);
-      setBranchForm({ name: "", zoneId: "", address: "" });
-      await loadTree();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create branch");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleProposeState(e: React.FormEvent) {
-    e.preventDefault();
-    const token = getAccessToken();
-    if (!token) return;
-    setLoading(true);
-    setError(undefined);
-    setSuccess(undefined);
-    try {
-      await api.proposeOrgChange(token, {
-        type: OrgChangeType.CREATE_STATE,
-        payload: { name: stateName },
-      });
-      setSuccess(`State "${stateName}" submitted for Lead Pastor approval.`);
-      setStateName("");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to propose state");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleProposeZone(e: React.FormEvent) {
-    e.preventDefault();
-    const token = getAccessToken();
-    if (!token) return;
-    setLoading(true);
-    setError(undefined);
-    setSuccess(undefined);
-    try {
-      await api.proposeOrgChange(token, {
-        type: OrgChangeType.CREATE_ZONE,
-        payload: { name: zoneForm.name, stateId: zoneForm.stateId },
-      });
-      setSuccess(`Zone "${zoneForm.name}" submitted for Lead Pastor approval.`);
-      setZoneForm({ name: "", stateId: "" });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to propose zone");
-    } finally {
-      setLoading(false);
-    }
+    loadTree().catch((err) => {
+      setError(err instanceof ApiError ? err.message : "Failed to refresh hierarchy");
+    });
   }
 
   if (!ready) return null;
@@ -115,181 +54,44 @@ export default function AdminOrgPage() {
   const user = getStoredUser();
   if (!user) return null;
 
-  const allZones = tree.flatMap((s) =>
-    s.zones.map((z) => ({ ...z, stateName: s.name })),
-  );
-
   return (
     <DashboardShell user={user}>
-      <div className="space-y-6">
-        <div
-          className="rounded-xl border p-6"
-          style={{ background: "var(--bg-surface)", borderColor: "var(--border-default)" }}
-        >
-          <h2 className="text-xl font-semibold">Organisation hierarchy</h2>
-          <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-            States and zones require Lead Pastor approval. Branches can be added directly under
-            an existing zone.
+      <OrgPageHeader
+        orgTree={orgTree}
+        onAddState={() => setActiveSheet("state")}
+        onAddZone={() => setActiveSheet("zone")}
+        onAddBranch={() => setActiveSheet("branch")}
+      />
+
+      <div className="space-y-4 p-6">
+        <ErrorText message={error} />
+        {success && (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {success}
           </p>
-          <ErrorText message={error} />
-          {success && (
-            <p className="mt-3 text-sm" style={{ color: "var(--state-success)" }}>
-              {success}
-            </p>
-          )}
-          <div className="mt-4 space-y-4">
-            {tree.length === 0 && (
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                No states yet. Propose one below or run the database seed.
-              </p>
-            )}
-            {tree.map((state) => (
-              <div key={state.id}>
-                <p className="font-medium">{state.name}</p>
-                {state.zones.length === 0 ? (
-                  <p className="ml-4 text-sm" style={{ color: "var(--text-muted)" }}>
-                    No zones
-                  </p>
-                ) : (
-                  state.zones.map((zone) => (
-                    <div key={zone.id} className="ml-4 mt-2">
-                      <p className="text-sm font-medium">{zone.name}</p>
-                      {zone.branches.length === 0 ? (
-                        <p className="ml-4 text-sm" style={{ color: "var(--text-muted)" }}>
-                          No branches
-                        </p>
-                      ) : (
-                        <ul className="ml-4 list-disc text-sm" style={{ color: "var(--text-muted)" }}>
-                          {zone.branches.map((branch) => (
-                            <li key={branch.id}>
-                              {branch.name}
-                              {branch.address ? ` — ${branch.address}` : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <form
-            onSubmit={handleCreateBranch}
-            className="rounded-xl border p-6"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border-default)" }}
-          >
-            <h3 className="font-semibold">Add branch</h3>
-            <div className="mt-4 space-y-3">
-              <Field label="Zone">
-                <select
-                  required
-                  value={branchForm.zoneId}
-                  onChange={(e) => setBranchForm((f) => ({ ...f, zoneId: e.target.value }))}
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">Select zone</option>
-                  {allZones.map((z) => (
-                    <option key={z.id} value={z.id}>
-                      {z.stateName} → {z.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Branch name">
-                <input
-                  required
-                  value={branchForm.name}
-                  onChange={(e) => setBranchForm((f) => ({ ...f, name: e.target.value }))}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </Field>
-              <Field label="Address">
-                <input
-                  value={branchForm.address}
-                  onChange={(e) => setBranchForm((f) => ({ ...f, address: e.target.value }))}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </Field>
-              <PrimaryButton type="submit" disabled={loading}>
-                Create branch
-              </PrimaryButton>
-            </div>
-          </form>
-
-          <form
-            onSubmit={handleProposeState}
-            className="rounded-xl border p-6"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border-default)" }}
-          >
-            <h3 className="font-semibold">Propose state</h3>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Requires Lead Pastor approval.
-            </p>
-            <div className="mt-4 space-y-3">
-              <Field label="State name">
-                <input
-                  required
-                  value={stateName}
-                  onChange={(e) => setStateName(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </Field>
-              <PrimaryButton type="submit" disabled={loading}>
-                Submit for approval
-              </PrimaryButton>
-            </div>
-          </form>
-
-          <form
-            onSubmit={handleProposeZone}
-            className="rounded-xl border p-6"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border-default)" }}
-          >
-            <h3 className="font-semibold">Propose zone</h3>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Requires Lead Pastor approval.
-            </p>
-            <div className="mt-4 space-y-3">
-              <Field label="State">
-                <select
-                  required
-                  value={zoneForm.stateId}
-                  onChange={(e) => setZoneForm((f) => ({ ...f, stateId: e.target.value }))}
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">Select state</option>
-                  {tree.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Zone name">
-                <input
-                  required
-                  value={zoneForm.name}
-                  onChange={(e) => setZoneForm((f) => ({ ...f, name: e.target.value }))}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </Field>
-              <PrimaryButton type="submit" disabled={loading}>
-                Submit for approval
-              </PrimaryButton>
-            </div>
-          </form>
-        </div>
+        )}
+        <OrgHierarchyPanel orgTree={orgTree} onAddState={() => setActiveSheet("state")} />
       </div>
+
+      <CreateStateSheet
+        open={activeSheet === "state"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+        onSuccess={(name) => handleSuccess("State", name)}
+      />
+
+      <CreateZoneSheet
+        open={activeSheet === "zone"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+        orgTree={orgTree}
+        onSuccess={(name) => handleSuccess("Zone", name)}
+      />
+
+      <CreateBranchSheet
+        open={activeSheet === "branch"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+        orgTree={orgTree}
+        onSuccess={(name) => handleSuccess("Branch", name)}
+      />
     </DashboardShell>
   );
 }

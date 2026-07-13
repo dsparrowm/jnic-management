@@ -62,6 +62,14 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 
 ## Completed
 
+### Admin organisation page redesign (2026-07-13)
+
+- `POST /org/states` and `POST /org/zones` — admin direct create (no LP approval)
+- Redesigned `/admin/org` — premium header, expandable hierarchy panel, slide-over create flows
+- Cascading state → zone selectors on branch/zone forms; pastor assignment stays on `/admin/pastors`
+- Org Approvals nav item removed (legacy `/approvals/org` route retained)
+- `pnpm build` passes
+
 ### Cascading bundle report flow (2026-07-13)
 
 - `HierarchyWeeklyRollup` entity — zone/state bundles with `IN_REVIEW` / `FORWARDED` / `STALE`
@@ -210,11 +218,11 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 ## Architecture Decisions
 
 - Context files follow unifycomply pattern (`AGENTS.md` + `context/` folder)
-- Lead Pastor approval workflow via `OrgChangeRequest` entity
+- Lead Pastor approval workflow via `OrgChangeRequest` entity *(legacy — direct org create superseded)*
 - `packages/types` is single source for shared enums between web and API
 - API `tsconfig.build.json` is standalone (does not inherit broken `baseUrl` from shared nestjs config)
 - Web fonts use system stack in Phase 0 (no `next/font` Google fetch at build time)
-- New states/zones require LP approval; branches created directly by Admin
+- New states/zones/branches created directly by Admin (legacy LP approval workflow retained in API only)
 
 ## Open Questions
 

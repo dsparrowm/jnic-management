@@ -4,7 +4,7 @@ import { OrgState } from "@/lib/api";
 import { formatRole } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 
 export interface PastorFilterValues {
@@ -68,7 +68,7 @@ export function PastorsFilterBar({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Select
+        <NativeSelect
           value={filters.stateId}
           onChange={(e) => {
             onFilterChange("stateId", e.target.value);
@@ -82,9 +82,9 @@ export function PastorsFilterBar({
               {state.name}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
 
-        <Select
+        <NativeSelect
           value={filters.zoneId}
           onChange={(e) => {
             onFilterChange("zoneId", e.target.value);
@@ -98,9 +98,9 @@ export function PastorsFilterBar({
               {zone.name}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
 
-        <Select
+        <NativeSelect
           value={filters.branchId}
           onChange={(e) => onFilterChange("branchId", e.target.value)}
           disabled={!filters.zoneId}
@@ -111,9 +111,9 @@ export function PastorsFilterBar({
               {branch.name}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
 
-        <Select
+        <NativeSelect
           value={filters.role}
           onChange={(e) => onFilterChange("role", e.target.value)}
         >
@@ -123,7 +123,7 @@ export function PastorsFilterBar({
               {formatRole(role)}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

@@ -10,6 +10,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import {
   CreateBranchDto,
   CreateOrgChangeRequestDto,
+  CreateStateDto,
+  CreateZoneDto,
   UpdateBranchDto,
   UpdateStateDto,
   UpdateZoneDto,
@@ -31,6 +33,30 @@ export class OrgService {
           },
         },
       },
+    });
+  }
+
+  async createState(dto: CreateStateDto): Promise<State> {
+    const existing = await this.prisma.state.findUnique({ where: { name: dto.name } });
+    if (existing) {
+      throw new ConflictException("State name already exists");
+    }
+
+    return this.prisma.state.create({ data: { name: dto.name } });
+  }
+
+  async createZone(dto: CreateZoneDto): Promise<Zone> {
+    await this.ensureState(dto.stateId);
+
+    const existing = await this.prisma.zone.findUnique({
+      where: { stateId_name: { stateId: dto.stateId, name: dto.name } },
+    });
+    if (existing) {
+      throw new ConflictException("Zone name already exists in this state");
+    }
+
+    return this.prisma.zone.create({
+      data: { name: dto.name, stateId: dto.stateId },
     });
   }
 

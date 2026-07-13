@@ -8,6 +8,8 @@ import { AuthUser } from "../common/auth.types";
 import {
   CreateBranchDto,
   CreateOrgChangeRequestDto,
+  CreateStateDto,
+  CreateZoneDto,
   ReviewOrgChangeDto,
   UpdateBranchDto,
   UpdateStateDto,
@@ -25,6 +27,20 @@ export class OrgController {
   @Roles(Role.ADMIN, Role.LEAD_PASTOR)
   getTree() {
     return this.orgService.getTree();
+  }
+
+  @Post("states")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  createState(@Body() dto: CreateStateDto) {
+    return this.orgService.createState(dto);
+  }
+
+  @Post("zones")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  createZone(@Body() dto: CreateZoneDto) {
+    return this.orgService.createZone(dto);
   }
 
   @Post("branches")

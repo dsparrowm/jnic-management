@@ -16,7 +16,7 @@ import { ErrorText } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Sheet,
   SheetContent,
@@ -245,7 +245,7 @@ export function OnboardPastorSheet({
               <FormSection title="Role and assignment">
                 <div className="space-y-2">
                   <Label htmlFor="onboard-role">Role</Label>
-                  <Select
+                  <NativeSelect
                     id="onboard-role"
                     value={form.role}
                     onChange={(e) =>
@@ -263,13 +263,13 @@ export function OnboardPastorSheet({
                         {formatRole(role)}
                       </option>
                     ))}
-                  </Select>
+                  </NativeSelect>
                 </div>
 
                 {showState && (
                   <div className="space-y-2">
                     <Label htmlFor="onboard-state">State</Label>
-                    <Select
+                    <NativeSelect
                       id="onboard-state"
                       required
                       value={form.stateId}
@@ -288,7 +288,7 @@ export function OnboardPastorSheet({
                           {s.name}
                         </option>
                       ))}
-                    </Select>
+                    </NativeSelect>
                   </div>
                 )}
 
@@ -297,7 +297,7 @@ export function OnboardPastorSheet({
                     <Label htmlFor="onboard-zone">
                       Zone{zoneRequired ? "" : " (optional)"}
                     </Label>
-                    <Select
+                    <NativeSelect
                       id="onboard-zone"
                       required={zoneRequired}
                       value={form.zoneId}
@@ -312,14 +312,14 @@ export function OnboardPastorSheet({
                           {z.name}
                         </option>
                       ))}
-                    </Select>
+                    </NativeSelect>
                   </div>
                 )}
 
                 {showBranchRequired && (
                   <div className="space-y-2">
                     <Label htmlFor="onboard-branch">Branch</Label>
-                    <Select
+                    <NativeSelect
                       id="onboard-branch"
                       required
                       value={form.branchId}
@@ -332,14 +332,14 @@ export function OnboardPastorSheet({
                           {b.name}
                         </option>
                       ))}
-                    </Select>
+                    </NativeSelect>
                   </div>
                 )}
 
                 {showBranchOptional && (
                   <div className="space-y-2">
                     <Label htmlFor="onboard-branch-optional">Home branch (optional)</Label>
-                    <Select
+                    <NativeSelect
                       id="onboard-branch-optional"
                       value={form.branchId}
                       onChange={(e) => handleBranchChange(e.target.value)}
@@ -351,7 +351,7 @@ export function OnboardPastorSheet({
                           {b.name}
                         </option>
                       ))}
-                    </Select>
+                    </NativeSelect>
                     <p className="text-xs text-muted-foreground">
                       Optional home branch — enables weekly report submission.
                     </p>

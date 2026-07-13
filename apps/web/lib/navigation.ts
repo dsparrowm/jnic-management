@@ -1,7 +1,6 @@
 import { Role, canSubmitWeeklyReports } from "@repo/types";
 import {
   Building2,
-  CheckSquare,
   ClipboardList,
   LayoutDashboard,
   type LucideIcon,
@@ -97,13 +96,6 @@ export const navSections: NavSection[] = [
         href: "/reports/national",
         icon: ClipboardList,
         roles: [Role.LEAD_PASTOR, Role.ADMIN],
-      },
-      {
-        id: "org-approvals",
-        label: "Org Approvals",
-        href: "/approvals/org",
-        icon: CheckSquare,
-        roles: [Role.LEAD_PASTOR],
       },
     ],
   },

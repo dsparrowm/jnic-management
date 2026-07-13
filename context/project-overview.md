@@ -69,8 +69,9 @@ National (HQ) summary requires Lead Pastor approval.
 
 ### 4. Org Changes
 
-Admin proposes new State or Zone → `OrgChangeRequest` created → Lead Pastor approves or
-rejects → entity created on approval.
+Admin creates states, zones, and branches directly from `/admin/org`. Pastor assignment
+remains on `/admin/pastors`. The legacy `OrgChangeRequest` LP approval workflow is retained
+in the API for historical data but no longer used for new org creates.
 
 ## Application Routes
 
@@ -80,8 +81,8 @@ rejects → entity created on approval.
 | `/onboard/[token]` | Pending users | US-1.1 |
 | `/dashboard` | All roles | Role-scoped home |
 | `/admin/pastors` | Admin | US-1.1 (onboard sheet), US-1.3, US-2.2 |
-| `/admin/org` | Admin | Org CRUD |
-| `/approvals/org` | Lead Pastor | Org change approval |
+| `/admin/org` | Admin | Org CRUD (direct state/zone/branch create) |
+| `/approvals/org` | Lead Pastor | *(Legacy)* Org change approval — unlinked from nav |
 | `/approvals/summaries` | Lead Pastor | National summary approval |
 | `/reports/submit` | Branch Pastor, Admin Staff | US-3.1, US-4.1, US-4.2 |
 | `/reports/zone` | Zonal Pastor | US-3.2 |

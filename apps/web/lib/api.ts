@@ -435,6 +435,18 @@ export const api = {
 
   getOrgTree: (token: string) => request<OrgState[]>("/org/tree", {}, token),
 
+  createState: (token: string, data: { name: string }) =>
+    request<OrgState>("/org/states", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  createZone: (token: string, data: { name: string; stateId: string }) =>
+    request<OrgZone>("/org/zones", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
   createBranch: (
     token: string,
     data: { name: string; zoneId: string; address?: string },
