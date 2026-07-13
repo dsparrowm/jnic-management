@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ErrorText } from "@/components/auth/auth-card";
 import { OrgCascadeSelectors } from "@/components/org/org-cascade-selectors";
@@ -16,7 +17,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { api, ApiError, OrgState } from "@/lib/api";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 interface CreateZoneSheetProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function CreateZoneSheet({
   orgTree,
   onSuccess,
 }: CreateZoneSheetProps) {
+  const router = useRouter();
   const [stateId, setStateId] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
@@ -57,6 +59,7 @@ export function CreateZoneSheet({
       onSuccess?.(name.trim());
       onOpenChange(false);
     } catch (err) {
+      if (redirectToLoginIfUnauthorized(err, router)) return;
       setError(err instanceof ApiError ? err.message : "Failed to create zone");
     } finally {
       setLoading(false);

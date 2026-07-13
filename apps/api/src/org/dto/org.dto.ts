@@ -1,5 +1,5 @@
 import { OrgChangeType } from "@repo/types";
-import { IsEnum, IsObject, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, MinLength } from "class-validator";
 
 export class CreateStateDto {
   @IsString()
@@ -22,6 +22,7 @@ export class CreateBranchDto {
   name!: string;
 
   @IsString()
+  @IsNotEmpty()
   zoneId!: string;
 
   @IsOptional()

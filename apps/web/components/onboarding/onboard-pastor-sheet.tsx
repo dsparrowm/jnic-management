@@ -5,11 +5,6 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import {
   Role,
   ONBOARDABLE_ROLES,
-  allowsOptionalBranch,
-  allowsOptionalZone,
-  requiresBranchId,
-  requiresStateId,
-  requiresZoneId,
   validateOrgAssignmentStructure,
 } from "@repo/types";
 import { ErrorText } from "@/components/auth/auth-card";
@@ -17,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { OnboardOrgSelectors } from "@/components/onboarding/onboard-org-selectors";
 import {
   Sheet,
   SheetContent,
@@ -63,18 +59,6 @@ function FormSection({
   );
 }
 
-function findBranchInTree(orgTree: OrgState[], branchId: string) {
-  for (const state of orgTree) {
-    for (const zone of state.zones) {
-      const branch = zone.branches.find((b) => b.id === branchId);
-      if (branch) {
-        return { stateId: state.id, zoneId: zone.id, branchId: branch.id };
-      }
-    }
-  }
-  return null;
-}
-
 export function OnboardPastorSheet({
   open,
   onOpenChange,
@@ -94,36 +78,6 @@ export function OnboardPastorSheet({
       setLoading(false);
     }
   }, [open]);
-
-  const showState = requiresStateId(form.role);
-  const showZone = requiresZoneId(form.role) || allowsOptionalZone(form.role);
-  const zoneRequired = requiresZoneId(form.role);
-  const showBranchRequired = requiresBranchId(form.role);
-  const showBranchOptional = allowsOptionalBranch(form.role);
-
-  const zonesForState = orgTree.find((s) => s.id === form.stateId)?.zones ?? [];
-  const branchesForZone = zonesForState.find((z) => z.id === form.zoneId)?.branches ?? [];
-  const branchesForState = zonesForState.flatMap((z) => z.branches);
-  const branchOptions =
-    form.role === Role.STATE_PASTOR && !form.zoneId ? branchesForState : branchesForZone;
-
-  function handleBranchChange(branchId: string) {
-    if (!branchId) {
-      setForm((f) => ({ ...f, branchId: "" }));
-      return;
-    }
-    const resolved = findBranchInTree(orgTree, branchId);
-    if (resolved) {
-      setForm((f) => ({
-        ...f,
-        branchId: resolved.branchId,
-        zoneId: resolved.zoneId,
-        stateId: resolved.stateId,
-      }));
-    } else {
-      setForm((f) => ({ ...f, branchId }));
-    }
-  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -266,97 +220,11 @@ export function OnboardPastorSheet({
                   </NativeSelect>
                 </div>
 
-                {showState && (
-                  <div className="space-y-2">
-                    <Label htmlFor="onboard-state">State</Label>
-                    <NativeSelect
-                      id="onboard-state"
-                      required
-                      value={form.stateId}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          stateId: e.target.value,
-                          zoneId: "",
-                          branchId: "",
-                        }))
-                      }
-                    >
-                      <option value="">Select state</option>
-                      {orgTree.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                )}
-
-                {showZone && (
-                  <div className="space-y-2">
-                    <Label htmlFor="onboard-zone">
-                      Zone{zoneRequired ? "" : " (optional)"}
-                    </Label>
-                    <NativeSelect
-                      id="onboard-zone"
-                      required={zoneRequired}
-                      value={form.zoneId}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, zoneId: e.target.value, branchId: "" }))
-                      }
-                      disabled={!form.stateId}
-                    >
-                      <option value="">{zoneRequired ? "Select zone" : "No zone"}</option>
-                      {zonesForState.map((z) => (
-                        <option key={z.id} value={z.id}>
-                          {z.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                )}
-
-                {showBranchRequired && (
-                  <div className="space-y-2">
-                    <Label htmlFor="onboard-branch">Branch</Label>
-                    <NativeSelect
-                      id="onboard-branch"
-                      required
-                      value={form.branchId}
-                      onChange={(e) => handleBranchChange(e.target.value)}
-                      disabled={!form.zoneId}
-                    >
-                      <option value="">Select branch</option>
-                      {branchesForZone.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                )}
-
-                {showBranchOptional && (
-                  <div className="space-y-2">
-                    <Label htmlFor="onboard-branch-optional">Home branch (optional)</Label>
-                    <NativeSelect
-                      id="onboard-branch-optional"
-                      value={form.branchId}
-                      onChange={(e) => handleBranchChange(e.target.value)}
-                      disabled={!form.stateId}
-                    >
-                      <option value="">No home branch</option>
-                      {branchOptions.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                    <p className="text-xs text-muted-foreground">
-                      Optional home branch — enables weekly report submission.
-                    </p>
-                  </div>
-                )}
+                <OnboardOrgSelectors
+                  orgTree={orgTree}
+                  values={form}
+                  onChange={(next) => setForm((current) => ({ ...current, ...next }))}
+                />
               </FormSection>
 
               <ErrorText message={error} />

@@ -15,7 +15,7 @@ import { PastorsPageHeader } from "@/components/pastors/pastors-page-header";
 import { PastorsTable } from "@/components/pastors/pastors-table";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, OrgState, PastorListResponse } from "@/lib/api";
-import { getAccessToken, getStoredUser, isAdmin } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isAdmin, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 function parseFilters(params: URLSearchParams): PastorFilterValues {
   return {
@@ -92,6 +92,18 @@ function PastorsPageContent() {
     }
   }, [filters, page, router]);
 
+  const loadOrgTree = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      const tree = await api.getOrgTree(token);
+      setOrgTree(tree);
+    } catch (err) {
+      if (redirectToLoginIfUnauthorized(err, router)) return;
+      setOrgTree([]);
+    }
+  }, [router]);
+
   useEffect(() => {
     const user = getStoredUser();
     if (!getAccessToken() || !isAdmin(user)) {
@@ -99,8 +111,14 @@ function PastorsPageContent() {
       return;
     }
     setReady(true);
-    api.getOrgTree(getAccessToken()!).then(setOrgTree).catch(() => {});
-  }, [router]);
+    void loadOrgTree();
+  }, [router, loadOrgTree]);
+
+  useEffect(() => {
+    if (onboardOpen) {
+      void loadOrgTree();
+    }
+  }, [onboardOpen, loadOrgTree]);
 
   useEffect(() => {
     if (!ready) return;

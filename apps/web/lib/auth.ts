@@ -45,6 +45,23 @@ export function clearSession() {
   localStorage.removeItem(USER_KEY);
 }
 
+export function redirectToLoginIfUnauthorized(
+  err: unknown,
+  router: { replace: (href: string) => void },
+): boolean {
+  if (
+    err &&
+    typeof err === "object" &&
+    "status" in err &&
+    (err as { status: number }).status === 401
+  ) {
+    clearSession();
+    router.replace("/login");
+    return true;
+  }
+  return false;
+}
+
 export function isAdmin(user: AuthUser | null): boolean {
   return user?.role === "ADMIN";
 }

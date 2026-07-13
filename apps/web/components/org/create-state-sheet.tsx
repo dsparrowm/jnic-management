@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { NIGERIAN_STATES } from "@repo/types";
 import { Loader2 } from "lucide-react";
 import { ErrorText } from "@/components/auth/auth-card";
@@ -22,7 +23,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { api, ApiError, OrgState } from "@/lib/api";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 interface CreateStateSheetProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function CreateStateSheet({
   orgTree,
   onSuccess,
 }: CreateStateSheetProps) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -71,6 +73,7 @@ export function CreateStateSheet({
       onSuccess?.(name);
       onOpenChange(false);
     } catch (err) {
+      if (redirectToLoginIfUnauthorized(err, router)) return;
       setError(err instanceof ApiError ? err.message : "Failed to create state");
     } finally {
       setLoading(false);

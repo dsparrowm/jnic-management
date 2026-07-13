@@ -10,7 +10,7 @@ import { OrgHierarchyPanel } from "@/components/org/org-hierarchy-panel";
 import { OrgPageHeader } from "@/components/org/org-page-header";
 import { ErrorText } from "@/components/auth/auth-card";
 import { api, ApiError, OrgState } from "@/lib/api";
-import { getAccessToken, getStoredUser, isAdmin } from "@/lib/auth";
+import { getAccessToken, getStoredUser, isAdmin, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 type SheetType = "state" | "zone" | "branch" | null;
 
@@ -37,6 +37,7 @@ export default function AdminOrgPage() {
     }
     setReady(true);
     loadTree().catch((err) => {
+      if (redirectToLoginIfUnauthorized(err, router)) return;
       setError(err instanceof ApiError ? err.message : "Failed to load organisation");
     });
   }, [router, loadTree]);
@@ -45,6 +46,7 @@ export default function AdminOrgPage() {
     setSuccess(`${entityType} "${name}" created successfully.`);
     setError(undefined);
     loadTree().catch((err) => {
+      if (redirectToLoginIfUnauthorized(err, router)) return;
       setError(err instanceof ApiError ? err.message : "Failed to refresh hierarchy");
     });
   }

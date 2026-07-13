@@ -279,6 +279,64 @@ class ApiError extends Error {
   }
 }
 
+function formatApiErrorMessage(body: unknown, fallback: string): string {
+  if (!body || typeof body !== "object") return fallback;
+  const message = (body as { message?: string | string[] }).message;
+  if (Array.isArray(message)) return message.join(", ");
+  if (typeof message === "string" && message.trim()) return message;
+  return fallback;
+}
+
+function shouldRefreshAccessToken(token: string, skewSeconds = 60): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1] ?? "")) as { exp?: number };
+    if (!payload.exp) return false;
+    return payload.exp * 1000 <= Date.now() + skewSeconds * 1000;
+  } catch {
+    return true;
+  }
+}
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    const { clearSession, getRefreshToken, saveSession } = await import("./auth");
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      return null;
+    }
+
+    try {
+      const session = await rawRequest<AuthResponse>("/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken }),
+      });
+      saveSession(session);
+      return session.accessToken;
+    } catch {
+      clearSession();
+      return null;
+    }
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
+async function resolveAccessToken(explicitToken?: string | null): Promise<string | null> {
+  const { getAccessToken } = await import("./auth");
+  const token = explicitToken ?? getAccessToken();
+  if (!token) return null;
+  if (!shouldRefreshAccessToken(token)) return token;
+  return refreshAccessToken();
+}
+
 async function rawRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -293,7 +351,7 @@ async function rawRequest<T>(
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    const message = (body as { message?: string }).message ?? res.statusText;
+    const message = formatApiErrorMessage(body, res.statusText);
     throw new ApiError(message, res.status);
   }
   if (res.status === 204) {
@@ -302,46 +360,36 @@ async function rawRequest<T>(
   return res.json() as Promise<T>;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const { clearSession, getRefreshToken, saveSession } = await import("./auth");
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    return null;
-  }
-
-  try {
-    const session = await rawRequest<AuthResponse>("/auth/refresh", {
-      method: "POST",
-      body: JSON.stringify({ refreshToken }),
-    });
-    saveSession(session);
-    return session.accessToken;
-  } catch {
-    clearSession();
-    return null;
-  }
-}
-
 async function request<T>(
   path: string,
   options: RequestInit = {},
   token?: string | null,
   retried = false,
 ): Promise<T> {
+  const accessToken = await resolveAccessToken(token);
+  const requestOptions: RequestInit = {
+    ...options,
+    body: options.body,
+  };
+
+  if (!path.startsWith("/auth/") && !accessToken) {
+    throw new ApiError("Session expired. Please sign in again.", 401);
+  }
+
   try {
-    return await rawRequest<T>(path, options, token);
+    return await rawRequest<T>(path, requestOptions, accessToken);
   } catch (err) {
     if (
       err instanceof ApiError &&
       err.status === 401 &&
-      token &&
       !retried &&
       !path.startsWith("/auth/")
     ) {
       const nextToken = await refreshAccessToken();
       if (nextToken) {
-        return request<T>(path, options, nextToken, true);
+        return request<T>(path, requestOptions, nextToken, true);
       }
+      throw new ApiError("Session expired. Please sign in again.", 401);
     }
     throw err;
   }
