@@ -337,6 +337,13 @@ async function resolveAccessToken(explicitToken?: string | null): Promise<string
   return refreshAccessToken();
 }
 
+function isPublicApiPath(path: string): boolean {
+  if (path.startsWith("/auth/")) return true;
+  if (path.startsWith("/onboarding/validate/")) return true;
+  if (path === "/onboarding/complete") return true;
+  return false;
+}
+
 async function rawRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -366,13 +373,16 @@ async function request<T>(
   token?: string | null,
   retried = false,
 ): Promise<T> {
-  const accessToken = await resolveAccessToken(token);
+  const isPublic = isPublicApiPath(path);
+  const accessToken = isPublic
+    ? (token ?? null)
+    : await resolveAccessToken(token);
   const requestOptions: RequestInit = {
     ...options,
     body: options.body,
   };
 
-  if (!path.startsWith("/auth/") && !accessToken) {
+  if (!isPublic && !accessToken) {
     throw new ApiError("Session expired. Please sign in again.", 401);
   }
 
@@ -383,7 +393,7 @@ async function request<T>(
       err instanceof ApiError &&
       err.status === 401 &&
       !retried &&
-      !path.startsWith("/auth/")
+      !isPublic
     ) {
       const nextToken = await refreshAccessToken();
       if (nextToken) {
