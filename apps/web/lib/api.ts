@@ -247,6 +247,15 @@ export interface MonthlySummaryWeekRow extends MonthlySummaryTotals {
   weekLabel: string;
 }
 
+export interface MonthlySummaryStateRow {
+  stateId: string;
+  stateName: string;
+  branchesReporting: number;
+  branchesTotal: number;
+  weeklyReports: number;
+  totals: MonthlySummaryTotals;
+}
+
 export interface MonthlySummaryItem {
   id: string;
   scopeType: string;
@@ -258,6 +267,7 @@ export interface MonthlySummaryItem {
   approvedAt: string | null;
   totals: MonthlySummaryTotals;
   weeks: MonthlySummaryWeekRow[];
+  stateBreakdown?: MonthlySummaryStateRow[];
 }
 
 export interface MonthlySummaryListResponse {

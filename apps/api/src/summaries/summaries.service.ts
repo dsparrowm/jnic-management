@@ -298,6 +298,95 @@ export class SummariesService {
     return true;
   }
 
+  private mapSummaryTotals(record: {
+    totalAdult: number;
+    totalTeenage: number;
+    totalChildren: number;
+    totalTithe: unknown;
+    totalOffering: unknown;
+    totalOther: unknown;
+    currency: string;
+  }) {
+    return {
+      adult: record.totalAdult,
+      teenage: record.totalTeenage,
+      children: record.totalChildren,
+      tithe: Number(record.totalTithe),
+      offering: Number(record.totalOffering),
+      other: Number(record.totalOther),
+      currency: record.currency,
+    };
+  }
+
+  private async buildStateBreakdown(
+    month: number,
+    year: number,
+    reports: ReportWithRelations[],
+  ) {
+    const stateSummaries = await this.prisma.monthlySummary.findMany({
+      where: {
+        scopeType: PrismaSummaryScopeType.STATE,
+        month,
+        year,
+      },
+    });
+
+    if (stateSummaries.length === 0) {
+      return [];
+    }
+
+    const states = await this.prisma.state.findMany({
+      where: { id: { in: stateSummaries.map((summary) => summary.scopeId) } },
+      select: { id: true, name: true },
+    });
+    const stateNameById = new Map(states.map((state) => [state.id, state.name]));
+
+    const branchesByState = new Map<string, Set<string>>();
+    const weeklyReportsByState = new Map<string, number>();
+    for (const report of reports) {
+      const stateId = report.branch.zone.state.id;
+      weeklyReportsByState.set(stateId, (weeklyReportsByState.get(stateId) ?? 0) + 1);
+      const branchIds = branchesByState.get(stateId) ?? new Set<string>();
+      branchIds.add(report.branch.id);
+      branchesByState.set(stateId, branchIds);
+    }
+
+    const branchCounts = await this.prisma.branch.groupBy({
+      by: ["zoneId"],
+      _count: { id: true },
+      where: {
+        zone: {
+          stateId: { in: stateSummaries.map((summary) => summary.scopeId) },
+        },
+      },
+    });
+    const zones = await this.prisma.zone.findMany({
+      where: { id: { in: branchCounts.map((row) => row.zoneId) } },
+      select: { id: true, stateId: true },
+    });
+    const stateIdByZoneId = new Map(zones.map((zone) => [zone.id, zone.stateId]));
+    const branchesTotalByState = new Map<string, number>();
+    for (const row of branchCounts) {
+      const stateId = stateIdByZoneId.get(row.zoneId);
+      if (!stateId) continue;
+      branchesTotalByState.set(
+        stateId,
+        (branchesTotalByState.get(stateId) ?? 0) + row._count.id,
+      );
+    }
+
+    return stateSummaries
+      .map((record) => ({
+        stateId: record.scopeId,
+        stateName: stateNameById.get(record.scopeId) ?? record.scopeId,
+        branchesReporting: branchesByState.get(record.scopeId)?.size ?? 0,
+        branchesTotal: branchesTotalByState.get(record.scopeId) ?? 0,
+        weeklyReports: weeklyReportsByState.get(record.scopeId) ?? 0,
+        totals: this.mapSummaryTotals(record),
+      }))
+      .sort((a, b) => a.stateName.localeCompare(b.stateName));
+  }
+
   async listMonthlySummaries(user: AuthUser, month: number, year: number) {
     const { reports } = await this.computeMonthlySummaries(month, year);
     const scopes = this.getVisibleScopeFilters(user);
@@ -334,6 +423,13 @@ export class SummariesService {
           currency: week.currency,
         }));
 
+        const isNationalViewer =
+          user.role === Role.ADMIN || user.role === Role.LEAD_PASTOR;
+        const stateBreakdown =
+          scope.scopeType === SummaryScopeType.HQ && isNationalViewer
+            ? await this.buildStateBreakdown(month, year, reports)
+            : undefined;
+
         return {
           id: record.id,
           scopeType: record.scopeType,
@@ -343,16 +439,9 @@ export class SummariesService {
           year: record.year,
           status: record.status,
           approvedAt: record.approvedAt?.toISOString() ?? null,
-          totals: {
-            adult: record.totalAdult,
-            teenage: record.totalTeenage,
-            children: record.totalChildren,
-            tithe: Number(record.totalTithe),
-            offering: Number(record.totalOffering),
-            other: Number(record.totalOther),
-            currency: record.currency,
-          },
+          totals: this.mapSummaryTotals(record),
           weeks,
+          ...(stateBreakdown ? { stateBreakdown } : {}),
         };
       }),
     );
