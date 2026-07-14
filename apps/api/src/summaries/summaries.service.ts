@@ -322,7 +322,17 @@ export class SummariesService {
         const scopeName = await this.resolveScopeName(scope.scopeType, scope.scopeId);
         const weeks = this.buildWeeklyBreakdown(reports, (report) =>
           this.summaryMatchesReport(scope.scopeType, scope.scopeId, report),
-        );
+        ).map((week) => ({
+          weekOf: week.weekOf,
+          weekLabel: week.weekLabel,
+          adult: week.totalAdult,
+          teenage: week.totalTeenage,
+          children: week.totalChildren,
+          tithe: week.totalTithe,
+          offering: week.totalOffering,
+          other: week.totalOther,
+          currency: week.currency,
+        }));
 
         return {
           id: record.id,
