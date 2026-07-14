@@ -4,9 +4,9 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-**Phase 5 — Hierarchy views + feedback (in progress)**
+**Phase 6 — Monthly aggregation + LP summary approval (in progress)**
 
-Hierarchy views complete. Feedback threads and notifications shipped; Phase 5 completion pending final verification.
+Pastor reassign UI shipped. Monthly summaries API + web pages implemented; BullMQ cron deferred.
 
 ## Scope Decisions
 
@@ -38,13 +38,13 @@ Hierarchy views complete. Feedback threads and notifications shipped; Phase 5 co
 | 2 | Org structure + LP approvals | Done |
 | 3 | Profiles + pastor directory (Epic 2) | Done |
 | 4 | Weekly reports + attendance + finance | Done |
-| 5 | Hierarchy views + feedback | In progress |
-| 6 | Monthly aggregation + LP summary approval | Not started |
+| 5 | Hierarchy views + feedback | Done |
+| 6 | Monthly aggregation + LP summary approval | In progress |
 | 7 | Hardening, tests, deploy | Not started |
 
 ## Current Goal
 
-Phase 5 — Final verification of feedback + hierarchy flows.
+Phase 6 — Monthly summaries on-demand compute + Lead Pastor national approval UI.
 
 ## Milestone Status
 
@@ -55,12 +55,22 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 | **2 — Org + LP Approvals** | **Complete** |
 | **3 — Profiles** | **Complete** |
 | **4 — Weekly Reports** | **Complete** |
-| **5 — Hierarchy + Feedback** | **In progress** |
-| 5 — Hierarchy + Feedback | Blocked |
-| 6 — Monthly Aggregation | Blocked |
+| **5 — Hierarchy + Feedback** | **Complete** |
+| **6 — Monthly Aggregation** | **In progress** |
 | 7 — Hardening | Blocked |
 
 ## Completed
+
+### Pastor reassign UI + monthly summaries (2026-07-14)
+
+- **US-1.3 reassign UI** — `ReassignPastorSheet` on `/admin/pastors`; active pastors only; reuses org selectors + `PATCH /users/:id/reassign`
+- **US-3.6 monthly summaries** — `SummariesModule` with on-demand compute from weekly reports
+  - `GET /summaries/monthly?month=&year=` — scoped branch/zone/state/HQ views
+  - `GET /summaries/monthly/pending-approval` + `POST /summaries/monthly/:id/approve` — Lead Pastor national sign-off
+  - Web `/summaries` (month picker, totals + weekly breakdown) and `/approvals/summaries`
+  - Nav: Monthly Summaries (pastor roles + Admin/LP); Summary Approvals (LP only)
+- **Deferred:** BullMQ `compute-monthly-summaries` cron (on-demand on list for now)
+- `pnpm build` passes
 
 ### Admin dashboard overview redesign (2026-07-13)
 
@@ -185,7 +195,7 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 - Web: `/login`, `/onboard/[token]`, `/dashboard`, `/admin/onboard`, `/admin/users`
 - `pnpm build` passes
 
-**Deferred from Phase 1 spec:** BullMQ email queue; reassign UI (API exists).
+**Deferred from Phase 1 spec:** BullMQ email queue.
 
 ### Onboarding email service (2026-07-12)
 
@@ -211,8 +221,8 @@ Phase 5 — Final verification of feedback + hierarchy flows.
 
 ## Next Up
 
-1. Phase 5 completion sign-off (hierarchy + feedback acceptance)
-2. Phase 6 — Monthly aggregation job + scoped summaries
+1. Phase 6 — BullMQ monthly aggregation cron job
+2. Phase 7 — Hardening, e2e tests, go-live checklist
 
 ## Feature Unit Queue (Phase 5)
 

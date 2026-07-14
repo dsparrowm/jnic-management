@@ -9,6 +9,7 @@ import { OnboardingModule } from "./onboarding/onboarding.module";
 import { OrgModule } from "./org/org.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ReportsModule } from "./reports/reports.module";
+import { SummariesModule } from "./summaries/summaries.module";
 import { UsersModule } from "./users/users.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
@@ -23,6 +24,7 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
     FilesModule,
     ReportsModule,
     NotificationsModule,
+    SummariesModule,
     UsersModule,
   ],
   providers: [

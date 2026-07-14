@@ -12,6 +12,7 @@ interface PastorsCardGridProps {
   actionId: string | null;
   onResend: (id: string) => void;
   onDeactivate: (id: string) => void;
+  onReassign: (pastor: PastorRecord) => void;
 }
 
 export function PastorsCardGrid({
@@ -19,6 +20,7 @@ export function PastorsCardGrid({
   actionId,
   onResend,
   onDeactivate,
+  onReassign,
 }: PastorsCardGridProps) {
   if (pastors.length === 0) {
     return (
@@ -63,6 +65,7 @@ export function PastorsCardGrid({
                 busy={actionId === pastor.id}
                 onResend={onResend}
                 onDeactivate={onDeactivate}
+                onReassign={onReassign}
               />
             </div>
 

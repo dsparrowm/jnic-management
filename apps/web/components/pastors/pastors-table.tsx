@@ -12,6 +12,7 @@ interface PastorsTableProps {
   actionId: string | null;
   onResend: (id: string) => void;
   onDeactivate: (id: string) => void;
+  onReassign: (pastor: PastorRecord) => void;
 }
 
 function LocationBadges({ pastor }: { pastor: PastorRecord }) {
@@ -48,6 +49,7 @@ export function PastorsTable({
   actionId,
   onResend,
   onDeactivate,
+  onReassign,
 }: PastorsTableProps) {
   if (pastors.length === 0) {
     return (
@@ -100,6 +102,7 @@ export function PastorsTable({
                 busy={actionId === pastor.id}
                 onResend={onResend}
                 onDeactivate={onDeactivate}
+                onReassign={onReassign}
               />
             </div>
           </div>

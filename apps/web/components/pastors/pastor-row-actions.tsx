@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, UserX, Mail } from "lucide-react";
+import { MoreHorizontal, UserX, Mail, UserCog } from "lucide-react";
 import { PastorRecord } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ interface PastorRowActionsProps {
   busy: boolean;
   onResend: (id: string) => void;
   onDeactivate: (id: string) => void;
+  onReassign: (pastor: PastorRecord) => void;
 }
 
 export function PastorRowActions({
@@ -22,11 +23,13 @@ export function PastorRowActions({
   busy,
   onResend,
   onDeactivate,
+  onReassign,
 }: PastorRowActionsProps) {
   const canResend = pastor.status === "PENDING";
   const canDeactivate = pastor.status !== "DEACTIVATED";
+  const canReassign = pastor.status === "ACTIVE";
 
-  if (!canResend && !canDeactivate) {
+  if (!canResend && !canDeactivate && !canReassign) {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
 
@@ -42,6 +45,12 @@ export function PastorRowActions({
           <DropdownMenuItem onClick={() => onResend(pastor.id)} disabled={busy}>
             <Mail className="h-4 w-4" />
             Resend onboarding
+          </DropdownMenuItem>
+        )}
+        {canReassign && (
+          <DropdownMenuItem onClick={() => onReassign(pastor)} disabled={busy}>
+            <UserCog className="h-4 w-4" />
+            Reassign
           </DropdownMenuItem>
         )}
         {canDeactivate && (

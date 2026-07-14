@@ -232,6 +232,55 @@ export interface NationalAnalyticsResponse {
   financeByState: NationalFinanceByState[];
 }
 
+export interface MonthlySummaryTotals {
+  adult: number;
+  teenage: number;
+  children: number;
+  tithe: number;
+  offering: number;
+  other: number;
+  currency: string;
+}
+
+export interface MonthlySummaryWeekRow extends MonthlySummaryTotals {
+  weekOf: string;
+  weekLabel: string;
+}
+
+export interface MonthlySummaryItem {
+  id: string;
+  scopeType: string;
+  scopeId: string;
+  scopeName: string;
+  month: number;
+  year: number;
+  status: string;
+  approvedAt: string | null;
+  totals: MonthlySummaryTotals;
+  weeks: MonthlySummaryWeekRow[];
+}
+
+export interface MonthlySummaryListResponse {
+  month: number;
+  year: number;
+  items: MonthlySummaryItem[];
+}
+
+export interface MonthlySummaryPendingItem {
+  id: string;
+  scopeType: string;
+  scopeId: string;
+  scopeName: string;
+  month: number;
+  year: number;
+  status: string;
+  totals: MonthlySummaryTotals;
+}
+
+export interface MonthlySummaryPendingResponse {
+  items: MonthlySummaryPendingItem[];
+}
+
 export interface FeedbackRecord {
   id: string;
   reportId: string;
@@ -523,6 +572,21 @@ export const api = {
   deactivateUser: (token: string, userId: string) =>
     request<UserRecord>(`/users/${userId}/deactivate`, { method: "PATCH" }, token),
 
+  reassignUser: (
+    token: string,
+    userId: string,
+    data: {
+      role?: Role;
+      stateId?: string | null;
+      zoneId?: string | null;
+      branchId?: string | null;
+    },
+  ) =>
+    request<UserRecord>(`/users/${userId}/reassign`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
   getOrgTree: (token: string) => request<OrgState[]>("/org/tree", {}, token),
 
   createState: (token: string, data: { name: string }) =>
@@ -638,6 +702,21 @@ export const api = {
   markNotificationRead: (token: string, notificationId: string) =>
     request<{ id: string; readAt: string }>(`/notifications/${notificationId}/read`, {
       method: "PATCH",
+    }, token),
+
+  listMonthlySummaries: (token: string, month: number, year: number) =>
+    request<MonthlySummaryListResponse>(
+      `/summaries/monthly?month=${month}&year=${year}`,
+      {},
+      token,
+    ),
+
+  listPendingMonthlySummaries: (token: string) =>
+    request<MonthlySummaryPendingResponse>("/summaries/monthly/pending-approval", {}, token),
+
+  approveMonthlySummary: (token: string, id: string) =>
+    request<{ id: string; status: string }>(`/summaries/monthly/${id}/approve`, {
+      method: "POST",
     }, token),
 };
 

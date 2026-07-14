@@ -6,6 +6,8 @@ import {
   type LucideIcon,
   UserCircle,
   UsersRound,
+  BarChart3,
+  CheckSquare,
 } from "lucide-react";
 
 export type NavItem = {
@@ -49,6 +51,19 @@ export const navSections: NavSection[] = [
         href: "/reports/submit",
         icon: ClipboardList,
         roles: [Role.STATE_PASTOR, Role.ZONAL_PASTOR, Role.BRANCH_PASTOR],
+      },
+      {
+        id: "summaries",
+        label: "Monthly Summaries",
+        href: "/summaries",
+        icon: BarChart3,
+        roles: [
+          Role.BRANCH_PASTOR,
+          Role.ZONAL_PASTOR,
+          Role.STATE_PASTOR,
+          Role.LEAD_PASTOR,
+          Role.ADMIN,
+        ],
       },
     ],
   },
@@ -97,6 +112,13 @@ export const navSections: NavSection[] = [
         icon: ClipboardList,
         roles: [Role.LEAD_PASTOR, Role.ADMIN],
       },
+      {
+        id: "summary-approvals",
+        label: "Summary Approvals",
+        href: "/approvals/summaries",
+        icon: CheckSquare,
+        roles: [Role.LEAD_PASTOR],
+      },
     ],
   },
 ];
@@ -134,6 +156,8 @@ export function getPageTitle(pathname: string): string {
     "/reports/zone": "Zone Reports",
     "/reports/state": "State Reports",
     "/reports/national": "National Reports",
+    "/summaries": "Monthly Summaries",
+    "/approvals/summaries": "Summary Approvals",
     "/admin/pastors": "Pastors",
     "/admin/org": "Organisation",
     "/approvals/org": "Org Approvals",

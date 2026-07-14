@@ -38,7 +38,7 @@ function AttendanceTooltip({
   breakdownBySeries,
 }: {
   active?: boolean;
-  payload?: AttendanceTooltipPayload[];
+  payload?: ReadonlyArray<AttendanceTooltipPayload>;
   label?: string;
   breakdownBySeries: Map<string, { adult: number; teenage: number; children: number }>;
 }) {
@@ -174,7 +174,7 @@ export function AttendanceTrendChart({ data, weeks }: AttendanceTrendChartProps)
                   return (
                     <AttendanceTooltip
                       active={active}
-                      payload={payload as AttendanceTooltipPayload[] | undefined}
+                      payload={payload as ReadonlyArray<AttendanceTooltipPayload> | undefined}
                       label={label as string | undefined}
                       breakdownBySeries={breakdownBySeries}
                     />

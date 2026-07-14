@@ -6,6 +6,7 @@ import { Role, UserStatus } from "@repo/types";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ErrorText } from "@/components/auth/auth-card";
 import { OnboardPastorSheet } from "@/components/onboarding/onboard-pastor-sheet";
+import { ReassignPastorSheet } from "@/components/pastors/reassign-pastor-sheet";
 import { PastorsCardGrid } from "@/components/pastors/pastors-card-grid";
 import {
   PastorFilterValues,
@@ -14,7 +15,7 @@ import {
 import { PastorsPageHeader } from "@/components/pastors/pastors-page-header";
 import { PastorsTable } from "@/components/pastors/pastors-table";
 import { Button } from "@/components/ui/button";
-import { api, ApiError, OrgState, PastorListResponse } from "@/lib/api";
+import { api, ApiError, OrgState, PastorListResponse, PastorRecord } from "@/lib/api";
 import { getAccessToken, getStoredUser, isAdmin, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 function parseFilters(params: URLSearchParams): PastorFilterValues {
@@ -39,6 +40,7 @@ function PastorsPageContent() {
   const [success, setSuccess] = useState<string>();
   const [actionId, setActionId] = useState<string | null>(null);
   const [onboardOpen, setOnboardOpen] = useState(false);
+  const [reassignPastor, setReassignPastor] = useState<PastorRecord | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
 
   const view = searchParams.get("view") === "cards" ? "cards" : "table";
@@ -253,6 +255,7 @@ function PastorsPageContent() {
               actionId={actionId}
               onResend={handleResend}
               onDeactivate={handleDeactivate}
+              onReassign={setReassignPastor}
             />
           ) : (
             <PastorsTable
@@ -260,6 +263,7 @@ function PastorsPageContent() {
               actionId={actionId}
               onResend={handleResend}
               onDeactivate={handleDeactivate}
+              onReassign={setReassignPastor}
             />
           )}
 
@@ -296,6 +300,16 @@ function PastorsPageContent() {
       <OnboardPastorSheet
         open={onboardOpen}
         onOpenChange={setOnboardOpen}
+        orgTree={orgTree}
+        onSuccess={() => void loadPastors()}
+      />
+
+      <ReassignPastorSheet
+        pastor={reassignPastor}
+        open={Boolean(reassignPastor)}
+        onOpenChange={(open) => {
+          if (!open) setReassignPastor(null);
+        }}
         orgTree={orgTree}
         onSuccess={() => void loadPastors()}
       />
