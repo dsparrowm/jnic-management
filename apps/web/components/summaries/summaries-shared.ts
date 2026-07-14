@@ -13,21 +13,15 @@ const MONTH_NAMES = [
   "December",
 ];
 
+export { MONTH_NAMES };
+
 export function formatSummaryPeriod(month: number, year: number): string {
   return `${MONTH_NAMES[month - 1]} ${year}`;
 }
 
-export function toMonthInputValue(month: number, year: number): string {
-  return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-export function parseMonthInputValue(value: string): { month: number; year: number } | null {
-  const match = /^(\d{4})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  if (month < 1 || month > 12) return null;
-  return { month, year };
+/** Prisma cuid() ids used for org entities in this project. */
+export function isValidScopeId(value: string): boolean {
+  return /^[a-z0-9]{10,40}$/i.test(value);
 }
 
 export function attendanceTotal(totals: {

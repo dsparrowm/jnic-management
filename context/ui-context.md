@@ -49,6 +49,10 @@ All components use CSS custom properties in `apps/web/app/globals.css`.
 Auth cards on `--bg-surface` over `--bg-base` page background. Primary buttons use
 `--accent-primary` with `--accent-foreground` text.
 
+Login uses a **split layout** (jubilee-nation reference): navy `--sidebar-gradient` hero panel
+on large screens, form card on the right with `--shadow-lg-token`. Sign-in CTA uses
+`--bg-sidebar` / `--bg-sidebar-surface`.
+
 ## Typography
 
 | Role | Font | Usage |

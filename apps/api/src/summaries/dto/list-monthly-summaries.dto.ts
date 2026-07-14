@@ -3,9 +3,10 @@ import { Type } from "class-transformer";
 import {
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
+  Matches,
   Max,
   Min,
   ValidateIf,
@@ -29,7 +30,10 @@ export class ListMonthlySummariesDto {
   scopeType?: SummaryScopeType;
 
   @ValidateIf((dto: ListMonthlySummariesDto) => dto.scopeType === SummaryScopeType.STATE)
+  @IsNotEmpty()
   @IsString()
-  @IsUUID()
+  @Matches(/^[a-z0-9]{10,40}$/i, {
+    message: "scopeId must be a valid organisation id",
+  })
   scopeId?: string;
 }

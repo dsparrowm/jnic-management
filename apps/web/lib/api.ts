@@ -743,8 +743,14 @@ export const api = {
       month: String(month),
       year: String(year),
     });
-    if (options?.scopeType) params.set("scopeType", options.scopeType);
-    if (options?.scopeId) params.set("scopeId", options.scopeId);
+    if (
+      options?.scopeType === "STATE" &&
+      options.scopeId &&
+      /^[a-z0-9]{10,40}$/i.test(options.scopeId)
+    ) {
+      params.set("scopeType", options.scopeType);
+      params.set("scopeId", options.scopeId);
+    }
     return request<MonthlySummaryListResponse>(
       `/summaries/monthly?${params.toString()}`,
       {},

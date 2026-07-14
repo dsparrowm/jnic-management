@@ -35,6 +35,11 @@
   --bg-surface: #ffffff;
   --bg-subtle: #eef1f8;
   --bg-brand-navy: #0d1b3e;
+  --bg-sidebar: #0d1b3e;
+  --bg-sidebar-surface: #162548;
+  --text-sidebar: #e5e9f2;
+  --text-sidebar-muted: #8a96b0;
+  --sidebar-gradient: linear-gradient(180deg, #0d1b3e 0%, #0a1530 100%);
   --text-primary: #111827;
   --text-muted: #6b7280;
   --accent-primary: #c9a050;
@@ -51,6 +56,7 @@
   --chart-success: #16a34a;
   --chart-warning: #d97706;
   --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.04), 0 8px 24px rgba(17, 24, 39, 0.06);
+  --shadow-lg-token: 0 12px 32px rgba(17, 24, 39, 0.1);
 
   /* shadcn tokens — Rokswood-style light shell, JNIC gold primary */
   --background: #ffffff;
@@ -89,5 +95,13 @@
   h2,
   h3 {
     font-family: var(--font-display);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .sidebar-gradient {
+    background: var(--sidebar-gradient);
   }
 }

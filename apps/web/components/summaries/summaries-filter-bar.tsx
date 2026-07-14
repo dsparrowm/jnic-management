@@ -1,14 +1,13 @@
 "use client";
 
-import { SummaryScopeType } from "@repo/types";
-import { BarChart3, CalendarDays, LayoutGrid, Table2 } from "lucide-react";
+import { SummaryScopeType, getTodayInLagos } from "@repo/types";
+import { BarChart3, LayoutGrid, Table2 } from "lucide-react";
 import { MonthlySummaryScopeOption } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
-import { toMonthInputValue } from "@/components/summaries/summaries-shared";
+import { MONTH_NAMES } from "@/components/summaries/summaries-shared";
 
 export type SummariesView = "summary" | "states" | "weekly";
 
@@ -37,6 +36,12 @@ const VIEW_OPTIONS: Array<{ id: SummariesView; label: string; icon: typeof Layou
   { id: "weekly", label: "Weekly", icon: Table2 },
 ];
 
+function currentMonthYear() {
+  const today = getTodayInLagos();
+  const [year, month] = today.split("-").map(Number);
+  return { month, year };
+}
+
 export function SummariesFilterBar({
   filters,
   scopeOptions,
@@ -56,28 +61,59 @@ export function SummariesFilterBar({
       ? `state:${filters.stateId}`
       : "hq";
 
+  const current = currentMonthYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => current.year - index);
+  const isCurrentPeriod = filters.month === current.month && filters.year === current.year;
+
   const hasActiveFilters =
-    filters.view !== "summary" || filters.scope === "state" || filters.stateId;
+    filters.view !== "summary" || filters.scope === "state" || filters.stateId || !isCurrentPeriod;
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-2">
-            <Label htmlFor="summary-period">Reporting period</Label>
-            <div className="relative">
-              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="summary-period"
-                type="month"
-                className="h-10 w-44 pl-9"
-                value={toMonthInputValue(filters.month, filters.year)}
-                onChange={(event) => {
-                  const match = /^(\d{4})-(\d{2})$/.exec(event.target.value);
-                  if (!match) return;
-                  onPeriodChange(Number(match[2]), Number(match[1]));
-                }}
-              />
+            <Label>Reporting period</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex overflow-hidden rounded-lg border border-input bg-background shadow-sm">
+                <NativeSelect
+                  id="summary-month"
+                  aria-label="Month"
+                  className="h-10 min-w-[8.5rem] rounded-none border-0 border-r border-input shadow-none focus-visible:ring-0"
+                  value={String(filters.month)}
+                  onChange={(event) => onPeriodChange(Number(event.target.value), filters.year)}
+                >
+                  {MONTH_NAMES.map((name, index) => (
+                    <option key={name} value={String(index + 1)}>
+                      {name}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  id="summary-year"
+                  aria-label="Year"
+                  className="h-10 w-[5.5rem] rounded-none border-0 shadow-none focus-visible:ring-0"
+                  value={String(filters.year)}
+                  onChange={(event) => onPeriodChange(filters.month, Number(event.target.value))}
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={String(year)}>
+                      {year}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              {!isCurrentPeriod ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 text-primary"
+                  onClick={() => onPeriodChange(current.month, current.year)}
+                >
+                  This month
+                </Button>
+              ) : null}
             </div>
           </div>
 

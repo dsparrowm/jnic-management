@@ -11,7 +11,7 @@ import {
   SummariesView,
 } from "@/components/summaries/summaries-filter-bar";
 import { SummariesPageHeader } from "@/components/summaries/summaries-page-header";
-import { formatSummaryPeriod } from "@/components/summaries/summaries-shared";
+import { formatSummaryPeriod, isValidScopeId } from "@/components/summaries/summaries-shared";
 import { SummariesStateTab } from "@/components/summaries/summaries-state-tab";
 import { SummariesSummaryTab } from "@/components/summaries/summaries-summary-tab";
 import { SummariesWeeklyTab } from "@/components/summaries/summaries-weekly-tab";
@@ -28,8 +28,15 @@ function parseFilters(params: URLSearchParams): SummariesFilterValues {
   const defaults = currentMonthYear();
   const month = Number(params.get("month") ?? defaults.month);
   const year = Number(params.get("year") ?? defaults.year);
-  const scope = params.get("scope") === "state" ? "state" : "hq";
-  const stateId = params.get("stateId") ?? "";
+  const scopeParam = params.get("scope")?.toLowerCase();
+  let scope: SummariesFilterValues["scope"] = scopeParam === "state" ? "state" : "hq";
+  let stateId = params.get("stateId") ?? "";
+
+  if (scope === "state" && !isValidScopeId(stateId)) {
+    scope = "hq";
+    stateId = "";
+  }
+
   const viewParam = params.get("view");
   const view: SummariesView =
     viewParam === "weekly" || viewParam === "states" || viewParam === "summary"
@@ -104,7 +111,10 @@ function SummariesPageContent() {
       setError(undefined);
 
       const scopeOptions =
-        isHq && filters.scope === "state" && filters.stateId
+        isHq &&
+        filters.scope === "state" &&
+        filters.stateId &&
+        isValidScopeId(filters.stateId)
           ? { scopeType: SummaryScopeType.STATE, scopeId: filters.stateId }
           : undefined;
 
@@ -140,6 +150,14 @@ function SummariesPageContent() {
       updateParams({ view: "summary" });
     }
   }, [showStatesTab, filters.view, updateParams]);
+
+  useEffect(() => {
+    const scopeParam = searchParams.get("scope")?.toLowerCase();
+    const stateId = searchParams.get("stateId") ?? "";
+    if (scopeParam === "state" && stateId && !isValidScopeId(stateId)) {
+      updateParams({ scope: undefined, stateId: undefined });
+    }
+  }, [searchParams, updateParams]);
 
   if (!ready || !user) return null;
 
