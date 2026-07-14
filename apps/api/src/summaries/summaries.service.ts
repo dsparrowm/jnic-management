@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -387,9 +388,120 @@ export class SummariesService {
       .sort((a, b) => a.stateName.localeCompare(b.stateName));
   }
 
-  async listMonthlySummaries(user: AuthUser, month: number, year: number) {
+  private async buildScopeOptions(user: AuthUser) {
+    if (user.role !== Role.ADMIN && user.role !== Role.LEAD_PASTOR) {
+      return undefined;
+    }
+
+    const states = await this.prisma.state.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+
+    return [
+      {
+        scopeType: SummaryScopeType.HQ,
+        scopeId: HQ_SCOPE_ID,
+        scopeName: "National",
+      },
+      ...states.map((state) => ({
+        scopeType: SummaryScopeType.STATE,
+        scopeId: state.id,
+        scopeName: state.name,
+      })),
+    ];
+  }
+
+  private async resolveRequestScopes(
+    user: AuthUser,
+    options?: { scopeType?: SummaryScopeType; scopeId?: string },
+  ): Promise<
+    Array<{
+      scopeType: SummaryScopeType;
+      scopeId: string;
+      scopeName: string;
+    }>
+  > {
+    if (!options?.scopeType) {
+      return this.getVisibleScopeFilters(user);
+    }
+
+    if (user.role !== Role.ADMIN && user.role !== Role.LEAD_PASTOR) {
+      throw new ForbiddenException("Scope override not permitted");
+    }
+
+    if (options.scopeType === SummaryScopeType.HQ) {
+      return [
+        {
+          scopeType: SummaryScopeType.HQ,
+          scopeId: HQ_SCOPE_ID,
+          scopeName: "National",
+        },
+      ];
+    }
+
+    if (options.scopeType === SummaryScopeType.STATE) {
+      if (!options.scopeId) {
+        throw new BadRequestException("scopeId is required when scopeType is STATE");
+      }
+
+      const state = await this.prisma.state.findUnique({ where: { id: options.scopeId } });
+      if (!state) {
+        throw new NotFoundException("State not found");
+      }
+
+      return [
+        {
+          scopeType: SummaryScopeType.STATE,
+          scopeId: state.id,
+          scopeName: state.name,
+        },
+      ];
+    }
+
+    throw new BadRequestException("Invalid scopeType for monthly summary filter");
+  }
+
+  private async buildCoverage(
+    reports: ReportWithRelations[],
+    scopeType: SummaryScopeType,
+    scopeId: string,
+  ) {
+    const scopedReports = reports.filter((report) =>
+      this.summaryMatchesReport(scopeType, scopeId, report),
+    );
+    const branchIds = new Set(scopedReports.map((report) => report.branch.id));
+
+    let branchesTotal = 0;
+    if (scopeType === SummaryScopeType.HQ) {
+      branchesTotal = await this.prisma.branch.count();
+    } else if (scopeType === SummaryScopeType.STATE) {
+      branchesTotal = await this.prisma.branch.count({
+        where: { zone: { stateId: scopeId } },
+      });
+    } else if (scopeType === SummaryScopeType.ZONE) {
+      branchesTotal = await this.prisma.branch.count({ where: { zoneId: scopeId } });
+    } else if (scopeType === SummaryScopeType.BRANCH) {
+      branchesTotal = 1;
+    }
+
+    return {
+      branchesReporting: branchIds.size,
+      branchesTotal,
+      weeklyReports: scopedReports.length,
+    };
+  }
+
+  async listMonthlySummaries(
+    user: AuthUser,
+    month: number,
+    year: number,
+    options?: { scopeType?: SummaryScopeType; scopeId?: string },
+  ) {
     const { reports } = await this.computeMonthlySummaries(month, year);
-    const scopes = this.getVisibleScopeFilters(user);
+    const scopes = await this.resolveRequestScopes(user, options);
+    const scopeOptions = await this.buildScopeOptions(user);
+    const isNationalViewer = user.role === Role.ADMIN || user.role === Role.LEAD_PASTOR;
 
     const summaries = await Promise.all(
       scopes.map(async (scope) => {
@@ -423,12 +535,11 @@ export class SummariesService {
           currency: week.currency,
         }));
 
-        const isNationalViewer =
-          user.role === Role.ADMIN || user.role === Role.LEAD_PASTOR;
         const stateBreakdown =
           scope.scopeType === SummaryScopeType.HQ && isNationalViewer
             ? await this.buildStateBreakdown(month, year, reports)
             : undefined;
+        const coverage = await this.buildCoverage(reports, scope.scopeType, scope.scopeId);
 
         return {
           id: record.id,
@@ -441,6 +552,7 @@ export class SummariesService {
           approvedAt: record.approvedAt?.toISOString() ?? null,
           totals: this.mapSummaryTotals(record),
           weeks,
+          coverage,
           ...(stateBreakdown ? { stateBreakdown } : {}),
         };
       }),
@@ -450,6 +562,7 @@ export class SummariesService {
       month,
       year,
       items: summaries.filter((item) => item !== null),
+      ...(scopeOptions ? { scopeOptions } : {}),
     };
   }
 

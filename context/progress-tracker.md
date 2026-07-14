@@ -61,6 +61,14 @@ Phase 6 — Monthly summaries on-demand compute + Lead Pastor national approval 
 
 ## Completed
 
+### Summaries page redesign (2026-07-14)
+
+- Redesigned `/summaries` — filter bar with month picker, scope drill-down (Admin/LP), and Summary / By state / Weekly tabs
+- URL-synced filters (`month`, `year`, `scope`, `stateId`, `view`)
+- API: optional `scopeType`/`scopeId` on `GET /summaries/monthly`; `scopeOptions` + `coverage` in response
+- State table: search, sort, click-through to state scope
+- `pnpm build` passes
+
 ### Pastor reassign UI + monthly summaries (2026-07-14)
 
 - **US-1.3 reassign UI** — `ReassignPastorSheet` on `/admin/pastors`; active pastors only; reuses org selectors + `PATCH /users/:id/reassign`

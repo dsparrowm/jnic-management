@@ -256,6 +256,18 @@ export interface MonthlySummaryStateRow {
   totals: MonthlySummaryTotals;
 }
 
+export interface MonthlySummaryCoverage {
+  branchesReporting: number;
+  branchesTotal: number;
+  weeklyReports: number;
+}
+
+export interface MonthlySummaryScopeOption {
+  scopeType: string;
+  scopeId: string;
+  scopeName: string;
+}
+
 export interface MonthlySummaryItem {
   id: string;
   scopeType: string;
@@ -267,6 +279,7 @@ export interface MonthlySummaryItem {
   approvedAt: string | null;
   totals: MonthlySummaryTotals;
   weeks: MonthlySummaryWeekRow[];
+  coverage: MonthlySummaryCoverage;
   stateBreakdown?: MonthlySummaryStateRow[];
 }
 
@@ -274,6 +287,12 @@ export interface MonthlySummaryListResponse {
   month: number;
   year: number;
   items: MonthlySummaryItem[];
+  scopeOptions?: MonthlySummaryScopeOption[];
+}
+
+export interface ListMonthlySummariesOptions {
+  scopeType?: string;
+  scopeId?: string;
 }
 
 export interface MonthlySummaryPendingItem {
@@ -714,12 +733,24 @@ export const api = {
       method: "PATCH",
     }, token),
 
-  listMonthlySummaries: (token: string, month: number, year: number) =>
-    request<MonthlySummaryListResponse>(
-      `/summaries/monthly?month=${month}&year=${year}`,
+  listMonthlySummaries: (
+    token: string,
+    month: number,
+    year: number,
+    options?: ListMonthlySummariesOptions,
+  ) => {
+    const params = new URLSearchParams({
+      month: String(month),
+      year: String(year),
+    });
+    if (options?.scopeType) params.set("scopeType", options.scopeType);
+    if (options?.scopeId) params.set("scopeId", options.scopeId);
+    return request<MonthlySummaryListResponse>(
+      `/summaries/monthly?${params.toString()}`,
       {},
       token,
-    ),
+    );
+  },
 
   listPendingMonthlySummaries: (token: string) =>
     request<MonthlySummaryPendingResponse>("/summaries/monthly/pending-approval", {}, token),

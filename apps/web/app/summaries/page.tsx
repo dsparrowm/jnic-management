@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getTodayInLagos } from "@repo/types";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SummaryScopeType, getTodayInLagos } from "@repo/types";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ErrorText } from "@/components/auth/auth-card";
-import { MonthlySummaryCard } from "@/components/summaries/monthly-summary-card";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  SummariesFilterBar,
+  SummariesFilterValues,
+  SummariesView,
+} from "@/components/summaries/summaries-filter-bar";
+import { SummariesPageHeader } from "@/components/summaries/summaries-page-header";
+import { formatSummaryPeriod } from "@/components/summaries/summaries-shared";
+import { SummariesStateTab } from "@/components/summaries/summaries-state-tab";
+import { SummariesSummaryTab } from "@/components/summaries/summaries-summary-tab";
+import { SummariesWeeklyTab } from "@/components/summaries/summaries-weekly-tab";
 import { api, ApiError, MonthlySummaryListResponse } from "@/lib/api";
-import { getAccessToken, getStoredUser } from "@/lib/auth";
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { getAccessToken, getStoredUser, isHqViewer } from "@/lib/auth";
 
 function currentMonthYear() {
   const today = getTodayInLagos();
@@ -32,22 +24,73 @@ function currentMonthYear() {
   return { month, year };
 }
 
-export default function SummariesPage() {
+function parseFilters(params: URLSearchParams): SummariesFilterValues {
+  const defaults = currentMonthYear();
+  const month = Number(params.get("month") ?? defaults.month);
+  const year = Number(params.get("year") ?? defaults.year);
+  const scope = params.get("scope") === "state" ? "state" : "hq";
+  const stateId = params.get("stateId") ?? "";
+  const viewParam = params.get("view");
+  const view: SummariesView =
+    viewParam === "weekly" || viewParam === "states" || viewParam === "summary"
+      ? viewParam
+      : "summary";
+
+  return {
+    month: Number.isFinite(month) ? month : defaults.month,
+    year: Number.isFinite(year) ? year : defaults.year,
+    scope,
+    stateId,
+    view,
+  };
+}
+
+function SummariesSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-40 animate-pulse rounded-lg bg-muted" />
+      <div className="h-24 animate-pulse rounded-lg bg-muted" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-36 animate-pulse rounded-lg bg-muted" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SummariesPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [ready, setReady] = useState(false);
-  const [month, setMonth] = useState(() => currentMonthYear().month);
-  const [year, setYear] = useState(() => currentMonthYear().year);
   const [data, setData] = useState<MonthlySummaryListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
+  const user = getStoredUser();
+  const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
+  const isHq = isHqViewer(user);
+  const showStatesTab = isHq && filters.scope === "hq";
+
+  const updateParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) params.set(key, value);
+        else params.delete(key);
+      }
+      router.replace(`/summaries?${params.toString()}`);
+    },
+    [router, searchParams],
+  );
+
   useEffect(() => {
-    if (!getAccessToken() || !getStoredUser()) {
+    if (!getAccessToken() || !user) {
       router.replace("/login");
       return;
     }
     setReady(true);
-  }, [router]);
+  }, [router, user]);
 
   useEffect(() => {
     if (!ready) return;
@@ -59,8 +102,19 @@ export default function SummariesPage() {
     async function load() {
       setLoading(true);
       setError(undefined);
+
+      const scopeOptions =
+        isHq && filters.scope === "state" && filters.stateId
+          ? { scopeType: SummaryScopeType.STATE, scopeId: filters.stateId }
+          : undefined;
+
       try {
-        const response = await api.listMonthlySummaries(token!, month, year);
+        const response = await api.listMonthlySummaries(
+          token!,
+          filters.month,
+          filters.year,
+          scopeOptions,
+        );
         if (!cancelled) setData(response);
       } catch (err) {
         if (!cancelled) {
@@ -79,70 +133,92 @@ export default function SummariesPage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, month, year, router]);
+  }, [ready, filters.month, filters.year, filters.scope, filters.stateId, isHq, router]);
 
-  if (!ready) return null;
-  const user = getStoredUser();
-  if (!user) return null;
+  useEffect(() => {
+    if (!showStatesTab && filters.view === "states") {
+      updateParams({ view: "summary" });
+    }
+  }, [showStatesTab, filters.view, updateParams]);
 
-  const yearOptions = Array.from({ length: 5 }, (_, i) => currentMonthYear().year - i);
+  if (!ready || !user) return null;
+
+  const summary = data?.items[0] ?? null;
+  const periodLabel = formatSummaryPeriod(filters.month, filters.year);
+
+  const handleReset = () => {
+    const defaults = currentMonthYear();
+    updateParams({
+      month: String(defaults.month),
+      year: String(defaults.year),
+      scope: undefined,
+      stateId: undefined,
+      view: undefined,
+    });
+  };
 
   return (
     <DashboardShell user={user} title="Monthly Summaries">
       <div className="space-y-6">
-        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-foreground">Monthly summaries</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Auto-aggregated attendance and finance totals from weekly reports, with a weekly
-            breakdown for your scope.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="summary-month">Month</Label>
-            <NativeSelect
-              id="summary-month"
-              value={String(month)}
-              onChange={(e) => setMonth(Number(e.target.value))}
-            >
-              {MONTH_NAMES.map((name, index) => (
-                <option key={name} value={String(index + 1)}>
-                  {name}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="summary-year">Year</Label>
-            <NativeSelect
-              id="summary-year"
-              value={String(year)}
-              onChange={(e) => setYear(Number(e.target.value))}
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={String(y)}>
-                  {y}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-        </div>
+        <SummariesFilterBar
+          filters={filters}
+          scopeOptions={data?.scopeOptions}
+          showScopeFilter={isHq}
+          showStatesTab={showStatesTab}
+          onPeriodChange={(month, year) => updateParams({ month: String(month), year: String(year) })}
+          onScopeChange={(scope, stateId) => {
+            if (scope === "hq") {
+              updateParams({ scope: undefined, stateId: undefined, view: "summary" });
+              return;
+            }
+            updateParams({
+              scope: "state",
+              stateId,
+              view: filters.view === "states" ? "summary" : filters.view,
+            });
+          }}
+          onViewChange={(view) => updateParams({ view: view === "summary" ? undefined : view })}
+          onReset={handleReset}
+        />
 
         {error && <ErrorText message={error} />}
 
         {loading ? (
-          <div className="h-48 animate-pulse rounded-lg bg-muted" />
-        ) : data && data.items.length === 0 ? (
+          <SummariesSkeleton />
+        ) : !summary ? (
           <p className="rounded-lg border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
-            No monthly summary available for your scope in {MONTH_NAMES[month - 1]} {year}.
+            No monthly summary available for {periodLabel}
+            {filters.scope === "state" && filters.stateId ? " in the selected state" : ""}.
           </p>
         ) : (
-          data?.items.map((summary) => (
-            <MonthlySummaryCard key={summary.id} summary={summary} />
-          ))
+          <>
+            <SummariesPageHeader summary={summary} />
+
+            {filters.view === "summary" && <SummariesSummaryTab summary={summary} />}
+            {filters.view === "states" && showStatesTab && (
+              <SummariesStateTab
+                states={summary.stateBreakdown ?? []}
+                onStateSelect={(stateId) =>
+                  updateParams({
+                    scope: "state",
+                    stateId,
+                    view: undefined,
+                  })
+                }
+              />
+            )}
+            {filters.view === "weekly" && <SummariesWeeklyTab summary={summary} />}
+          </>
         )}
       </div>
     </DashboardShell>
+  );
+}
+
+export default function SummariesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SummariesPageContent />
+    </Suspense>
   );
 }

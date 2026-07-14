@@ -1,5 +1,15 @@
+import { SummaryScopeType } from "@repo/types";
 import { Type } from "class-transformer";
-import { IsInt, Max, Min } from "class-validator";
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+  ValidateIf,
+} from "class-validator";
 
 export class ListMonthlySummariesDto {
   @Type(() => Number)
@@ -13,4 +23,13 @@ export class ListMonthlySummariesDto {
   @Min(2020)
   @Max(2100)
   year!: number;
+
+  @IsOptional()
+  @IsEnum(SummaryScopeType)
+  scopeType?: SummaryScopeType;
+
+  @ValidateIf((dto: ListMonthlySummariesDto) => dto.scopeType === SummaryScopeType.STATE)
+  @IsString()
+  @IsUUID()
+  scopeId?: string;
 }

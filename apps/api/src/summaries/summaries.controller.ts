@@ -31,7 +31,10 @@ export class SummariesController {
     Role.ADMIN,
   )
   listMonthly(@CurrentUser() user: AuthUser, @Query() query: ListMonthlySummariesDto) {
-    return this.summariesService.listMonthlySummaries(user, query.month, query.year);
+    return this.summariesService.listMonthlySummaries(user, query.month, query.year, {
+      scopeType: query.scopeType,
+      scopeId: query.scopeId,
+    });
   }
 
   @Post("monthly/:id/approve")
