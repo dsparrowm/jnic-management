@@ -16,6 +16,18 @@ function parseOrigins(value: string | undefined): string[] {
 
 /** CORS allowlist — comma-separated WEB_ORIGIN or localhost:3000–3002 by default. */
 export function getCorsOrigins(): string | string[] {
+  if (process.env.NODE_ENV === "production") {
+    const raw = process.env.WEB_ORIGIN?.trim();
+    if (!raw) {
+      throw new Error("WEB_ORIGIN is required in production.");
+    }
+    const productionOrigins = parseOrigins(raw);
+    if (productionOrigins.length === 0) {
+      throw new Error("WEB_ORIGIN is required in production.");
+    }
+    return productionOrigins.length === 1 ? productionOrigins[0]! : productionOrigins;
+  }
+
   const origins = parseOrigins(process.env.WEB_ORIGIN);
   return origins.length === 1 ? origins[0]! : origins;
 }

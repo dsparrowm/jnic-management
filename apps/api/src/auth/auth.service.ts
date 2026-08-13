@@ -3,7 +3,8 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { User } from "@repo/database";
 import * as bcrypt from "bcrypt";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
+import { hashToken } from "../common/hash-token";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthResponse, AuthUser, TokenPair } from "../common/auth.types";
 import { toAuthUser } from "../common/user.mapper";
@@ -37,7 +38,7 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const tokenHash = this.hashToken(refreshToken);
+    const tokenHash = hashToken(refreshToken);
     const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       include: { user: true },
@@ -59,7 +60,7 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    const tokenHash = this.hashToken(refreshToken);
+    const tokenHash = hashToken(refreshToken);
     await this.prisma.refreshToken.deleteMany({ where: { tokenHash } });
   }
 
@@ -81,16 +82,12 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         userId: user.id,
-        tokenHash: this.hashToken(refreshToken),
+        tokenHash: hashToken(refreshToken),
         expiresAt: refreshExpiry,
       },
     });
 
     return { accessToken, refreshToken, user: authUser };
-  }
-
-  hashToken(token: string): string {
-    return createHash("sha256").update(token).digest("hex");
   }
 
   private parseExpiry(value: string): Date {

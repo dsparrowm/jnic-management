@@ -3,6 +3,20 @@ import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
+const DEFAULT_SEED_PASSWORD = "ChangeMe123!";
+
+function resolveSeedPassword(envName: string): string {
+  const value = process.env[envName];
+  if (process.env.NODE_ENV === "production") {
+    if (!value || value === DEFAULT_SEED_PASSWORD) {
+      throw new Error(
+        `Refusing to seed in production without ${envName}. Do not use the default password.`,
+      );
+    }
+  }
+  return value ?? DEFAULT_SEED_PASSWORD;
+}
+
 async function ensureUser(
   email: string,
   password: string,
@@ -49,13 +63,13 @@ async function ensureUser(
 
 async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@jnic.org";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
+  const adminPassword = resolveSeedPassword("SEED_ADMIN_PASSWORD");
   const adminName = process.env.SEED_ADMIN_NAME ?? "Platform Admin";
 
   await ensureUser(adminEmail, adminPassword, adminName, Role.ADMIN);
 
   const lpEmail = process.env.SEED_LP_EMAIL ?? "lead@jnic.org";
-  const lpPassword = process.env.SEED_LP_PASSWORD ?? "ChangeMe123!";
+  const lpPassword = resolveSeedPassword("SEED_LP_PASSWORD");
   const lpName = process.env.SEED_LP_NAME ?? "Lead Pastor";
 
   await ensureUser(lpEmail, lpPassword, lpName, Role.LEAD_PASTOR);
@@ -83,7 +97,7 @@ async function main() {
   });
 
   const zonalEmail = process.env.SEED_ZONAL_EMAIL ?? "zonal@jnic.org";
-  const zonalPassword = process.env.SEED_ZONAL_PASSWORD ?? "ChangeMe123!";
+  const zonalPassword = resolveSeedPassword("SEED_ZONAL_PASSWORD");
   const zonalName = process.env.SEED_ZONAL_NAME ?? "Zonal Pastor";
 
   const zonalPastor = await ensureUser(zonalEmail, zonalPassword, zonalName, Role.ZONAL_PASTOR, {
@@ -98,7 +112,7 @@ async function main() {
   });
 
   const branchEmail = process.env.SEED_BRANCH_EMAIL ?? "branch@jnic.org";
-  const branchPassword = process.env.SEED_BRANCH_PASSWORD ?? "ChangeMe123!";
+  const branchPassword = resolveSeedPassword("SEED_BRANCH_PASSWORD");
   const branchName = process.env.SEED_BRANCH_NAME ?? "Branch Pastor";
 
   const branchPastor = await ensureUser(branchEmail, branchPassword, branchName, Role.BRANCH_PASTOR, {
@@ -113,7 +127,7 @@ async function main() {
   });
 
   const stateEmail = process.env.SEED_STATE_EMAIL ?? "state@jnic.org";
-  const statePassword = process.env.SEED_STATE_PASSWORD ?? "ChangeMe123!";
+  const statePassword = resolveSeedPassword("SEED_STATE_PASSWORD");
   const stateName = process.env.SEED_STATE_NAME ?? "State Pastor";
 
   const statePastor = await ensureUser(stateEmail, statePassword, stateName, Role.STATE_PASTOR, {

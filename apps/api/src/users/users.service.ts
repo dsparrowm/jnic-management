@@ -125,6 +125,19 @@ export class UsersService {
       throw new BadRequestException("User is already deactivated");
     }
 
+    if (user.role === Role.ADMIN && user.status === UserStatus.ACTIVE) {
+      const otherActiveAdmins = await this.prisma.user.count({
+        where: {
+          role: Role.ADMIN,
+          status: UserStatus.ACTIVE,
+          id: { not: userId },
+        },
+      });
+      if (otherActiveAdmins === 0) {
+        throw new BadRequestException("Cannot deactivate the last active admin");
+      }
+    }
+
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
 
     const updated = await this.prisma.user.update({
@@ -141,29 +154,27 @@ export class UsersService {
     }
 
     const targetRole = (dto.role ?? user.role) as Role;
-
-    let stateId = dto.stateId === undefined ? user.stateId : dto.stateId;
-    let zoneId = dto.zoneId === undefined ? user.zoneId : dto.zoneId;
-    let branchId = dto.branchId === undefined ? user.branchId : dto.branchId;
-
-    if (ONBOARDABLE_ROLES.includes(targetRole)) {
-      const org = await resolveAndValidateOrgAssignment(this.prisma, targetRole, {
-        stateId,
-        zoneId,
-        branchId,
-      });
-      stateId = org.stateId;
-      zoneId = org.zoneId;
-      branchId = org.branchId;
+    if (!ONBOARDABLE_ROLES.includes(targetRole)) {
+      throw new BadRequestException("Cannot assign Admin or Lead Pastor via reassign");
     }
+
+    const stateId = dto.stateId === undefined ? user.stateId : dto.stateId;
+    const zoneId = dto.zoneId === undefined ? user.zoneId : dto.zoneId;
+    const branchId = dto.branchId === undefined ? user.branchId : dto.branchId;
+
+    const org = await resolveAndValidateOrgAssignment(this.prisma, targetRole, {
+      stateId,
+      zoneId,
+      branchId,
+    });
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         role: targetRole,
-        stateId,
-        zoneId,
-        branchId,
+        stateId: org.stateId,
+        zoneId: org.zoneId,
+        branchId: org.branchId,
       },
     });
     return sanitizeUser(updated);

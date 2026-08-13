@@ -1,9 +1,9 @@
-import { IsEnum, IsOptional, IsString } from "class-validator";
-import { Role } from "@repo/types";
+import { IsIn, IsOptional, IsString } from "class-validator";
+import { ONBOARDABLE_ROLES, Role } from "@repo/types";
 
 export class ReassignUserDto {
   @IsOptional()
-  @IsEnum(Role)
+  @IsIn(ONBOARDABLE_ROLES)
   role?: Role;
 
   @IsOptional()

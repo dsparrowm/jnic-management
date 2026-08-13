@@ -4,9 +4,9 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-**Phase 6 — Monthly aggregation + LP summary approval (in progress)**
+**Phase 7 — Hardening week 1 (in progress)**
 
-Pastor reassign UI shipped. Monthly summaries API + web pages implemented; BullMQ cron deferred.
+Phase 6 monthly summaries remain on-demand (BullMQ cron still deferred). Week 1 production hardening: report visibility, reassign RBAC, fail-closed boot, auth throttle, Helmet/CSP, hashed onboarding tokens, DB health check.
 
 ## Scope Decisions
 
@@ -40,11 +40,11 @@ Pastor reassign UI shipped. Monthly summaries API + web pages implemented; BullM
 | 4 | Weekly reports + attendance + finance | Done |
 | 5 | Hierarchy views + feedback | Done |
 | 6 | Monthly aggregation + LP summary approval | In progress |
-| 7 | Hardening, tests, deploy | Not started |
+| 7 | Hardening, tests, deploy | Week 1 in progress |
 
 ## Current Goal
 
-Phase 6 — Monthly summaries on-demand compute + Lead Pastor national approval UI.
+Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend domain, R2) and Week 3 smoke e2e / UAT.
 
 ## Milestone Status
 
@@ -57,9 +57,19 @@ Phase 6 — Monthly summaries on-demand compute + Lead Pastor national approval 
 | **4 — Weekly Reports** | **Complete** |
 | **5 — Hierarchy + Feedback** | **Complete** |
 | **6 — Monthly Aggregation** | **In progress** |
-| 7 — Hardening | Blocked |
+| **7 — Hardening** | **Week 1 in progress** |
 
 ## Completed
+
+### Phase 7 week 1 hardening (2026-08-13)
+
+- Zone/state report drill-down: dual-scope and hierarchy viewers can open in-scope reports (submitter-only lock limited to `BRANCH_PASTOR`)
+- Reassign DTO/service restricted to `ONBOARDABLE_ROLES`; last active Admin cannot be deactivated
+- Production boot fails closed (JWT secret strength, https `WEB_ORIGIN`/`WEB_APP_URL`, `RESEND_API_KEY`)
+- `@nestjs/throttler` 5/min on login, refresh, logout, onboarding validate/complete; `RolesGuard` is a global `APP_GUARD`
+- Helmet on API; Next.js security headers + CSP; onboarding tokens hashed SHA-256 at rest
+- `GET /health` pings Postgres; seed refuses default passwords when `NODE_ENV=production`
+- `pnpm` typecheck on touched packages
 
 ### Summaries page redesign (2026-07-14)
 
@@ -229,8 +239,9 @@ Phase 6 — Monthly summaries on-demand compute + Lead Pastor national approval 
 
 ## Next Up
 
-1. Phase 6 — BullMQ monthly aggregation cron job
-2. Phase 7 — Hardening, e2e tests, go-live checklist
+1. Phase 7 week 2 — paid API/DB host, Vercel web, Resend domain, R2 env, backups
+2. Phase 7 week 3 — smoke e2e, httpOnly cookies (or documented XSS risk), docs/UAT
+3. Phase 6 — BullMQ monthly aggregation cron (still deferred)
 
 ## Feature Unit Queue (Phase 5)
 

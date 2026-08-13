@@ -71,6 +71,7 @@ jnic_management/
 
 - **`apps/web`** owns routing, page composition, client state, and API client calls
 - **`apps/api`** owns authorization, validation, persistence, and job enqueueing
+- Global guards: `ThrottlerGuard` → `JwtAuthGuard` → `RolesGuard`. Public auth/onboarding endpoints are limited to 5 requests/minute. `GET /health` skips throttle and pings Postgres.
 - **`packages/database`** owns Prisma schema and generated client — sole DB access path
 - **`packages/types`** owns shared enums (`Role`, `ReportStatus`, etc.) used by both apps
 
@@ -78,7 +79,7 @@ jnic_management/
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `auth` | Login, JWT refresh, password set via onboarding token, guards |
+| `auth` | Login, JWT refresh, password set via onboarding token, guards, auth rate limits |
 | `users` | Profile, deactivate, reassign, pastor directory |
 | `onboarding` | Admin creates pending user, token, resend, email job |
 | `org` | States, zones, branches; `OrgChangeRequest` workflow |
@@ -131,6 +132,10 @@ No separate permissions table. Scope derived from user's role + org FKs.
 
 Example: Zonal Pastor queries reports where `branch.zoneId = user.zoneId`.
 
+Dual-scope STATE/ZONAL pastors may open their home-branch report without forward gating, and other reports in their zone/state according to rollup visibility.
+
+`PATCH /users/:id/reassign` may only assign `ONBOARDABLE_ROLES` (not `ADMIN` or `LEAD_PASTOR`). The last active `ADMIN` cannot be deactivated.
+
 ## Background Jobs (BullMQ)
 
 | Job | Trigger |
@@ -164,7 +169,7 @@ Example: Zonal Pastor queries reports where `branch.zoneId = user.zoneId`.
 
 ## State Model
 
-- **Auth** — Access token in memory or httpOnly cookie; refresh flow via API
+- **Auth** — Access + refresh JWTs (Bearer). Refresh and onboarding tokens stored as SHA-256 hashes. Access/refresh still held in web `localStorage` (httpOnly cookies deferred). Rate limiting on public auth/onboarding. Production boot fails closed if JWT secret, `WEB_ORIGIN`, `WEB_APP_URL`, or `RESEND_API_KEY` are missing/weak.
 - **Server state** — TanStack Query hooks in `apps/web/lib/hooks/`
 - **Form state** — React Hook Form + Zod schemas colocated with forms
 - **RBAC (web)** — Mirror API permissions for nav gating; API is source of truth

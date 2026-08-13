@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { Role } from "@repo/types";
 import { Public } from "../common/decorators/public.decorator";
 import { sanitizeOnboardingToken } from "../common/onboarding-token";
@@ -29,12 +30,14 @@ export class OnboardingController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Get("validate/:token")
   validate(@Param("token") token: string) {
     return this.onboardingService.validateToken(sanitizeOnboardingToken(token));
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post("complete")
   complete(@Body() dto: CompleteOnboardingDto) {
     return this.onboardingService.complete(dto);

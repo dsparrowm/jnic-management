@@ -105,12 +105,12 @@ persistence before production deployment.
 
 ### Security
 
-- [ ] RBAC enforced on all API endpoints (not UI-only)
-- [ ] Rate limiting on auth endpoints
-- [ ] Passwords hashed with bcrypt
-- [ ] JWT secrets not committed to repo
+- [x] RBAC enforced on all API endpoints (not UI-only)
+- [x] Rate limiting on auth endpoints
+- [x] Passwords hashed with bcrypt
+- [x] JWT secrets not committed to repo
 - [ ] R2 bucket access restricted to presigned URLs
-- [ ] CORS configured for production web origin only
+- [x] CORS configured for production web origin only
 
 ### Quality
 

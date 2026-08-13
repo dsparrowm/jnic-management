@@ -15,7 +15,6 @@ import {
   Role,
   NotificationType,
   SummaryScopeType,
-  WEEKLY_REPORT_SUBMITTER_ROLES,
   canSubmitWeeklyReports,
   computeWeekOf,
   formatWeekChartLabel,
@@ -37,7 +36,6 @@ import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { toFeedbackView } from "./feedback.mapper";
 import { toWeeklyReportView, weeklyReportInclude } from "./reports.mapper";
 
-const SUBMITTER_ROLES = new Set<Role>(WEEKLY_REPORT_SUBMITTER_ROLES);
 const HQ_VIEW_ROLES = new Set<Role>([Role.LEAD_PASTOR, Role.ADMIN]);
 const FEEDBACK_ROLES = new Set<Role>([
   Role.ZONAL_PASTOR,
@@ -139,11 +137,12 @@ export class ReportsService {
     user: AuthUser,
     report: WeeklyReportWithRelations,
   ): Promise<void> {
-    if (SUBMITTER_ROLES.has(user.role)) {
-      if (report.branchId !== user.branchId) {
-        throw new ForbiddenException("Insufficient permissions");
-      }
+    if (user.branchId && report.branchId === user.branchId) {
       return;
+    }
+
+    if (user.role === Role.BRANCH_PASTOR) {
+      throw new ForbiddenException("Insufficient permissions");
     }
 
     if (user.role === Role.ZONAL_PASTOR) {

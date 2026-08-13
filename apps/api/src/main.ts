@@ -1,12 +1,22 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { assertProductionConfig } from "./common/production-config";
 import { getCorsOrigins } from "./common/web-origin";
 
 async function bootstrap() {
   assertProductionConfig();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.set("trust proxy", 1);
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

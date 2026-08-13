@@ -6,10 +6,11 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { User, UserStatus } from "@repo/database";
-import { ONBOARDABLE_ROLES, Role } from "@repo/types";
+import { ONBOARDABLE_ROLES } from "@repo/types";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 import { AuthService } from "../auth/auth.service";
+import { hashToken } from "../common/hash-token";
 import { sanitizeOnboardingToken } from "../common/onboarding-token";
 import { sanitizeUser } from "../common/user.mapper";
 import { EmailService } from "../email/email.service";
@@ -59,7 +60,7 @@ export class OnboardingService {
         stateId: org.stateId,
         zoneId: org.zoneId,
         branchId: org.branchId,
-        onboardingToken: token,
+        onboardingToken: hashToken(token),
         onboardingTokenExpiry: expiry,
         createdById: adminId,
       },
@@ -83,7 +84,7 @@ export class OnboardingService {
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { onboardingToken: token, onboardingTokenExpiry: expiry },
+      data: { onboardingToken: hashToken(token), onboardingTokenExpiry: expiry },
     });
 
     await this.sendOnboardingEmail(updated, token);
@@ -119,7 +120,15 @@ export class OnboardingService {
 
   private async findByToken(token: string): Promise<User> {
     const normalized = sanitizeOnboardingToken(token);
-    const user = await this.prisma.user.findUnique({ where: { onboardingToken: normalized } });
+    if (!normalized) {
+      throw new NotFoundException("Invalid onboarding link");
+    }
+
+    const hashed = hashToken(normalized);
+    const user =
+      (await this.prisma.user.findUnique({ where: { onboardingToken: hashed } })) ??
+      (await this.prisma.user.findUnique({ where: { onboardingToken: normalized } }));
+
     if (!user || !user.onboardingTokenExpiry) {
       throw new NotFoundException("Invalid onboarding link");
     }

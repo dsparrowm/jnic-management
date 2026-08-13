@@ -1,15 +1,18 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   Post,
   UnauthorizedException,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { Public } from "../common/decorators/public.decorator";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto } from "./dto/auth.dto";
 
+const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
+
+@Throttle(AUTH_THROTTLE)
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
