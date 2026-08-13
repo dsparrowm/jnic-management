@@ -2,17 +2,33 @@ const { execFileSync } = require("node:child_process");
 const path = require("node:path");
 const { PrismaClient } = require("@prisma/client");
 
+const INIT_MIGRATION = "20260710120000_init";
+
+const INIT_ENUMS = [
+  "RollupStatus",
+  "NotificationType",
+  "MonthlySummaryStatus",
+  "SummaryScopeType",
+  "ReportStatus",
+  "OrgChangeStatus",
+  "OrgChangeType",
+  "UserStatus",
+  "Role",
+];
+
 const MIGRATIONS = [
   {
-    name: "20260710120000_init",
+    name: INIT_MIGRATION,
     async isPresent(prisma) {
-      return tableExists(prisma, "User");
+      const tables = await listPublicTables(prisma);
+      return ["User", "State", "Zone", "Branch"].some((name) => tables.includes(name));
     },
   },
   {
     name: "20260710150000_add_refresh_tokens",
     async isPresent(prisma) {
-      return tableExists(prisma, "RefreshToken");
+      const tables = await listPublicTables(prisma);
+      return tables.includes("RefreshToken");
     },
   },
   {
@@ -25,48 +41,64 @@ const MIGRATIONS = [
   {
     name: "20260713120000_add_hierarchy_weekly_rollups",
     async isPresent(prisma) {
-      return tableExists(prisma, "HierarchyWeeklyRollup");
+      const tables = await listPublicTables(prisma);
+      return tables.includes("HierarchyWeeklyRollup");
     },
   },
 ];
 
 const packageRoot = path.join(__dirname, "..");
 
-async function tableExists(prisma, tableName) {
-  const rows = await prisma.$queryRaw`
-    SELECT EXISTS (
-      SELECT 1
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_name = ${tableName}
-    ) AS present
-  `;
-  return Boolean(rows[0]?.present);
+async function listPublicTables(prisma) {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT tablename AS name
+    FROM pg_catalog.pg_tables
+    WHERE schemaname = 'public'
+    ORDER BY tablename
+  `);
+  return rows.map((row) => row.name);
+}
+
+async function listPublicEnums(prisma) {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT t.typname AS name
+    FROM pg_catalog.pg_type t
+    JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public'
+      AND t.typtype = 'e'
+    ORDER BY t.typname
+  `);
+  return rows.map((row) => row.name);
 }
 
 async function enumLabels(prisma, typeName) {
-  const rows = await prisma.$queryRaw`
-    SELECT e.enumlabel AS label
-    FROM pg_enum e
-    JOIN pg_type t ON t.oid = e.enumtypid
-    JOIN pg_namespace n ON n.oid = t.typnamespace
-    WHERE n.nspname = 'public'
-      AND t.typname = ${typeName}
-  `;
+  const rows = await prisma.$queryRawUnsafe(
+    `
+      SELECT e.enumlabel AS label
+      FROM pg_catalog.pg_enum e
+      JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
+      JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+      WHERE n.nspname = 'public'
+        AND t.typname = $1
+    `,
+    typeName,
+  );
   return rows.map((row) => row.label);
 }
 
-async function migrationStatus(prisma, name) {
-  const tableReady = await tableExists(prisma, "_prisma_migrations");
-  if (!tableReady) {
+async function migrationStatus(prisma, name, tables) {
+  if (!tables.includes("_prisma_migrations")) {
     return "missing";
   }
 
-  const rows = await prisma.$queryRaw`
-    SELECT finished_at, rolled_back_at
-    FROM "_prisma_migrations"
-    WHERE migration_name = ${name}
-  `;
+  const rows = await prisma.$queryRawUnsafe(
+    `
+      SELECT finished_at, rolled_back_at
+      FROM "_prisma_migrations"
+      WHERE migration_name = $1
+    `,
+    name,
+  );
   const row = rows[0];
   if (!row) {
     return "missing";
@@ -77,13 +109,35 @@ async function migrationStatus(prisma, name) {
   return "failed";
 }
 
-function markApplied(name) {
-  console.log(`Marking ${name} as applied (objects already exist in the database).`);
-  execFileSync("pnpm", ["exec", "prisma", "migrate", "resolve", "--applied", name], {
+function runPrisma(args) {
+  execFileSync("pnpm", ["exec", "prisma", ...args], {
     cwd: packageRoot,
     stdio: "inherit",
     env: process.env,
   });
+}
+
+function markApplied(name) {
+  console.log(`Marking ${name} as applied (objects already exist).`);
+  runPrisma(["migrate", "resolve", "--applied", name]);
+}
+
+function markRolledBack(name) {
+  console.log(`Marking ${name} as rolled back so it can be applied cleanly.`);
+  runPrisma(["migrate", "resolve", "--rolled-back", name]);
+}
+
+async function dropLeftoverInitEnums(prisma) {
+  const existing = new Set(await listPublicEnums(prisma));
+  const toDrop = INIT_ENUMS.filter((name) => existing.has(name));
+  if (toDrop.length === 0) {
+    return;
+  }
+
+  console.log(`Dropping leftover enum types: ${toDrop.join(", ")}`);
+  for (const name of toDrop) {
+    await prisma.$executeRawUnsafe(`DROP TYPE IF EXISTS "${name}" CASCADE`);
+  }
 }
 
 async function main() {
@@ -93,14 +147,28 @@ async function main() {
 
   const prisma = new PrismaClient();
   try {
-    const hasUserTable = await tableExists(prisma, "User");
-    if (!hasUserTable) {
-      console.log("Empty database — skipping Prisma baseline.");
+    const tables = await listPublicTables(prisma);
+    const enums = await listPublicEnums(prisma);
+    const appTables = tables.filter((name) => name !== "_prisma_migrations");
+
+    console.log(`Public tables: ${tables.join(", ") || "(none)"}`);
+    console.log(`Public enums: ${enums.join(", ") || "(none)"}`);
+
+    const initStatus = await migrationStatus(prisma, INIT_MIGRATION, tables);
+
+    if (initStatus === "failed" && appTables.length === 0) {
+      await dropLeftoverInitEnums(prisma);
+      markRolledBack(INIT_MIGRATION);
+      return;
+    }
+
+    if (appTables.length === 0 && initStatus !== "failed") {
+      console.log("Empty database — nothing to baseline.");
       return;
     }
 
     for (const migration of MIGRATIONS) {
-      const status = await migrationStatus(prisma, migration.name);
+      const status = await migrationStatus(prisma, migration.name, tables);
       if (status === "applied") {
         continue;
       }
