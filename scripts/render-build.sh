@@ -29,7 +29,7 @@ if ! "${PNPM[@]}" --filter @repo/database exec prisma migrate deploy; then
   "${PNPM[@]}" --filter @repo/database exec prisma migrate deploy
 fi
 
-if [ "${RUN_DB_SEED:-false}" = "true" ]; then
+if [ "${RUN_DB_SEED:-false}" = "true" ] || [ -n "${SEED_ADMIN_PASSWORD:-}" ]; then
   echo "Seeding database..."
   "${PNPM[@]}" --filter @repo/database seed
 fi

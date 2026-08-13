@@ -28,6 +28,10 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: SEED_ADMIN_EMAIL
+        value: admin@jnic.org
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
 
 databases:
   - name: jnlop-db

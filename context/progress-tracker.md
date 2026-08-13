@@ -71,6 +71,7 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 - `GET /health` pings Postgres; seed refuses default passwords when `NODE_ENV=production`
 - `pnpm` typecheck on touched packages
 - Render migrate: baseline existing schema into `_prisma_migrations` before `migrate deploy` (fixes P3018 `NotificationType already exists`)
+- Production seed creates only the admin when `SEED_ADMIN_PASSWORD` is set (demo pastors skipped unless `SEED_DEMO_USERS=true`)
 
 ### Summaries page redesign (2026-07-14)
 

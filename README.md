@@ -92,6 +92,9 @@ pnpm dev --filter @repo/web
 
 On Render, set **`DATABASE_URL`** to a **dedicated empty Postgres** for JNLOP. Do not reuse a database from another app (the current failure was `jnic_fteh` already containing investments/KYC/mining tables). Create a new Postgres in the Render dashboard, link it to `jnlop-api`, then redeploy.
 
+On Render, set **`SEED_ADMIN_PASSWORD`** to a strong password (not `ChangeMe123!`) and rebuild.
+That creates `admin@jnic.org` — migrate alone does not create any login accounts.
+
 On Render, set **`WEB_APP_URL`** to the public URL of your **Next.js web app** (not the API URL).
 Pastors open invitation links on this host, e.g. `https://your-app.vercel.app`.
 
