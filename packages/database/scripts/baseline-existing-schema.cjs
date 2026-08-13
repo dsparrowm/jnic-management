@@ -140,6 +140,22 @@ async function dropLeftoverInitEnums(prisma) {
   }
 }
 
+const FOREIGN_TABLES = [
+  "asset_positions",
+  "investments",
+  "kyc_documents",
+  "mining_operations",
+  "payouts",
+  "transactions",
+];
+
+const JNLOP_TABLES = ["User", "State", "Zone", "Branch"];
+
+function isForeignSchema(tables) {
+  return FOREIGN_TABLES.some((name) => tables.includes(name)) &&
+    !JNLOP_TABLES.some((name) => tables.includes(name));
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required to baseline migrations.");
@@ -153,6 +169,18 @@ async function main() {
 
     console.log(`Public tables: ${tables.join(", ") || "(none)"}`);
     console.log(`Public enums: ${enums.join(", ") || "(none)"}`);
+
+    if (isForeignSchema(tables)) {
+      throw new Error(
+        [
+          "DATABASE_URL points at a database that already belongs to another application",
+          `(tables include ${FOREIGN_TABLES.filter((name) => tables.includes(name)).join(", ")}).`,
+          "Do not run JNLOP migrations on it — that would collide with existing types such as NotificationType.",
+          "In the Render dashboard: create a new empty Postgres instance for JNLOP, set this service's DATABASE_URL to that instance, then redeploy.",
+          "After switching, you can delete the leftover `_prisma_migrations` row for 20260710120000_init from the old database if that app does not use Prisma.",
+        ].join(" "),
+      );
+    }
 
     const initStatus = await migrationStatus(prisma, INIT_MIGRATION, tables);
 
