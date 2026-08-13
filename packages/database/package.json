@@ -21,6 +21,8 @@
     "migrate:deploy": "prisma migrate deploy",
     "push": "prisma db push",
     "seed": "prisma db seed",
+    "baseline": "node scripts/baseline-existing-schema.cjs",
+    "baseline": "node scripts/baseline-existing-schema.cjs",
     "check-types": "tsc --noEmit",
     "lint": "echo \"No lint configured for @repo/database\""
   },

@@ -19,8 +19,15 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
+echo "Baselining Prisma history if this database already has schema objects..."
+"${PNPM[@]}" --filter @repo/database exec node scripts/baseline-existing-schema.cjs
+
 echo "Applying database migrations..."
-"${PNPM[@]}" --filter @repo/database exec prisma migrate deploy
+if ! "${PNPM[@]}" --filter @repo/database exec prisma migrate deploy; then
+  echo "migrate deploy failed — retrying after another baseline pass..."
+  "${PNPM[@]}" --filter @repo/database exec node scripts/baseline-existing-schema.cjs
+  "${PNPM[@]}" --filter @repo/database exec prisma migrate deploy
+fi
 
 if [ "${RUN_DB_SEED:-false}" = "true" ]; then
   echo "Seeding database..."

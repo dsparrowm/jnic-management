@@ -74,7 +74,7 @@ packages/
 | Setting | Value |
 | ------- | ----- |
 | Root Directory | `.` (repo root — leave blank) |
-| Build Command | `bash scripts/render-build.sh` (installs, runs `prisma migrate deploy`, builds API) |
+| Build Command | `bash scripts/render-build.sh` (installs, baselines existing schema, `prisma migrate deploy`, builds API) |
 | Start Command | `node apps/api/dist/main.js` |
 | Health Check Path | `/health` |
 
