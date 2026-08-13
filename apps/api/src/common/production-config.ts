@@ -13,20 +13,40 @@ function isWeakSecret(value: string): boolean {
   );
 }
 
-function assertHttpsPublicUrl(value: string, name: string): void {
-  let parsed: URL;
+function parseUrl(value: string, name: string): URL {
   try {
-    parsed = new URL(value);
+    return new URL(value);
   } catch {
     throw new Error(`${name} must be a valid URL.`);
   }
+}
 
+function isLocalHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+/** Public URL pastors open from emails — https only, never localhost. */
+function assertWebAppUrl(value: string): void {
+  const parsed = parseUrl(value, "WEB_APP_URL");
   if (parsed.protocol !== "https:") {
-    throw new Error(`${name} must use https in production.`);
+    throw new Error("WEB_APP_URL must use https in production.");
   }
+  if (isLocalHost(parsed.hostname)) {
+    throw new Error("WEB_APP_URL must not use localhost in production.");
+  }
+}
 
-  if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
-    throw new Error(`${name} must not use localhost in production.`);
+/** CORS allowlist — public hosts must be https; localhost is allowed for local web → hosted API. */
+function assertCorsOrigin(value: string): void {
+  const parsed = parseUrl(value, "WEB_ORIGIN");
+  if (isLocalHost(parsed.hostname)) {
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("WEB_ORIGIN local origin must use http or https.");
+    }
+    return;
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error("WEB_ORIGIN public origins must use https in production.");
   }
 }
 
@@ -52,7 +72,7 @@ export function assertProductionConfig(): void {
   } else {
     for (const origin of webOrigin.split(",").map((item) => item.trim()).filter(Boolean)) {
       try {
-        assertHttpsPublicUrl(origin, "WEB_ORIGIN");
+        assertCorsOrigin(origin);
       } catch (error) {
         errors.push(error instanceof Error ? error.message : "Invalid WEB_ORIGIN.");
       }
@@ -64,7 +84,7 @@ export function assertProductionConfig(): void {
     errors.push("WEB_APP_URL is required.");
   } else {
     try {
-      assertHttpsPublicUrl(webAppUrl, "WEB_APP_URL");
+      assertWebAppUrl(webAppUrl);
     } catch (error) {
       errors.push(error instanceof Error ? error.message : "Invalid WEB_APP_URL.");
     }
