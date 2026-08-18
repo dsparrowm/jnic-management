@@ -1,3 +1,4 @@
+import { join } from "path";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
@@ -17,7 +18,10 @@ import { RolesGuard } from "./common/guards/roles.guard";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [join(__dirname, "..", "..", "..", ".env"), ".env"],
+    }),
     ThrottlerModule.forRoot({
       throttlers: [{ name: "default", ttl: 60_000, limit: 60 }],
     }),
