@@ -2,6 +2,10 @@ const LOCAL_DEV_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:3002",
+  "http://localhost:8081",
+  "http://127.0.0.1:8081",
+  "http://localhost:19006",
+  "http://127.0.0.1:19006",
 ] as const;
 
 function parseOrigins(value: string | undefined): string[] {
@@ -14,7 +18,11 @@ function parseOrigins(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-/** CORS allowlist — comma-separated WEB_ORIGIN or localhost:3000–3002 by default. */
+function uniqueOrigins(origins: string[]): string[] {
+  return [...new Set(origins)];
+}
+
+/** CORS allowlist — comma-separated WEB_ORIGIN or localhost defaults. */
 export function getCorsOrigins(): string | string[] {
   if (process.env.NODE_ENV === "production") {
     const raw = process.env.WEB_ORIGIN?.trim();
@@ -25,10 +33,11 @@ export function getCorsOrigins(): string | string[] {
     if (productionOrigins.length === 0) {
       throw new Error("WEB_ORIGIN is required in production.");
     }
-    return productionOrigins.length === 1 ? productionOrigins[0]! : productionOrigins;
+    const origins = uniqueOrigins([...productionOrigins, ...LOCAL_DEV_ORIGINS]);
+    return origins.length === 1 ? origins[0]! : origins;
   }
 
-  const origins = parseOrigins(process.env.WEB_ORIGIN);
+  const origins = uniqueOrigins([...parseOrigins(process.env.WEB_ORIGIN), ...LOCAL_DEV_ORIGINS]);
   return origins.length === 1 ? origins[0]! : origins;
 }
 

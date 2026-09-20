@@ -134,6 +134,39 @@ Borrow from **Rokswood** for shell and cards; **jubilee-nation** for report form
 
 Mobile-first. Sidebar hidden below `lg`; hamburger opens slide-over drawer with backdrop.
 
+## Mobile HQ Home
+
+The sibling Expo app uses the same semantic navy/gold palette with a native command-center
+composition rather than reproducing web cards:
+
+- Compact identity hero with profile image fallback, greeting, role, and reporting week
+- One high-emphasis weekly health card with report coverage and a contextual action
+- Three compact role-aware KPIs; avoid oversized stat grids and duplicate navigation shortcuts
+- Action queue ordered by operational severity, followed by an accessible six-week attendance trend
+- Recent activity is sourced only from persisted user notifications; provide deliberate loading,
+  error, refresh, and empty states
+- Minimum interactive target is `44px`; charts require a screen-reader summary and layouts must
+  remain usable at 150% text scaling
+
+## Mobile Screen System
+
+All Expo routes extend the Home visual language through shared mobile primitives:
+
+- Navy safe-area hero with icon, title, supporting copy, and optional role/status action
+- Light content sheet that overlaps the hero; white elevated surfaces use semantic status tones
+- Gold-tinted pull-to-refresh, skeleton first loads, icon-led empty states, and inline retry notices
+- Grouped rows, shared month navigation, search controls, and status pills use `44px` targets
+- Native form sheets include a drag handle, close action, safe-area spacing, and guarded dismissal
+- Login sits on navy without a wrapping form card: JNIC logo, JNLOP, on-navy fields, and
+  gold Sign in. Unavailable and not-found use the same tokens without the tab layout
+
+### Android Back contract
+
+- A form sheet or modal handles Back first and confirms before discarding entered data
+- Back on a non-Home root tab returns to Home
+- Back on Home, Login, or the unavailable screen is left to Android’s normal exit/minimize behavior
+- Submitting forms cannot be dismissed through hardware Back
+
 ## shadcn/ui
 
 Primitives in `components/ui/*` — do not modify generated files. Map JNIC tokens to shadcn

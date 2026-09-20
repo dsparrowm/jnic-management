@@ -18,6 +18,7 @@
     "db:studio": "pnpm --filter @repo/database studio"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
     "prettier": "^3.5.3",
     "turbo": "^2.5.4",
     "typescript": "^5.8.2"

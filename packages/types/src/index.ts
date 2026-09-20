@@ -1,11 +1,5 @@
-/** Platform roles — single source of truth for web and API */
-export enum Role {
-  LEAD_PASTOR = "LEAD_PASTOR",
-  ADMIN = "ADMIN",
-  STATE_PASTOR = "STATE_PASTOR",
-  ZONAL_PASTOR = "ZONAL_PASTOR",
-  BRANCH_PASTOR = "BRANCH_PASTOR",
-}
+export { Role } from "./role";
+import { Role } from "./role";
 
 /** Roles assignable via admin pastor onboarding (excludes ADMIN and LEAD_PASTOR) */
 export const ONBOARDABLE_ROLES: Role[] = [
@@ -98,3 +92,11 @@ export {
 export type { OrgAssignmentInput, ResolvedOrgAssignment } from "./org-assignment";
 export { NIGERIAN_STATES } from "./nigerian-states";
 export type { NigerianStateName } from "./nigerian-states";
+export type {
+  HqDashboardResponse,
+  HqHomeAttendancePoint,
+  HqHomeNotification,
+  HqHomeTask,
+  HqHomeTaskKind,
+  HqHomeTaskSeverity,
+} from "./mobile-home";

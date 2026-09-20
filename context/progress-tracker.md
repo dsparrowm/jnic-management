@@ -8,6 +8,20 @@ Update this file whenever the current phase, active feature, or implementation s
 
 Phase 6 monthly summaries remain on-demand (BullMQ cron still deferred). Week 1 production hardening: report visibility, reassign RBAC, fail-closed boot, auth throttle, Helmet/CSP, hashed onboarding tokens, DB health check.
 
+## Mobile (post-MVP track)
+
+Sibling Expo app at `/home/davies/jnic-mobile` — Admin / Lead Pastor HQ workflows on iOS + Android. Reuses NestJS Bearer JWT API; not part of Phases 0–7 completion criteria.
+
+| Milestone | Status |
+| --------- | ------ |
+| M0 — Scaffold, SecureStore auth, EAS/dev-client, role gate | Done |
+| M1 — Pastors (onboard / reassign / deactivate) | Done |
+| M2 — Org tree + create | Done |
+| M3 — LP summary approvals + summaries browser | Done |
+| M4 — Polish + EAS ship docs | Done (docs); Expo Go is primary device test path; EAS native build optional |
+
+Testing: physical device via **Expo Go** + `npm run start:tunnel` (WSL); EAS Simulator deferred (waitlist). Fixed Metro circular import (`org-assignment` → `index` → `Role`) by extracting `Role` to `packages/types/src/role.ts`. Native UI pass: immersive navy auth, grouped lists, custom home/profile heroes, shared mobile primitives (not web-card chrome).
+
 ## Scope Decisions
 
 | Decision | Value |
@@ -60,6 +74,40 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 | **7 — Hardening** | **Week 1 in progress** |
 
 ## Completed
+
+### Premium mobile screen rollout + Android navigation (2026-09-20)
+
+- Extended the Home command-center language across Pastors, Organisation, Approvals,
+  Summaries, Profile, Login, unavailable, and not-found routes
+- Added shared premium hero/surface/state/search/month/status/sheet primitives and semantic
+  pressed, focus, accessibility, loading, error, and empty behavior
+- Android hardware Back now closes guarded form sheets first, returns non-Home root tabs to Home,
+  and retains normal platform exit behavior on Home
+- Onboarding, reassignment, and organisation-create sheets block dismissal while submitting and
+  confirm before discarding entered data
+- Validation: mobile TypeScript, IDE diagnostics, Admin route visual smoke, modal close behavior,
+  and 150% browser scaling
+
+### Premium mobile HQ home (2026-09-20)
+
+- Added shared `HqDashboardResponse` contract and RBAC-protected `GET /dashboard/hq`
+  aggregate for Admin / Lead Pastor
+- Preserved forward-gated reporting coverage and non-forward-gated national attendance trends
+- Rebuilt Expo home as a role-aware operations command center with weekly health, compact KPIs,
+  priority actions, six-week trend, and persisted notification activity
+- Added first-load skeleton, retry, last-good refresh handling, pull-to-refresh, accessible chart
+  summary, 44px targets, profile-image avatar fallback, and focused API tests
+- Validation: mobile TypeScript, API typecheck/build/tests, and 360×640 Expo web visual smoke
+
+### Mobile M0–M3 scaffold (sibling `jnic-mobile`)
+
+- Expo Router app with SecureStore JWT session, refresh client, JNIC tokens
+- Role gate: ADMIN / LEAD_PASTOR full tabs; other roles → web-only screen
+- Pastors: list/search/status filters, onboard, resend, reassign, deactivate
+- Org: hierarchy tree + create state/zone/branch
+- Approvals (LP): pending national monthly approve; Summaries month browser (HQ)
+- EAS `development` profile + README; **Expo Go + tunnel** is the primary physical-device path from WSL (no Android Studio)
+- Types via Metro watch on `jnic-management/packages/types/src` (no enum duplication)
 
 ### Phase 7 week 1 hardening (2026-08-13)
 

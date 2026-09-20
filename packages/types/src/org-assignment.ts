@@ -1,4 +1,4 @@
-import { Role } from "./index";
+import { Role } from "./role";
 
 export type OrgAssignmentInput = {
   stateId?: string | null;

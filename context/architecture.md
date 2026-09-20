@@ -88,6 +88,7 @@ jnic_management/
 | `summaries` | Monthly aggregation reads + HQ approval workflow |
 | `notifications` | In-app list + email dispatch via queue |
 | `files` | R2 presigned URLs for profile pictures |
+| `dashboard` | Consolidated, role-aware HQ home data for the mobile command center |
 
 ## Core Data Model
 
@@ -125,6 +126,9 @@ jnic_management/
 - `GET /reports/national/analytics?weekOf=&weeks=` — `ADMIN` and `LEAD_PASTOR` only
 - Aggregates **all branch weekly reports** nationally (attendance + finance), regardless of zone/state forward status
 - National summary list views (`/reports/national/summary`) remain forward-gated; charts use broader data for operational visibility
+- `GET /dashboard/hq?weekOf=&weeks=` — consolidated mobile-friendly HQ home response
+- Composes org, users, reports, summaries, and user-scoped notifications; pastor counts remain Admin-only while national approval counts remain Lead Pastor-only
+- Compliance coverage preserves forward-gated national summary semantics; attendance trend preserves non-forward-gated analytics semantics
 
 ### Visibility Rule
 

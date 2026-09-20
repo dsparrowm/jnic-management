@@ -8,6 +8,7 @@
     "start": "node dist/main",
     "lint": "echo \"No lint configured for @repo/api\"",
     "check-types": "tsc --noEmit",
+    "test": "tsx --test src/**/*.spec.ts",
     "test:email": "tsx scripts/test-onboarding-email.ts"
   },
   "dependencies": {

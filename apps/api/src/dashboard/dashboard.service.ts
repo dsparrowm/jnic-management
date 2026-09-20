@@ -1,0 +1,141 @@
+import { Injectable } from "@nestjs/common";
+import {
+  NotificationType,
+  Role,
+  formatWeekEndingLabel,
+  type HqDashboardResponse,
+  type HqHomeTask,
+} from "@repo/types";
+import type { AuthUser } from "../common/auth.types";
+import { NotificationsService } from "../notifications/notifications.service";
+import { OrgService } from "../org/org.service";
+import { ReportsService } from "../reports/reports.service";
+import { SummariesService } from "../summaries/summaries.service";
+import { UsersService } from "../users/users.service";
+
+@Injectable()
+export class DashboardService {
+  constructor(
+    private readonly orgService: OrgService,
+    private readonly usersService: UsersService,
+    private readonly reportsService: ReportsService,
+    private readonly summariesService: SummariesService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+
+  async getHqDashboard(
+    user: AuthUser,
+    weekOf: string,
+    weeks = 6,
+  ): Promise<HqDashboardResponse> {
+    const isAdmin = user.role === Role.ADMIN;
+    const isLeadPastor = user.role === Role.LEAD_PASTOR;
+
+    const [tree, national, analytics, notifications, pastors, approvals] =
+      await Promise.all([
+        this.orgService.getTree(),
+        this.reportsService.getNationalSummary(user, weekOf),
+        this.reportsService.getNationalAnalytics(user, weekOf, weeks),
+        this.notificationsService.listForUser(user.id, 4),
+        isAdmin ? this.usersService.listPastors({ perPage: 1 }) : Promise.resolve(null),
+        isLeadPastor
+          ? this.summariesService.listPendingApprovals(user)
+          : Promise.resolve({ items: [] }),
+      ]);
+
+    const zones = tree.reduce((count, state) => count + state.zones.length, 0);
+    const branches = tree.reduce(
+      (count, state) =>
+        count +
+        state.zones.reduce(
+          (zoneCount, zone) => zoneCount + zone.branches.length,
+          0,
+        ),
+      0,
+    );
+
+    const attendance = national.totals.attendance;
+    const finance = national.totals.finance;
+    const pendingSummaryApprovals = approvals.items.length;
+    const tasks: HqHomeTask[] = [];
+
+    if (isAdmin && pastors && pastors.summary.pending > 0) {
+      tasks.push({
+        kind: "PENDING_ONBOARDING",
+        title: "Complete pastor onboarding",
+        description: "Invited pastors are still waiting to activate their accounts.",
+        count: pastors.summary.pending,
+        severity: "INFO",
+      });
+    }
+
+    if (national.summary.missed > 0) {
+      tasks.push({
+        kind: "MISSED_REPORTS",
+        title: "Review missed reports",
+        description: "Branches missed the current HQ-visible reporting window.",
+        count: national.summary.missed,
+        severity: "URGENT",
+      });
+    }
+
+    if (isLeadPastor && pendingSummaryApprovals > 0) {
+      tasks.push({
+        kind: "PENDING_SUMMARY_APPROVALS",
+        title: "Approve monthly summaries",
+        description: "National summaries are ready for your sign-off.",
+        count: pendingSummaryApprovals,
+        severity: "WARNING",
+      });
+    }
+
+    return {
+      generatedAt: new Date().toISOString(),
+      role: user.role as Role.ADMIN | Role.LEAD_PASTOR,
+      weekOf,
+      weekLabel: formatWeekEndingLabel(weekOf),
+      org: {
+        states: tree.length,
+        zones,
+        branches,
+      },
+      ...(pastors
+        ? {
+            pastors: {
+              active: pastors.summary.active,
+              pending: pastors.summary.pending,
+              deactivated: pastors.summary.deactivated,
+            },
+          }
+        : {}),
+      weeklyReporting: {
+        ...national.summary,
+        attendance: {
+          ...attendance,
+          total:
+            attendance.adultCount +
+            attendance.teenageCount +
+            attendance.childrenCount,
+        },
+        finance: {
+          ...finance,
+          total: finance.tithe + finance.offering + finance.other,
+        },
+      },
+      pendingSummaryApprovals,
+      attendanceTrend: analytics.attendanceTrend.map((point) => ({
+        weekOf: point.weekOf,
+        weekLabel: point.weekLabel,
+        total: point.byState.reduce((sum, state) => sum + state.total, 0),
+      })),
+      tasks,
+      recentActivity: {
+        unreadCount: notifications.unreadCount,
+        items: notifications.items.map((item) => ({
+          ...item,
+          type: item.type as NotificationType,
+        })),
+      },
+    };
+  }
+}
