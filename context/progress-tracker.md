@@ -96,6 +96,13 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ## Completed
 
+### Admin report drill-down (2026-09-22)
+
+- National reports list every state, zone, and branch, including ones that have not forwarded
+- Admin and Lead Pastor can open a submitted branch report before the rollup is forwarded
+- State pastors still see branch rows only after the zone forwards
+- National attendance and finance totals still count forwarded rollups only
+
 ### HQ home branch coverage (2026-09-22)
 
 - Admin home report count includes every branch, including new branches and branches with no zone

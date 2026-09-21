@@ -71,7 +71,7 @@ Progression is triggered by **explicit forward actions** at zone and state level
 | ------ | ------------------------ |
 | Zonal Pastor | Branch submits (always in their zone) |
 | State Pastor | Zone has **forwarded** for that week |
-| Lead Pastor / Admin | State has **forwarded** for that week |
+| Lead Pastor / Admin | Any branch. National reports list every state, zone, and branch, including ones that have not forwarded. Attendance and finance totals still count only forwarded rollups. |
 
 Missed branches are flagged in bundles. Zone/State can forward anytime after reviewing.
 Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards to push updates upward.
@@ -96,7 +96,7 @@ Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards t
 | **POST** | **`/reports/zone/:weekOf/forward`** | **Zonal Pastor** | **Forward zone bundle to state** |
 | GET | `/reports/state/summary` | State Pastor+ | State aggregates (gated by zone forward) |
 | **POST** | **`/reports/state/:weekOf/forward`** | **State Pastor** | **Forward state bundle to HQ** |
-| GET | `/reports/national/summary` | Lead Pastor, Admin | National aggregates (gated by state forward) |
+| GET | `/reports/national/summary` | Lead Pastor, Admin | Full state/zone/branch tree, including unforwarded. Totals stay on forwarded rollups. |
 | POST | `/reports/:id/feedback` | Zonal+, State+, LP, Admin | Add feedback |
 | GET | `/reports/:id/feedback` | Scoped | List feedback thread |
 | GET | `/summaries/monthly` | Scoped | Monthly summaries |

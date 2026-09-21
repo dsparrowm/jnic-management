@@ -9,6 +9,7 @@ interface ZoneReportsSectionProps {
   branches: ZoneReportBranchRow[];
   summary: { submitted: number; missed: number; pending: number; total: number };
   forwarded?: boolean;
+  revealBranches?: boolean;
   rollup?: { status: "IN_REVIEW" | "FORWARDED" | "STALE"; version: number; forwardedAt: string | null };
   onViewReport: (reportId: string) => void;
 }
@@ -18,9 +19,11 @@ export function ZoneReportsSection({
   branches,
   summary,
   forwarded = true,
+  revealBranches = false,
   rollup,
   onViewReport,
 }: ZoneReportsSectionProps) {
+  const showBranches = forwarded || revealBranches;
   return (
     <section className="rounded-lg border border-border bg-card shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -29,7 +32,7 @@ export function ZoneReportsSection({
             <h2 className="text-sm font-semibold text-foreground">{zoneName}</h2>
             {rollup && <RollupStatusBadge rollup={rollup} />}
           </div>
-          {forwarded ? (
+          {showBranches ? (
             <p className="mt-1 text-xs text-muted-foreground">
               {summary.submitted} submitted · {summary.pending} pending · {summary.missed} missed
             </p>
@@ -41,7 +44,7 @@ export function ZoneReportsSection({
           )}
         </div>
       </div>
-      {forwarded ? (
+      {showBranches ? (
         <ZoneReportsTable branches={branches} onViewReport={onViewReport} />
       ) : (
         <p className="px-5 py-8 text-center text-sm text-muted-foreground">

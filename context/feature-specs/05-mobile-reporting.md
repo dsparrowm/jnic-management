@@ -29,7 +29,7 @@ those routes.
 ## Product rules
 
 - Submitters: `canSubmitWeeklyReports(role, branchId)`
-- Reviewers: zonal sees own zone on submit; state sees forwarded zones; Admin/LP see forwarded states
+- Reviewers: zonal sees own zone on submit; state sees forwarded zones; Admin/LP can open every state, zone, and branch, including ones that have not forwarded
 - Forward is explicit: `POST /reports/zone/:weekOf/forward`, `POST /reports/state/:weekOf/forward`
 - Edit lock: PATCH only while `editable` (before `ZONE_REVIEWED`)
 - Feedback does not block progression
@@ -46,7 +46,9 @@ those routes.
 | `/library` | Pastor — upcoming HQ sermons/books |
 | `/profile` | Assignment + session |
 | Approve / Summaries | Lead Pastor monthly (unchanged, retitled Summaries) |
-| Pastors / Org | Admin (unchanged) |
+| `/pastors` | Admin pastor directory |
+| `/pastors/[id]` | Admin pastor detail: contact, assignment, resend, reassign, deactivate |
+| Org | Admin (unchanged) |
 
 ## API
 

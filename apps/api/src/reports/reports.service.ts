@@ -173,29 +173,6 @@ export class ReportsService {
     }
 
     if (HQ_VIEW_ROLES.has(user.role)) {
-      const stateRollup = await this.getRollup(
-        SummaryScopeType.STATE,
-        report.branch.stateId,
-        report.weekOf,
-      );
-      if (!isRollupVisibleToUpstream(stateRollup)) {
-        throw new ForbiddenException(
-          "Report is not yet available — state has not forwarded",
-        );
-      }
-      if (!report.branch.zoneId) {
-        return;
-      }
-      const zoneRollup = await this.getRollup(
-        SummaryScopeType.ZONE,
-        report.branch.zoneId,
-        report.weekOf,
-      );
-      if (!isRollupVisibleToUpstream(zoneRollup)) {
-        throw new ForbiddenException(
-          "Branch report is not yet available — zone has not forwarded",
-        );
-      }
       return;
     }
 
@@ -1062,70 +1039,73 @@ export class ReportsService {
     const stateRollupById = new Map(stateRollups.map((rollup) => [rollup.scopeId, rollup]));
     const zoneRollupById = new Map(zoneRollups.map((rollup) => [rollup.scopeId, rollup]));
 
-    const stateSummaries = states
-      .filter((state) => isRollupVisibleToUpstream(stateRollupById.get(state.id) ?? null))
-      .map((state) => {
-        const stateReports = reports.filter(
-          (report) => report.branch.stateId === state.id,
-        );
+    const stateSummaries = states.map((state) => {
+      const stateReports = reports.filter(
+        (report) => report.branch.stateId === state.id,
+      );
+      const stateRollup = stateRollupById.get(state.id) ?? null;
 
-        const zones = state.zones
-          .filter((zone) => isRollupVisibleToUpstream(zoneRollupById.get(zone.id) ?? null))
-          .map((zone) => {
-            const zoneReports = stateReports.filter((report) => report.branch.zoneId === zone.id);
-            const branches = this.buildBranchRows(zone.branches, zoneReports, weekOf);
-
-            return {
-              zone: { id: zone.id, name: zone.name },
-              rollup: toRollupView(zoneRollupById.get(zone.id) ?? null),
-              forwarded: true,
-              totals: {
-                attendance: this.sumAttendance(zoneReports),
-                finance: this.sumFinance(zoneReports),
-              },
-              branches,
-              summary: this.countSummary(branches),
-            };
-          });
-
-        const unzoned = state.branches.filter((branch) => !branch.zoneId);
-        if (unzoned.length > 0) {
-          const unzonedReports = stateReports.filter((report) => !report.branch.zoneId);
-          const unzonedRows = this.buildBranchRows(unzoned, unzonedReports, weekOf);
-          zones.push({
-            zone: { id: `unzoned:${state.id}`, name: "No zone" },
-            rollup: toRollupView(null),
-            forwarded: true,
-            totals: {
-              attendance: this.sumAttendance(unzonedReports),
-              finance: this.sumFinance(unzonedReports),
-            },
-            branches: unzonedRows,
-            summary: this.countSummary(unzonedRows),
-          });
-        }
-
-        const allBranches = zones.flatMap((zone) => zone.branches);
-        const visibleReports = stateReports.filter((report) => {
-          if (!report.branch.zoneId) return true;
-          return isRollupVisibleToUpstream(zoneRollupById.get(report.branch.zoneId) ?? null);
-        });
+      const zones = state.zones.map((zone) => {
+        const zoneRollup = zoneRollupById.get(zone.id) ?? null;
+        const zoneReports = stateReports.filter((report) => report.branch.zoneId === zone.id);
+        const branches = this.buildBranchRows(zone.branches, zoneReports, weekOf);
 
         return {
-          state: { id: state.id, name: state.name },
-          rollup: toRollupView(stateRollupById.get(state.id) ?? null),
+          zone: { id: zone.id, name: zone.name },
+          rollup: toRollupView(zoneRollup),
+          forwarded: isRollupVisibleToUpstream(zoneRollup),
           totals: {
-            attendance: this.sumAttendance(visibleReports),
-            finance: this.sumFinance(visibleReports),
+            attendance: this.sumAttendance(zoneReports),
+            finance: this.sumFinance(zoneReports),
           },
-          zones,
-          summary: this.countSummary(allBranches),
+          branches,
+          summary: this.countSummary(branches),
         };
       });
 
-    const allBranches = stateSummaries.flatMap((state) =>
-      state.zones.flatMap((zone) => zone.branches),
-    );
+      const unzoned = state.branches.filter((branch) => !branch.zoneId);
+      if (unzoned.length > 0) {
+        const unzonedReports = stateReports.filter((report) => !report.branch.zoneId);
+        const unzonedRows = this.buildBranchRows(unzoned, unzonedReports, weekOf);
+        zones.push({
+          zone: { id: `unzoned:${state.id}`, name: "No zone" },
+          rollup: toRollupView(null),
+          forwarded: true,
+          totals: {
+            attendance: this.sumAttendance(unzonedReports),
+            finance: this.sumFinance(unzonedReports),
+          },
+          branches: unzonedRows,
+          summary: this.countSummary(unzonedRows),
+        });
+      }
+
+      const treeBranches = zones.flatMap((zone) => zone.branches);
+      const visibleReports = isRollupVisibleToUpstream(stateRollup)
+        ? stateReports.filter((report) => {
+            if (!report.branch.zoneId) return true;
+            return isRollupVisibleToUpstream(zoneRollupById.get(report.branch.zoneId) ?? null);
+          })
+        : [];
+
+      return {
+        state: { id: state.id, name: state.name },
+        rollup: toRollupView(stateRollup),
+        totals: {
+          attendance: this.sumAttendance(visibleReports),
+          finance: this.sumFinance(visibleReports),
+        },
+        zones,
+        summary: this.countSummary(treeBranches),
+      };
+    });
+
+    const forwardedBranches = stateSummaries.flatMap((state) => {
+      if (state.rollup.status !== "FORWARDED") return [];
+      return state.zones
+        .filter((zone) => zone.forwarded)
+        .flatMap((zone) => zone.branches);
+    });
     const coverageRows = states.flatMap((state) => {
       const branches = [
         ...state.zones.flatMap((zone) => zone.branches),
@@ -1149,7 +1129,7 @@ export class ReportsService {
         finance: this.sumFinance(visibleReports),
       },
       states: stateSummaries,
-      summary: this.countSummary(allBranches),
+      summary: this.countSummary(forwardedBranches),
       coverage: this.countSummary(coverageRows),
     };
   }

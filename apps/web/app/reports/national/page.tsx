@@ -128,10 +128,10 @@ export default function NationalReportsPage() {
         {data && (
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <SummaryStat label="Branches" value={data.summary.total} icon={CheckCircle2} />
-              <SummaryStat label="Submitted" value={data.summary.submitted} icon={CheckCircle2} tone="success" />
-              <SummaryStat label="Pending" value={data.summary.pending} icon={Clock} tone="warning" />
-              <SummaryStat label="Missed" value={data.summary.missed} icon={AlertTriangle} tone="destructive" />
+              <SummaryStat label="Branches" value={(data.coverage ?? data.summary).total} icon={CheckCircle2} />
+              <SummaryStat label="Submitted" value={(data.coverage ?? data.summary).submitted} icon={CheckCircle2} tone="success" />
+              <SummaryStat label="Pending" value={(data.coverage ?? data.summary).pending} icon={Clock} tone="warning" />
+              <SummaryStat label="Missed" value={(data.coverage ?? data.summary).missed} icon={AlertTriangle} tone="destructive" />
             </div>
 
             {data.summary.submitted > 0 && (
@@ -146,8 +146,7 @@ export default function NationalReportsPage() {
               <p className="text-sm text-muted-foreground">Loading national reports…</p>
             ) : data.states.length === 0 ? (
               <p className="rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-                State reports appear here after state pastors forward the week.
-                Coverage gaps stay with the state until then.
+                States, zones, and branches appear here once they are created.
               </p>
             ) : (
               <div className="space-y-8">
@@ -172,6 +171,7 @@ export default function NationalReportsPage() {
                         branches={zone.branches}
                         summary={zone.summary}
                         forwarded={zone.forwarded}
+                        revealBranches
                         rollup={zone.rollup}
                         onViewReport={(id) => void handleViewReport(id)}
                       />
