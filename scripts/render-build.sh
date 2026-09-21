@@ -14,6 +14,11 @@ fi
 echo "Building native dependencies (bcrypt, Prisma)..."
 "${PNPM[@]}" rebuild bcrypt @prisma/client
 
+# Schema changes do not bump the Prisma package, so a cached install can keep
+# the previous client (for example zoneId_name after stateId_name landed).
+echo "Generating Prisma client from the current schema..."
+"${PNPM[@]}" --filter @repo/database exec prisma generate
+
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "ERROR: DATABASE_URL must be set to run migrations on deploy."
   exit 1
