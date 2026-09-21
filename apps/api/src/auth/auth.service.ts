@@ -74,7 +74,10 @@ export class AuthService {
       { sub: user.id, email: user.email, role: user.role },
       {
         secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
-        expiresIn: this.config.get("JWT_ACCESS_EXPIRY", "1h") as `${number}m`,
+        expiresIn: this.config.get(
+          "JWT_ACCESS_EXPIRY",
+          "1h",
+        ) as `${number}${"s" | "m" | "h" | "d"}`,
       },
     );
 
