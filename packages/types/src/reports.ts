@@ -162,3 +162,15 @@ export function canLeaveFeedback(role: Role): boolean {
     role === Role.ADMIN
   );
 }
+
+export function canReplyToFeedback(
+  userId: string,
+  feedback: FeedbackRecord,
+): boolean {
+  return feedback.toUser.id === userId;
+}
+
+export type CreateFeedbackInput = {
+  message: string;
+  replyToId?: string;
+};

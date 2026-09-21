@@ -89,6 +89,7 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 | -------- | ------ |
 | Pastor Home → branch overview dashboard (trends + month snapshot; report nudge only) | Done — `GET /dashboard/pastor` + mobile overview Home |
 | Zonal pastor Home → zone overview (nudge, KPIs, exceptions, trend, month snapshot) | Done — `zoneAttendanceTrend` + `zoneMonth` on dashboard API; mobile `ZoneActionNudge` / `ZoneHomeMetrics` |
+| Feedback replies on report threads | Done — `POST /reports/:id/feedback` accepts `replyToId`; branch pastors can reply when addressed |
 
 ## Completed
 

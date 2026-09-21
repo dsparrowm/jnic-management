@@ -125,7 +125,7 @@ export class ReportsController {
 
   @Post(":reportId/feedback")
   @UseGuards(RolesGuard)
-  @Roles(...FEEDBACK_LEAVE_ROLES)
+  @Roles(...FEEDBACK_VIEW_ROLES)
   createFeedback(
     @CurrentUser() user: AuthUser,
     @Param("reportId") reportId: string,

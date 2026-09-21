@@ -43,6 +43,7 @@ interface WeeklyReportDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loading?: boolean;
+  currentUserId?: string;
   canLeaveFeedback?: boolean;
 }
 
@@ -51,6 +52,7 @@ export function WeeklyReportDetailSheet({
   open,
   onOpenChange,
   loading,
+  currentUserId,
   canLeaveFeedback = false,
 }: WeeklyReportDetailSheetProps) {
   return (
@@ -111,7 +113,11 @@ export function WeeklyReportDetailSheet({
               </dl>
             </section>
 
-            <FeedbackThread reportId={report.id} canLeaveFeedback={canLeaveFeedback} />
+            <FeedbackThread
+              reportId={report.id}
+              currentUserId={currentUserId}
+              canLeaveFeedback={canLeaveFeedback}
+            />
           </div>
         )}
       </SheetContent>

@@ -105,7 +105,14 @@ export type {
   PastorHomeWeekReport,
   PastorHomeWeekSnapshot,
 } from "./mobile-home";
+export {
+  canLeaveFeedback,
+  canReplyToFeedback,
+} from "./reports";
 export type {
+  CreateFeedbackInput,
+  FeedbackListResponse,
+  FeedbackRecord,
   StateSummaryResponse,
   WeeklyReportAttendance,
   WeeklyReportFinance,

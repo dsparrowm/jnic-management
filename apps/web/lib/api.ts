@@ -722,10 +722,15 @@ export const api = {
   listReportFeedback: (token: string, reportId: string) =>
     request<FeedbackListResponse>(`/reports/${reportId}/feedback`, {}, token),
 
-  createReportFeedback: (token: string, reportId: string, message: string) =>
+  createReportFeedback: (
+    token: string,
+    reportId: string,
+    message: string,
+    replyToId?: string,
+  ) =>
     request<FeedbackRecord>(`/reports/${reportId}/feedback`, {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, ...(replyToId ? { replyToId } : {}) }),
     }, token),
 
   listNotifications: (token: string) =>

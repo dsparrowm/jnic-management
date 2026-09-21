@@ -23,8 +23,7 @@ import {
 } from "@/lib/auth";
 
 function defaultServiceDateForWeek(weekOf: string): string {
-  const today = getTodayInLagos();
-  return computeWeekOf(today) === weekOf ? today : weekOf;
+  return weekOf;
 }
 
 export default function SubmitWeeklyReportPage() {
@@ -91,6 +90,9 @@ export default function SubmitWeeklyReportPage() {
           stateId: me.stateId,
           zoneId: me.zoneId,
           branchId: me.branchId,
+          stateName: me.stateName,
+          zoneName: me.zoneName,
+          branchName: me.branchName,
           profilePicUrl: me.profilePicUrl,
         };
         updateStoredUser(user);
@@ -253,6 +255,7 @@ export default function SubmitWeeklyReportPage() {
                     key={weekOf}
                     existingReport={existingReport}
                     defaultServiceDate={defaultServiceDate}
+                    branchName={sessionUser.branchName ?? existingReport?.branch.name}
                     loading={loading}
                     error={submitError}
                     onSubmit={handleSubmit}
@@ -261,7 +264,11 @@ export default function SubmitWeeklyReportPage() {
 
                 {existingReport && (
                   <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <FeedbackThread reportId={existingReport.id} canLeaveFeedback={false} />
+                    <FeedbackThread
+                      reportId={existingReport.id}
+                      currentUserId={sessionUser.id}
+                      canLeaveFeedback={false}
+                    />
                   </div>
                 )}
               </>

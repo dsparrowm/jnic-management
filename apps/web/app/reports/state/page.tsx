@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
+import { ExceptionBanner } from "@/components/reports/exception-banner";
 import { api, ApiError, StateSummaryResponse, WeeklyReportRecord } from "@/lib/api";
 import { getAccessToken, getStoredUser, isStatePastor, canLeaveFeedback } from "@/lib/auth";
 
@@ -142,12 +143,33 @@ export default function StateReportsPage() {
         {error && <ErrorText message={error} />}
 
         {data && (
+          <ExceptionBanner
+            branches={data.zones.flatMap((zone) => zone.branches)}
+            onViewReport={(id) => void handleViewReport(id)}
+          />
+        )}
+
+        {data && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm font-medium text-foreground">State report status</p>
               <RollupStatusBadge rollup={data.rollup} />
             </div>
-            <Button onClick={() => void handleForward()} disabled={forwarding}>
+            <Button
+              onClick={() => {
+                const waiting = data.zones
+                  .flatMap((zone) => zone.branches)
+                  .filter((row) => row.missed || row.submissionState !== "SUBMITTED");
+                const names = waiting.map((row) => row.branch.name).slice(0, 4).join(", ");
+                const coverage =
+                  waiting.length > 0
+                    ? `${waiting.length} still waiting${names ? ` (${names}${waiting.length > 4 ? "…" : ""})` : ""}. Forward anyway?`
+                    : "All in-scope reports are in. Forward to HQ?";
+                if (!window.confirm(coverage)) return;
+                void handleForward();
+              }}
+              disabled={forwarding}
+            >
               <Send className="mr-2 h-4 w-4" />
               {data.rollup.status === "FORWARDED" || data.rollup.status === "STALE"
                 ? forwarding
@@ -199,6 +221,7 @@ export default function StateReportsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         loading={detailLoading}
+        currentUserId={sessionUser?.id}
         canLeaveFeedback={canLeaveFeedback(sessionUser)}
       />
     </DashboardShell>

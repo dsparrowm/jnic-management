@@ -1201,14 +1201,39 @@ export class ReportsService {
   }
 
   async createFeedback(user: AuthUser, reportId: string, dto: CreateFeedbackDto) {
-    this.assertCanLeaveFeedback(user);
     const report = await this.getReportForAccess(user, reportId);
+    let toUserId: string;
+
+    if (dto.replyToId) {
+      const parent = await this.prisma.feedback.findFirst({
+        where: { id: dto.replyToId, reportId },
+      });
+      if (!parent) {
+        throw new NotFoundException("Feedback not found");
+      }
+      if (parent.toUserId !== user.id && parent.fromUserId !== user.id) {
+        throw new ForbiddenException("You cannot reply to this feedback");
+      }
+      toUserId =
+        parent.fromUserId === user.id ? parent.toUserId : parent.fromUserId;
+    } else {
+      this.assertCanLeaveFeedback(user);
+      toUserId = report.submittedById;
+    }
+
+    const recipient = await this.prisma.user.findUnique({
+      where: { id: toUserId },
+      select: { id: true, name: true, email: true },
+    });
+    if (!recipient) {
+      throw new NotFoundException("Recipient not found");
+    }
 
     const feedback = await this.prisma.feedback.create({
       data: {
         reportId,
         fromUserId: user.id,
-        toUserId: report.submittedById,
+        toUserId,
         message: dto.message.trim(),
       },
       include: {
@@ -1217,12 +1242,17 @@ export class ReportsService {
       },
     });
 
+    const isReply = Boolean(dto.replyToId);
     await this.prisma.notification.create({
       data: {
-        userId: report.submittedById,
+        userId: toUserId,
         type: NotificationType.FEEDBACK_RECEIVED,
-        title: `Feedback on ${report.branch.name}`,
-        body: `${user.name} left feedback on your weekly report.`,
+        title: isReply
+          ? `Reply on ${report.branch.name}`
+          : `Feedback on ${report.branch.name}`,
+        body: isReply
+          ? `${user.name} replied on the weekly report thread.`
+          : `${user.name} left feedback on your weekly report.`,
         metadata: {
           reportId: report.id,
           feedbackId: feedback.id,
@@ -1236,8 +1266,8 @@ export class ReportsService {
 
     void this.emailService
       .sendFeedbackNotification(
-        report.submittedBy.email,
-        report.submittedBy.name,
+        recipient.email,
+        recipient.name,
         user.name,
         report.branch.name,
         weekLabel,

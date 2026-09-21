@@ -11,6 +11,7 @@ import { SummaryStat } from "@/components/reports/summary-stat";
 import { WeekPicker } from "@/components/reports/week-picker";
 import { WeeklyReportDetailSheet } from "@/components/reports/weekly-report-detail-sheet";
 import { ZoneReportsSection } from "@/components/reports/zone-reports-section";
+import { ExceptionBanner } from "@/components/reports/exception-banner";
 import { RollupStatusBadge } from "@/components/reports/rollup-status-badge";
 import { api, ApiError, NationalSummaryResponse, WeeklyReportRecord } from "@/lib/api";
 import { getAccessToken, getStoredUser, isHqViewer, canLeaveFeedback } from "@/lib/auth";
@@ -116,6 +117,15 @@ export default function NationalReportsPage() {
         {error && <ErrorText message={error} />}
 
         {data && (
+          <ExceptionBanner
+            branches={data.states.flatMap((state) =>
+              state.zones.flatMap((zone) => zone.branches),
+            )}
+            onViewReport={(id) => void handleViewReport(id)}
+          />
+        )}
+
+        {data && (
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <SummaryStat label="Branches" value={data.summary.total} icon={CheckCircle2} />
@@ -136,7 +146,8 @@ export default function NationalReportsPage() {
               <p className="text-sm text-muted-foreground">Loading national reports…</p>
             ) : data.states.length === 0 ? (
               <p className="rounded-lg border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-                No state reports have been forwarded to HQ for this week yet.
+                State reports appear here after state pastors forward the week.
+                Coverage gaps stay with the state until then.
               </p>
             ) : (
               <div className="space-y-8">
@@ -178,6 +189,7 @@ export default function NationalReportsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         loading={detailLoading}
+        currentUserId={sessionUser?.id}
         canLeaveFeedback={canLeaveFeedback(sessionUser)}
       />
     </DashboardShell>

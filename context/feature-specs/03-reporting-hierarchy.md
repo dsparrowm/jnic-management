@@ -42,6 +42,7 @@ feedback, notifications, and monthly aggregation with Lead Pastor national appro
 - [x] Feedback tied to report; visible as thread
 - [x] Notification on new feedback (in-app + email)
 - [x] Feedback does not block status progression
+- [x] Reply to feedback — recipient can reply via `replyToId`; notifies the other party
 
 ### US-3.6 — Monthly summary
 
@@ -101,7 +102,7 @@ Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards t
 | GET | `/summaries/monthly` | Scoped | Monthly summaries |
 | POST | `/summaries/monthly/:id/approve` | Lead Pastor | Approve national summary |
 
-## Web Routes
+## Web Routes (desktop fallback)
 
 | Route | Audience |
 | ----- | -------- |
@@ -111,6 +112,15 @@ Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards t
 | `/reports/national` | Lead Pastor, Admin |
 | `/summaries` | All scoped roles |
 | `/approvals/summaries` | Lead Pastor |
+
+## Mobile Routes (primary reporting client)
+
+| Route | Audience |
+| ----- | -------- |
+| Weekly tab `/weekly` | All authenticated roles (role-aware week view) |
+| `/weekly/submit` | Pastor with `branchId` |
+| `/weekly/[id]` | Scoped report detail + feedback |
+| Home | HQ command center, or pastor this-week status |
 
 ## Data Model
 
