@@ -1126,6 +1126,14 @@ export class ReportsService {
     const allBranches = stateSummaries.flatMap((state) =>
       state.zones.flatMap((zone) => zone.branches),
     );
+    const coverageRows = states.flatMap((state) => {
+      const branches = [
+        ...state.zones.flatMap((zone) => zone.branches),
+        ...state.branches,
+      ];
+      const stateReports = reports.filter((report) => report.branch.stateId === state.id);
+      return this.buildBranchRows(branches, stateReports, weekOf);
+    });
     const visibleReports = reports.filter((report) => {
       const stateRollup = stateRollupById.get(report.branch.stateId);
       if (!isRollupVisibleToUpstream(stateRollup ?? null)) return false;
@@ -1142,6 +1150,7 @@ export class ReportsService {
       },
       states: stateSummaries,
       summary: this.countSummary(allBranches),
+      coverage: this.countSummary(coverageRows),
     };
   }
 

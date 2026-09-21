@@ -124,6 +124,8 @@ export type NationalSummaryResponse = {
   };
   states: NationalStateSummary[];
   summary: ReportCountSummary;
+  /** Every branch this week, including ones not yet forwarded to HQ. */
+  coverage: ReportCountSummary;
 };
 
 export type FeedbackRecord = {

@@ -96,6 +96,16 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ## Completed
 
+### HQ home branch coverage (2026-09-22)
+
+- Admin home report count includes every branch, including new branches and branches with no zone
+- Forwarded national drill-down still hides branch rows until the zone and state forward
+
+### Pastor detail (2026-09-22)
+
+- Tapping a pastor on the mobile directory opens `/pastors/[id]` instead of an action prompt
+- Detail shows contact, assignment, and joined date; resend, reassign, and deactivate live on that page
+
 ### Mobile profile screen (2026-09-21)
 
 - Profile tab matches Home light-shell patterns: centered hero, overline sections, `SurfaceCard` rows

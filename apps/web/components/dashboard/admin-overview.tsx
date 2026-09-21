@@ -103,10 +103,10 @@ export function AdminOverview({ userName }: AdminOverviewProps) {
 
   const orgSummary = useMemo(() => computeOrgSummary(orgTree), [orgTree]);
 
-  const submittedCount = nationalSummary?.summary.submitted ?? 0;
-  const missedCount = nationalSummary?.summary.missed ?? 0;
-  const visibleBranches = nationalSummary?.summary.total ?? 0;
-  const hasForwardedReports = (nationalSummary?.states.length ?? 0) > 0;
+  const coverage = nationalSummary?.coverage ?? nationalSummary?.summary;
+  const submittedCount = coverage?.submitted ?? 0;
+  const missedCount = coverage?.missed ?? 0;
+  const branchTotal = coverage?.total ?? orgSummary.branches;
 
   if (loading) {
     return <OverviewSkeleton />;
@@ -156,16 +156,8 @@ export function AdminOverview({ userName }: AdminOverviewProps) {
         <OverviewStatCard
           icon={ClipboardList}
           label="Reports submitted"
-          value={
-            hasForwardedReports
-              ? `${submittedCount}/${visibleBranches}`
-              : `${submittedCount}/${orgSummary.branches}`
-          }
-          hint={
-            hasForwardedReports
-              ? `Forwarded to HQ · week ending ${weekLabel}`
-              : `All submitted branches · week ending ${weekLabel}`
-          }
+          value={`${submittedCount}/${branchTotal}`}
+          hint={`All branches · week ending ${weekLabel}`}
           href="/reports/national"
           iconTone="success"
         />

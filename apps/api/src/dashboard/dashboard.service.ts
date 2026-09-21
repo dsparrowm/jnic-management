@@ -147,9 +147,11 @@ export class DashboardService {
         state.zones.reduce(
           (zoneCount, zone) => zoneCount + zone.branches.length,
           0,
-        ),
+        ) +
+        (state.branches?.length ?? 0),
       0,
     );
+    const coverage = national.coverage ?? national.summary;
 
     const attendance = national.totals.attendance;
     const finance = national.totals.finance;
@@ -166,12 +168,12 @@ export class DashboardService {
       });
     }
 
-    if (national.summary.missed > 0) {
+    if (coverage.missed > 0) {
       tasks.push({
         kind: "MISSED_REPORTS",
         title: "Review missed reports",
-        description: "Branches missed the current HQ-visible reporting window.",
-        count: national.summary.missed,
+        description: "Branches missed the current reporting window.",
+        count: coverage.missed,
         severity: "URGENT",
       });
     }
@@ -206,7 +208,7 @@ export class DashboardService {
           }
         : {}),
       weeklyReporting: {
-        ...national.summary,
+        ...coverage,
         attendance: {
           ...attendance,
           total:

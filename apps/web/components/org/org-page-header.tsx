@@ -41,6 +41,7 @@ export function computeOrgSummary(orgTree: OrgState[]): OrgSummary {
     for (const zone of state.zones) {
       branches += zone.branches.length;
     }
+    branches += state.branches?.length ?? 0;
   }
   return { states: orgTree.length, zones, branches };
 }

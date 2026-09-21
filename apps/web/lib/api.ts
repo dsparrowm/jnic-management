@@ -201,6 +201,7 @@ export interface NationalSummaryResponse {
   };
   states: NationalStateSummary[];
   summary: ReportCountSummary;
+  coverage?: ReportCountSummary;
 }
 
 export interface NationalAttendanceTrendPoint {
