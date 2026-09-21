@@ -5,6 +5,7 @@ import { Roles } from "../common/decorators/roles.decorator";
 import type { AuthUser } from "../common/auth.types";
 import { DashboardService } from "./dashboard.service";
 import { HqDashboardQueryDto } from "./dto/hq-dashboard-query.dto";
+import { PastorDashboardQueryDto } from "./dto/pastor-dashboard-query.dto";
 
 @Controller("dashboard")
 export class DashboardController {
@@ -17,5 +18,14 @@ export class DashboardController {
     @Query() query: HqDashboardQueryDto,
   ) {
     return this.dashboardService.getHqDashboard(user, query.weekOf, query.weeks);
+  }
+
+  @Get("pastor")
+  @Roles(Role.BRANCH_PASTOR, Role.ZONAL_PASTOR, Role.STATE_PASTOR)
+  getPastorDashboard(
+    @CurrentUser() user: AuthUser,
+    @Query() query: PastorDashboardQueryDto,
+  ) {
+    return this.dashboardService.getPastorDashboard(user, query.weekOf, query.weeks);
   }
 }

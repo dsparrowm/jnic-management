@@ -99,4 +99,15 @@ export type {
   HqHomeTask,
   HqHomeTaskKind,
   HqHomeTaskSeverity,
+  PastorDashboardResponse,
+  PastorHomeAttendancePoint,
+  PastorHomeMonthSnapshot,
+  PastorHomeWeekReport,
+  PastorHomeWeekSnapshot,
 } from "./mobile-home";
+export type {
+  StateSummaryResponse,
+  WeeklyReportAttendance,
+  WeeklyReportFinance,
+  ZoneSummaryResponse,
+} from "./reports";

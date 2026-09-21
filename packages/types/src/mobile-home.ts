@@ -1,5 +1,11 @@
-import type { NotificationType } from "./index";
+import type { BranchSubmissionState, NotificationType, ReportStatus } from "./index";
 import type { Role } from "./role";
+import type {
+  StateSummaryResponse,
+  WeeklyReportAttendance,
+  WeeklyReportFinance,
+  ZoneSummaryResponse,
+} from "./reports";
 
 export type HqHomeTaskKind =
   | "PENDING_ONBOARDING"
@@ -30,6 +36,67 @@ export type HqHomeAttendancePoint = {
   weekOf: string;
   weekLabel: string;
   total: number;
+};
+
+export type PastorHomeAttendancePoint = {
+  weekOf: string;
+  weekLabel: string;
+  total: number;
+  adultCount: number;
+  teenageCount: number;
+  childrenCount: number;
+};
+
+export type PastorHomeWeekReport = {
+  id: string;
+  status: ReportStatus;
+  editable: boolean;
+  attendance: WeeklyReportAttendance | null;
+  finance: WeeklyReportFinance | null;
+};
+
+export type PastorHomeWeekSnapshot = {
+  weekOf: string;
+  weekLabel: string;
+  report: PastorHomeWeekReport | null;
+  submissionState: BranchSubmissionState;
+};
+
+export type PastorHomeMonthSnapshot = {
+  month: number;
+  year: number;
+  label: string;
+  weeksReported: number;
+  weeksExpected: number;
+  totals: {
+    adult: number;
+    teenage: number;
+    children: number;
+    tithe: number;
+    offering: number;
+    other: number;
+    currency: string;
+  };
+};
+
+export type PastorDashboardResponse = {
+  generatedAt: string;
+  role: Role.BRANCH_PASTOR | Role.ZONAL_PASTOR | Role.STATE_PASTOR;
+  branch: {
+    id: string;
+    name: string;
+    zoneName: string | null;
+    stateName: string | null;
+  } | null;
+  thisWeek: PastorHomeWeekSnapshot;
+  attendanceTrend: PastorHomeAttendancePoint[];
+  month: PastorHomeMonthSnapshot | null;
+  zone: ZoneSummaryResponse | null;
+  state: StateSummaryResponse | null;
+  recentActivity: {
+    unreadCount: number;
+    items: HqHomeNotification[];
+  };
 };
 
 export type HqDashboardResponse = {

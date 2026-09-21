@@ -479,6 +479,85 @@ export class ReportsService {
     };
   }
 
+  async getBranchPastorInsights(user: AuthUser, weekOf: string, weeks: number) {
+    if (!canSubmitWeeklyReports(user.role, user.branchId)) {
+      return null;
+    }
+
+    const branchId = user.branchId!;
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+      include: {
+        zone: {
+          include: {
+            state: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+    if (!branch) {
+      throw new NotFoundException("Branch not found");
+    }
+
+    const weekRange = listWeekRange(weekOf, weeks);
+    const reports = await this.prisma.weeklyReport.findMany({
+      where: {
+        branchId,
+        weekOf: { in: weekRange.map((weekKey) => parseReportDate(weekKey)) },
+      },
+      include: weeklyReportInclude,
+    });
+
+    const reportByWeek = new Map(
+      reports.map((report) => [formatReportDate(report.weekOf), report]),
+    );
+
+    const attendanceTrend = weekRange.map((weekKey) => {
+      const report = reportByWeek.get(weekKey);
+      const adultCount = report?.attendance?.adultCount ?? 0;
+      const teenageCount = report?.attendance?.teenageCount ?? 0;
+      const childrenCount = report?.attendance?.childrenCount ?? 0;
+
+      return {
+        weekOf: weekKey,
+        weekLabel: formatWeekChartLabel(weekKey),
+        adultCount,
+        teenageCount,
+        childrenCount,
+        total: adultCount + teenageCount + childrenCount,
+      };
+    });
+
+    const currentReport = reportByWeek.get(weekOf);
+    const reportView = currentReport
+      ? toWeeklyReportView(currentReport, { editableForUserId: user.id })
+      : null;
+
+    return {
+      branch: {
+        id: branch.id,
+        name: branch.name,
+        zoneName: branch.zone?.name ?? null,
+        stateName: branch.zone?.state?.name ?? null,
+      },
+      thisWeek: {
+        weekOf,
+        weekLabel: formatWeekEndingLabel(weekOf),
+        report: reportView
+          ? {
+              id: reportView.id,
+              status: reportView.status,
+              editable: reportView.editable,
+              attendance: reportView.attendance,
+              finance: reportView.finance,
+            }
+          : null,
+        submissionState: getBranchSubmissionState(weekOf, Boolean(currentReport)),
+      },
+      attendanceTrend,
+    };
+  }
+
   async getWeeklyReport(user: AuthUser, reportId: string) {
     let report = await this.prisma.weeklyReport.findUnique({
       where: { id: reportId },

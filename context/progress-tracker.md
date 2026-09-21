@@ -10,7 +10,9 @@ Phase 6 monthly summaries remain on-demand (BullMQ cron still deferred). Week 1 
 
 ## Mobile (post-MVP track)
 
-Sibling Expo app at `/home/davies/jnic-mobile` — Admin / Lead Pastor HQ workflows on iOS + Android. Reuses NestJS Bearer JWT API; not part of Phases 0–7 completion criteria.
+Sibling Expo app at `/home/davies/jnic-mobile` — primary weekly-reporting client for all
+pastor roles, plus Admin / Lead Pastor HQ workflows. Reuses NestJS Bearer JWT API; not
+part of Phases 0–7 completion criteria. Web `/reports/*` remains a desktop fallback.
 
 | Milestone | Status |
 | --------- | ------ |
@@ -19,6 +21,9 @@ Sibling Expo app at `/home/davies/jnic-mobile` — Admin / Lead Pastor HQ workfl
 | M2 — Org tree + create | Done |
 | M3 — LP summary approvals + summaries browser | Done |
 | M4 — Polish + EAS ship docs | Done (docs); Expo Go is primary device test path; EAS native build optional |
+| M5 — Pastor access + weekly submit | Done |
+| M6 — Zone/state review + forward | Done |
+| M7 — National weekly + feedback | Done |
 
 Testing: physical device via **Expo Go** + `npm run start:tunnel` (WSL); EAS Simulator deferred (waitlist). Fixed Metro circular import (`org-assignment` → `index` → `Role`) by extracting `Role` to `packages/types/src/role.ts`. Native UI pass: immersive navy auth, grouped lists, custom home/profile heroes, shared mobile primitives (not web-card chrome).
 
@@ -73,7 +78,45 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 | **6 — Monthly Aggregation** | **In progress** |
 | **7 — Hardening** | **Week 1 in progress** |
 
+## Open questions
+
+| Question | Status |
+| -------- | ------ |
+| Pastor Home → branch overview dashboard (trends + month snapshot; report nudge only) | Done — `GET /dashboard/pastor` + mobile overview Home |
+
 ## Completed
+
+### Pastor branch overview Home (2026-09-21)
+
+- `GET /dashboard/pastor` composes branch insights, month snapshot, zone/state summaries,
+  and notifications in one round-trip
+- Mobile pastor Home is overview-first: compact report nudge, this-week KPIs, attendance
+  trend, month snapshot, and recent activity; submit/edit stays on Reports
+
+### Mobile pastor reporting UX pass (2026-09-21)
+
+- Weekly submit is a ritual: Sunday-default day picker, Naira grouping, live totals,
+  no-service guard, confirm sheet, and a success receipt
+- Nested Weekly screens hide the tab dock; switching back to Weekly always opens this week
+- Review lists lead with missing/late branches; forward confirms coverage
+- Status copy is pastoral (Sent / Waiting / Late / With zonal pastor)
+- Gold CTAs use navy text for contrast; Home role badge no longer truncates
+- `GET /users/me` and login include assigned state/zone/branch names (after API deploy);
+  Home, Weekly, and Profile also show the branch from this week’s report so names work
+  against the current production API
+- Nested submit no longer calls `dismissAll` (that threw `POP_TO_TOP` on web tabs)
+- Web `/reports/*` fallback matches confirm, totals, exceptions, and labels
+- Pastor dock is **Home · Reports · Library · Profile** (light system tab bar, gold active);
+  Library is an upcoming HQ sermons/books shelf; pastor Home uses a light Peloton-inspired
+  greeting + this-week featured card
+
+### Mobile pastor reporting M5–M7 (2026-09-20)
+
+- Opened the Expo app to every `ACTIVE` role; HQ-only unavailable is no longer the pastor happy path
+- Added a role-aware Weekly tab for submit/edit, zone/state review with confirmed forward, HQ national drill-down, and non-blocking feedback
+- Pastor Home composes this-week report/zone/state status plus notifications (deep-link to a report when `metadata.reportId` is present)
+- Lifted weekly/zone/state/national/feedback DTOs into `@repo/types`; web remains a desktop fallback
+- Mobile TypeScript `--noEmit` passes
 
 ### Premium mobile screen rollout + Android navigation (2026-09-20)
 

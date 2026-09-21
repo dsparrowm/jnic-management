@@ -13,3 +13,17 @@ test("restricts the HQ dashboard endpoint to HQ roles", () => {
   assert.deepEqual(roles, [Role.ADMIN, Role.LEAD_PASTOR]);
   assert.equal(roles.includes(Role.BRANCH_PASTOR), false);
 });
+
+test("restricts the pastor dashboard endpoint to pastor roles", () => {
+  const roles = Reflect.getMetadata(
+    ROLES_KEY,
+    DashboardController.prototype.getPastorDashboard,
+  ) as Role[];
+
+  assert.deepEqual(roles, [
+    Role.BRANCH_PASTOR,
+    Role.ZONAL_PASTOR,
+    Role.STATE_PASTOR,
+  ]);
+  assert.equal(roles.includes(Role.ADMIN), false);
+});

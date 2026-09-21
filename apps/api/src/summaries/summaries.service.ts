@@ -12,6 +12,7 @@ import {
 import {
   Role,
   SummaryScopeType,
+  canSubmitWeeklyReports,
   formatWeekChartLabel,
   formatReportDate,
 } from "@repo/types";
@@ -489,6 +490,58 @@ export class SummariesService {
       branchesReporting: branchIds.size,
       branchesTotal,
       weeklyReports: scopedReports.length,
+    };
+  }
+
+  private countSundaysInMonth(month: number, year: number): number {
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    let count = 0;
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      if (new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 0) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private formatMonthLabel(month: number, year: number): string {
+    return new Intl.DateTimeFormat("en-GB", {
+      month: "long",
+      year: "numeric",
+      timeZone: "Africa/Lagos",
+    }).format(new Date(Date.UTC(year, month - 1, 1, 12)));
+  }
+
+  async getBranchMonthSnapshot(user: AuthUser, month: number, year: number) {
+    if (!canSubmitWeeklyReports(user.role, user.branchId)) {
+      return null;
+    }
+
+    const { reports } = await this.computeMonthlySummaries(month, year);
+    const weeks = this.buildWeeklyBreakdown(reports, (report) =>
+      this.summaryMatchesReport(SummaryScopeType.BRANCH, user.branchId!, report),
+    );
+
+    const totals = this.emptyTotals();
+    for (const week of weeks) {
+      this.mergeTotals(totals, week);
+    }
+
+    return {
+      month,
+      year,
+      label: this.formatMonthLabel(month, year),
+      weeksReported: weeks.length,
+      weeksExpected: this.countSundaysInMonth(month, year),
+      totals: {
+        adult: totals.totalAdult,
+        teenage: totals.totalTeenage,
+        children: totals.totalChildren,
+        tithe: totals.totalTithe,
+        offering: totals.totalOffering,
+        other: totals.totalOther,
+        currency: totals.currency,
+      },
     };
   }
 

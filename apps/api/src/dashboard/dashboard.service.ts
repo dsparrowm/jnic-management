@@ -1,10 +1,16 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import {
   NotificationType,
   Role,
   formatWeekEndingLabel,
+  getBranchSubmissionState,
+  getTodayInLagos,
   type HqDashboardResponse,
   type HqHomeTask,
+  type PastorDashboardResponse,
+  type PastorHomeWeekSnapshot,
+  type StateSummaryResponse,
+  type ZoneSummaryResponse,
 } from "@repo/types";
 import type { AuthUser } from "../common/auth.types";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -22,6 +28,72 @@ export class DashboardService {
     private readonly summariesService: SummariesService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  private assertPastorRole(user: AuthUser) {
+    if (
+      user.role !== Role.BRANCH_PASTOR &&
+      user.role !== Role.ZONAL_PASTOR &&
+      user.role !== Role.STATE_PASTOR
+    ) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+  }
+
+  private currentMonthYearInLagos() {
+    const [year, month] = getTodayInLagos().split("-").map(Number);
+    return { month, year };
+  }
+
+  async getPastorDashboard(
+    user: AuthUser,
+    weekOf: string,
+    weeks = 6,
+  ): Promise<PastorDashboardResponse> {
+    this.assertPastorRole(user);
+    const { month, year } = this.currentMonthYearInLagos();
+
+    const [branchInsights, notifications, zone, state, monthSnapshot] =
+      await Promise.all([
+        this.reportsService.getBranchPastorInsights(user, weekOf, weeks),
+        this.notificationsService.listForUser(user.id, 4),
+        user.role === Role.ZONAL_PASTOR
+          ? this.reportsService.getZoneSummary(user, weekOf)
+          : Promise.resolve(null),
+        user.role === Role.STATE_PASTOR
+          ? this.reportsService.getStateSummary(user, weekOf)
+          : Promise.resolve(null),
+        this.summariesService.getBranchMonthSnapshot(user, month, year),
+      ]);
+
+    const thisWeek: PastorHomeWeekSnapshot =
+      (branchInsights?.thisWeek as PastorHomeWeekSnapshot | undefined) ?? {
+        weekOf,
+        weekLabel: formatWeekEndingLabel(weekOf),
+        report: null,
+        submissionState: getBranchSubmissionState(weekOf, false),
+      };
+
+    return {
+      generatedAt: new Date().toISOString(),
+      role: user.role as
+        | Role.BRANCH_PASTOR
+        | Role.ZONAL_PASTOR
+        | Role.STATE_PASTOR,
+      branch: branchInsights?.branch ?? null,
+      thisWeek,
+      attendanceTrend: branchInsights?.attendanceTrend ?? [],
+      month: monthSnapshot,
+      zone: zone as ZoneSummaryResponse | null,
+      state: state as StateSummaryResponse | null,
+      recentActivity: {
+        unreadCount: notifications.unreadCount,
+        items: notifications.items.map((item) => ({
+          ...item,
+          type: item.type as NotificationType,
+        })),
+      },
+    };
+  }
 
   async getHqDashboard(
     user: AuthUser,
