@@ -65,7 +65,11 @@ export class AuthService {
   }
 
   async issueTokens(user: User): Promise<AuthResponse> {
-    const authUser = toAuthUser(user);
+    const withOrg = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { state: true, zone: true, branch: true },
+    });
+    const authUser = toAuthUser(withOrg ?? user);
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, email: user.email, role: user.role },
       {

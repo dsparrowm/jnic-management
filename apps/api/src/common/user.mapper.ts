@@ -2,7 +2,15 @@ import { User } from "@repo/database";
 import { Role } from "@repo/types";
 import { AuthUser } from "./auth.types";
 
-export function toAuthUser(user: User): AuthUser {
+type OrgName = { name: string };
+
+type UserWithOrg = User & {
+  state?: OrgName | null;
+  zone?: OrgName | null;
+  branch?: OrgName | null;
+};
+
+export function toAuthUser(user: UserWithOrg): AuthUser {
   return {
     id: user.id,
     email: user.email,
@@ -12,11 +20,14 @@ export function toAuthUser(user: User): AuthUser {
     stateId: user.stateId,
     zoneId: user.zoneId,
     branchId: user.branchId,
+    stateName: user.state?.name ?? null,
+    zoneName: user.zone?.name ?? null,
+    branchName: user.branch?.name ?? null,
     profilePicUrl: user.profilePicUrl,
   };
 }
 
-export function sanitizeUser(user: User) {
+export function sanitizeUser(user: UserWithOrg) {
   return {
     id: user.id,
     email: user.email,
@@ -27,6 +38,9 @@ export function sanitizeUser(user: User) {
     stateId: user.stateId,
     zoneId: user.zoneId,
     branchId: user.branchId,
+    stateName: user.state?.name ?? null,
+    zoneName: user.zone?.name ?? null,
+    branchName: user.branch?.name ?? null,
     profilePicUrl: user.profilePicUrl,
     onboardingTokenExpiry: user.onboardingTokenExpiry,
     createdAt: user.createdAt,

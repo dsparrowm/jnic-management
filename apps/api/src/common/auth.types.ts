@@ -9,6 +9,9 @@ export interface AuthUser {
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
+  stateName?: string | null;
+  zoneName?: string | null;
+  branchName?: string | null;
   profilePicUrl: string | null;
 }
 
