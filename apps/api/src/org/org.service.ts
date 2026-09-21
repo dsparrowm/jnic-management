@@ -23,7 +23,7 @@ export class OrgService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getTree(): Promise<OrgTreeState[]> {
-    return this.prisma.state.findMany({
+    const states = await this.prisma.state.findMany({
       orderBy: { name: "asc" },
       include: {
         zones: {
@@ -32,8 +32,36 @@ export class OrgService {
             branches: { orderBy: { name: "asc" } },
           },
         },
+        branches: {
+          where: { zoneId: null },
+          orderBy: { name: "asc" },
+        },
       },
     });
+
+    return states.map((state) => ({
+      id: state.id,
+      name: state.name,
+      zones: state.zones.map((zone) => ({
+        id: zone.id,
+        name: zone.name,
+        stateId: zone.stateId,
+        branches: zone.branches.map((branch) => ({
+          id: branch.id,
+          name: branch.name,
+          address: branch.address,
+          zoneId: branch.zoneId,
+          stateId: branch.stateId,
+        })),
+      })),
+      branches: state.branches.map((branch) => ({
+        id: branch.id,
+        name: branch.name,
+        address: branch.address,
+        zoneId: branch.zoneId,
+        stateId: branch.stateId,
+      })),
+    }));
   }
 
   async createState(dto: CreateStateDto): Promise<State> {
@@ -61,20 +89,33 @@ export class OrgService {
   }
 
   async createBranch(dto: CreateBranchDto): Promise<Branch> {
-    const zone = await this.prisma.zone.findUnique({ where: { id: dto.zoneId } });
-    if (!zone) {
-      throw new NotFoundException("Zone not found");
+    await this.ensureState(dto.stateId);
+    const zoneId = dto.zoneId?.trim() || null;
+
+    if (zoneId) {
+      const zone = await this.prisma.zone.findUnique({ where: { id: zoneId } });
+      if (!zone) {
+        throw new NotFoundException("Zone not found");
+      }
+      if (zone.stateId !== dto.stateId) {
+        throw new BadRequestException("Zone is not in the selected state");
+      }
     }
 
     const existing = await this.prisma.branch.findUnique({
-      where: { zoneId_name: { zoneId: dto.zoneId, name: dto.name } },
+      where: { stateId_name: { stateId: dto.stateId, name: dto.name } },
     });
     if (existing) {
-      throw new ConflictException("Branch name already exists in this zone");
+      throw new ConflictException("Branch name already exists in this state");
     }
 
     return this.prisma.branch.create({
-      data: { name: dto.name, zoneId: dto.zoneId, address: dto.address },
+      data: {
+        name: dto.name,
+        stateId: dto.stateId,
+        zoneId,
+        address: dto.address,
+      },
     });
   }
 

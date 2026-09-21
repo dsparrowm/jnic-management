@@ -153,8 +153,11 @@ export class ReportsService {
     }
 
     if (user.role === Role.STATE_PASTOR) {
-      if (!user.stateId || report.branch.zone.stateId !== user.stateId) {
+      if (!user.stateId || report.branch.stateId !== user.stateId) {
         throw new ForbiddenException("Insufficient permissions");
+      }
+      if (!report.branch.zoneId) {
+        return;
       }
       const zoneRollup = await this.getRollup(
         SummaryScopeType.ZONE,
@@ -172,13 +175,16 @@ export class ReportsService {
     if (HQ_VIEW_ROLES.has(user.role)) {
       const stateRollup = await this.getRollup(
         SummaryScopeType.STATE,
-        report.branch.zone.stateId,
+        report.branch.stateId,
         report.weekOf,
       );
       if (!isRollupVisibleToUpstream(stateRollup)) {
         throw new ForbiddenException(
           "Report is not yet available — state has not forwarded",
         );
+      }
+      if (!report.branch.zoneId) {
+        return;
       }
       const zoneRollup = await this.getRollup(
         SummaryScopeType.ZONE,
@@ -350,13 +356,15 @@ export class ReportsService {
 
     const branch = await this.prisma.branch.findUnique({
       where: { id: branchId },
-      select: { zoneId: true, zone: { select: { stateId: true } } },
+      select: { zoneId: true, stateId: true },
     });
     if (branch) {
-      await this.markRollupStaleIfForwarded(SummaryScopeType.ZONE, branch.zoneId, weekOf);
+      if (branch.zoneId) {
+        await this.markRollupStaleIfForwarded(SummaryScopeType.ZONE, branch.zoneId, weekOf);
+      }
       await this.markRollupStaleIfForwarded(
         SummaryScopeType.STATE,
-        branch.zone.stateId,
+        branch.stateId,
         weekOf,
       );
     }
@@ -488,6 +496,7 @@ export class ReportsService {
     const branch = await this.prisma.branch.findUnique({
       where: { id: branchId },
       include: {
+        state: { select: { id: true, name: true } },
         zone: {
           include: {
             state: { select: { id: true, name: true } },
@@ -538,7 +547,7 @@ export class ReportsService {
         id: branch.id,
         name: branch.name,
         zoneName: branch.zone?.name ?? null,
-        stateName: branch.zone?.state?.name ?? null,
+        stateName: branch.state?.name ?? branch.zone?.state?.name ?? null,
       },
       thisWeek: {
         weekOf,
@@ -591,6 +600,83 @@ export class ReportsService {
 
     const attendanceTrend = weekRange.map((weekKey) => {
       const weekReports = reportsByWeek.get(weekKey) ?? [];
+      const attendance = this.sumAttendance(weekReports);
+      const total =
+        attendance.adultCount + attendance.teenageCount + attendance.childrenCount;
+
+      return {
+        weekOf: weekKey,
+        weekLabel: formatWeekChartLabel(weekKey),
+        adultCount: attendance.adultCount,
+        teenageCount: attendance.teenageCount,
+        childrenCount: attendance.childrenCount,
+        total,
+      };
+    });
+
+    return { attendanceTrend };
+  }
+
+  async getStatePastorInsights(user: AuthUser, weekOf: string, weeks: number) {
+    if (user.role !== Role.STATE_PASTOR || !user.stateId) {
+      return null;
+    }
+
+    const state = await this.prisma.state.findUnique({
+      where: { id: user.stateId },
+      include: { zones: { include: { branches: true } } },
+    });
+    if (!state) {
+      throw new NotFoundException("State not found");
+    }
+
+    const unzoned = await this.prisma.branch.findMany({
+      where: { stateId: state.id, zoneId: null },
+      select: { id: true },
+    });
+    const zoneIds = state.zones.map((zone) => zone.id);
+    const branchIds = [
+      ...state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id)),
+      ...unzoned.map((branch) => branch.id),
+    ];
+    const weekRange = listWeekRange(weekOf, weeks);
+    const weekDates = weekRange.map((weekKey) => parseReportDate(weekKey));
+
+    const [reports, rollups] =
+      branchIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.prisma.weeklyReport.findMany({
+              where: {
+                branchId: { in: branchIds },
+                weekOf: { in: weekDates },
+              },
+              include: weeklyReportInclude,
+            }),
+            this.prisma.hierarchyWeeklyRollup.findMany({
+              where: {
+                scopeType: PrismaSummaryScopeType.ZONE,
+                scopeId: { in: zoneIds },
+                weekOf: { in: weekDates },
+              },
+            }),
+          ]);
+
+    const rollupByWeekAndZone = new Map(
+      rollups.map((rollup) => [
+        `${formatReportDate(rollup.weekOf)}:${rollup.scopeId}`,
+        rollup,
+      ]),
+    );
+
+    const attendanceTrend = weekRange.map((weekKey) => {
+      const weekReports = reports.filter((report) => {
+        if (formatReportDate(report.weekOf) !== weekKey) return false;
+        if (!report.branch.zoneId) return true;
+        const rollup =
+          rollupByWeekAndZone.get(`${weekKey}:${report.branch.zoneId}`) ?? null;
+        return isRollupVisibleToUpstream(rollup);
+      });
       const attendance = this.sumAttendance(weekReports);
       const total =
         attendance.adultCount + attendance.teenageCount + attendance.childrenCount;
@@ -827,6 +913,10 @@ export class ReportsService {
             branches: { orderBy: { name: "asc" } },
           },
         },
+        branches: {
+          where: { zoneId: null },
+          orderBy: { name: "asc" },
+        },
       },
     });
     if (!state) {
@@ -834,7 +924,10 @@ export class ReportsService {
     }
 
     const zoneIds = state.zones.map((zone) => zone.id);
-    const branchIds = state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id));
+    const branchIds = [
+      ...state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id)),
+      ...state.branches.map((branch) => branch.id),
+    ];
     const [reports, zoneRollups, stateRollup] = await Promise.all([
       this.prisma.weeklyReport.findMany({
         where: {
@@ -885,7 +978,25 @@ export class ReportsService {
       }),
     );
 
+    const unzonedRows = this.buildBranchRows(state.branches, reports, weekOf);
+    if (unzonedRows.length > 0) {
+      zones.push({
+        zone: { id: `unzoned:${state.id}`, name: "No zone" },
+        rollup: toRollupView(null),
+        forwarded: true,
+        totals: {
+          attendance: this.sumAttendance(
+            reports.filter((report) => !report.branch.zoneId),
+          ),
+          finance: this.sumFinance(reports.filter((report) => !report.branch.zoneId)),
+        },
+        branches: unzonedRows,
+        summary: this.countSummary(unzonedRows),
+      });
+    }
+
     const visibleReports = reports.filter((report) => {
+      if (!report.branch.zoneId) return report.branch.stateId === state.id;
       const zoneRollup = zoneRollupById.get(report.branch.zoneId);
       return isRollupVisibleToUpstream(zoneRollup ?? null);
     });
@@ -916,6 +1027,10 @@ export class ReportsService {
           include: {
             branches: { orderBy: { name: "asc" } },
           },
+        },
+        branches: {
+          where: { zoneId: null },
+          orderBy: { name: "asc" },
         },
       },
     });
@@ -951,7 +1066,7 @@ export class ReportsService {
       .filter((state) => isRollupVisibleToUpstream(stateRollupById.get(state.id) ?? null))
       .map((state) => {
         const stateReports = reports.filter(
-          (report) => report.branch.zone.stateId === state.id,
+          (report) => report.branch.stateId === state.id,
         );
 
         const zones = state.zones
@@ -973,10 +1088,28 @@ export class ReportsService {
             };
           });
 
+        const unzoned = state.branches.filter((branch) => !branch.zoneId);
+        if (unzoned.length > 0) {
+          const unzonedReports = stateReports.filter((report) => !report.branch.zoneId);
+          const unzonedRows = this.buildBranchRows(unzoned, unzonedReports, weekOf);
+          zones.push({
+            zone: { id: `unzoned:${state.id}`, name: "No zone" },
+            rollup: toRollupView(null),
+            forwarded: true,
+            totals: {
+              attendance: this.sumAttendance(unzonedReports),
+              finance: this.sumFinance(unzonedReports),
+            },
+            branches: unzonedRows,
+            summary: this.countSummary(unzonedRows),
+          });
+        }
+
         const allBranches = zones.flatMap((zone) => zone.branches);
-        const visibleReports = stateReports.filter((report) =>
-          isRollupVisibleToUpstream(zoneRollupById.get(report.branch.zoneId) ?? null),
-        );
+        const visibleReports = stateReports.filter((report) => {
+          if (!report.branch.zoneId) return true;
+          return isRollupVisibleToUpstream(zoneRollupById.get(report.branch.zoneId) ?? null);
+        });
 
         return {
           state: { id: state.id, name: state.name },
@@ -994,12 +1127,11 @@ export class ReportsService {
       state.zones.flatMap((zone) => zone.branches),
     );
     const visibleReports = reports.filter((report) => {
-      const stateRollup = stateRollupById.get(report.branch.zone.stateId);
+      const stateRollup = stateRollupById.get(report.branch.stateId);
+      if (!isRollupVisibleToUpstream(stateRollup ?? null)) return false;
+      if (!report.branch.zoneId) return true;
       const zoneRollup = zoneRollupById.get(report.branch.zoneId);
-      return (
-        isRollupVisibleToUpstream(stateRollup ?? null) &&
-        isRollupVisibleToUpstream(zoneRollup ?? null)
-      );
+      return isRollupVisibleToUpstream(zoneRollup ?? null);
     });
 
     return {
@@ -1049,6 +1181,7 @@ export class ReportsService {
         finance: true,
         branch: {
           include: {
+            state: true,
             zone: {
               include: {
                 state: true,
@@ -1106,7 +1239,8 @@ export class ReportsService {
     const financeBranchesByState = new Map<string, Set<string>>();
 
     for (const report of reports) {
-      const stateId = report.branch.zone.stateId;
+      const stateId = report.branch.stateId ?? report.branch.zone?.stateId;
+      if (!stateId) continue;
       const stateInfo = stateMeta.get(stateId);
       if (!stateInfo) continue;
 

@@ -107,10 +107,11 @@ async function main() {
   });
 
   const branch = await prisma.branch.upsert({
-    where: { zoneId_name: { zoneId: zone.id, name: "VI Main Campus" } },
+    where: { stateId_name: { stateId: state.id, name: "VI Main Campus" } },
     update: {},
     create: {
       name: "VI Main Campus",
+      stateId: state.id,
       zoneId: zone.id,
       address: "12 Adeola Odeku Street, Victoria Island",
     },

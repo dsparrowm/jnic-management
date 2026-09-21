@@ -89,6 +89,9 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 | -------- | ------ |
 | Pastor Home → branch overview dashboard (trends + month snapshot; report nudge only) | Done — `GET /dashboard/pastor` + mobile overview Home |
 | Zonal pastor Home → zone overview (nudge, KPIs, exceptions, trend, month snapshot) | Done — `zoneAttendanceTrend` + `zoneMonth` on dashboard API; mobile `ZoneActionNudge` / `ZoneHomeMetrics` |
+| State pastor Home → state overview (nudge, forwarded KPIs, zones waiting, trend, month snapshot) | Done — `stateAttendanceTrend` + `stateMonth` on dashboard API; mobile `StateActionNudge` / `StateZoneAttention` |
+| State pastor home branch on onboard | Done — mobile onboard offers an optional home branch in the selected state |
+| Branch without a zone | Done — `Branch.stateId` required, `zoneId` optional |
 | Feedback replies on report threads | Done — `POST /reports/:id/feedback` accepts `replyToId`; branch pastors can reply when addressed |
 
 ## Completed
@@ -101,6 +104,14 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - Assignment card reflects role hierarchy and dual-scope home-branch footnote
 - App shortcuts: Notifications, Weekly reports, Library (pastors), Pastors (Admin), Summaries (LP)
 - Profile photo upload: presign → Cloudinary POST → `PATCH /users/me/profile-picture` (`expo-image-picker`)
+
+### State pastor overview Home (2026-09-21)
+
+- Home matches zonal overview: action nudge, this-week KPIs from forwarded zones, zones
+  still waiting, six-week attendance trend, and month snapshot
+- Trend counts only zones that have forwarded that week
+- Dual-scope state pastors keep personal branch blocks below the state overview
+- Reports tab stays the review and forward-to-HQ surface
 
 ### Pastor branch overview Home (2026-09-21)
 

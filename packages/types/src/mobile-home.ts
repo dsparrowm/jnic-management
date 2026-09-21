@@ -95,6 +95,8 @@ export type PastorDashboardResponse = {
   zoneAttendanceTrend: PastorHomeAttendancePoint[];
   zoneMonth: PastorHomeMonthSnapshot | null;
   state: StateSummaryResponse | null;
+  stateAttendanceTrend: PastorHomeAttendancePoint[];
+  stateMonth: PastorHomeMonthSnapshot | null;
   recentActivity: {
     unreadCount: number;
     items: HqHomeNotification[];

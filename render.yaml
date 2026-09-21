@@ -28,6 +28,10 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: JWT_ACCESS_EXPIRY
+        value: 1h
+      - key: JWT_REFRESH_EXPIRY
+        value: 90d
       - key: SEED_ADMIN_EMAIL
         value: admin@jnic.org
       - key: SEED_ADMIN_PASSWORD

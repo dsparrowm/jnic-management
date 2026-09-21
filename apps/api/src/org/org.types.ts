@@ -4,7 +4,8 @@ export type OrgTreeBranch = {
   id: string;
   name: string;
   address: string | null;
-  zoneId: string;
+  zoneId: string | null;
+  stateId: string;
 };
 
 export type OrgTreeZone = {
@@ -18,6 +19,8 @@ export type OrgTreeState = {
   id: string;
   name: string;
   zones: OrgTreeZone[];
+  /** Branches in this state that are not assigned to a zone. */
+  branches: OrgTreeBranch[];
 };
 
 export type OrgChangeRequestView = {

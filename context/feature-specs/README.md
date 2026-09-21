@@ -84,5 +84,6 @@ Who can access what (API guards).
 | `02-profiles.md` | Epic 2 — profile pictures + directory | 3 | Draft |
 | `03-reporting-hierarchy.md` | Epic 3 — hierarchy + feedback + summaries | 4–6 | Draft |
 | `04-attendance-finance.md` | Epic 4 — attendance + finance fields | 4 | Draft |
+| `05-mobile-reporting.md` | Post-MVP mobile weekly reporting (M5–M7) | Mobile | Done |
 
 _Add rows as specs are refined during implementation._

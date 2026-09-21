@@ -8,6 +8,11 @@ visibility and feedback, and attendance/finance tracking.
 
 **Repository:** `/home/davies/jnic_management` — greenfield Turborepo monorepo.
 
+**Mobile:** `/home/davies/jnic-mobile` — Expo app. Primary client for weekly pastor
+reporting (submit, zone/state review, feedback, HQ national weekly). Web `/reports/*`
+remains as a desktop fallback. HQ Admin / Lead Pastor also use mobile for directory,
+org, and monthly summary approval.
+
 **Product docs:** `context/mvp-roadmap.md`, `context/go-live-checklist.md`
 
 **Source requirements:**
@@ -84,10 +89,10 @@ in the API for historical data but no longer used for new org creates.
 | `/admin/org` | Admin | Org CRUD (direct state/zone/branch create) |
 | `/approvals/org` | Lead Pastor | *(Legacy)* Org change approval — unlinked from nav |
 | `/approvals/summaries` | Lead Pastor | National summary approval |
-| `/reports/submit` | Branch Pastor, Admin Staff | US-3.1, US-4.1, US-4.2 |
-| `/reports/zone` | Zonal Pastor | US-3.2 |
-| `/reports/state` | State Pastor | US-3.3 |
-| `/reports/national` | Lead Pastor, Admin | US-3.4 |
+| `/reports/submit` | Pastor with `branchId` (web fallback) | US-3.1, US-4.1, US-4.2 |
+| `/reports/zone` | Zonal Pastor (web fallback) | US-3.2 |
+| `/reports/state` | State Pastor (web fallback) | US-3.3 |
+| `/reports/national` | Lead Pastor, Admin (web fallback) | US-3.4 |
 | `/profile` | All pastors | US-2.1 |
 | `/summaries` | Scoped roles | US-3.6 |
 
@@ -121,7 +126,6 @@ persistence:
 
 ## Out of Scope (MVP)
 
-- Mobile app (JWT design keeps door open)
 - Paystack/wallet/payroll
 - LMS / courses / training modules
 - Multi-branch pastor assignments (1:1 for MVP)

@@ -27,13 +27,15 @@ type ReportWithRelations = {
   branch: {
     id: string;
     name: string;
-    zoneId: string;
+    zoneId: string | null;
+    stateId: string;
+    state: { id: string; name: string };
     zone: {
       id: string;
       name: string;
       stateId: string;
       state: { id: string; name: string };
-    };
+    } | null;
   };
   attendance: {
     adultCount: number;
@@ -118,6 +120,7 @@ export class SummariesService {
         finance: true,
         branch: {
           include: {
+            state: true,
             zone: {
               include: { state: true },
             },
@@ -137,18 +140,22 @@ export class SummariesService {
 
     for (const report of reports) {
       const branchId = report.branch.id;
-      const zoneId = report.branch.zone.id;
-      const stateId = report.branch.zone.state.id;
+      const zoneId = report.branch.zone?.id ?? null;
+      const stateId = report.branch.stateId;
 
       branchNames.set(branchId, report.branch.name);
-      zoneNames.set(zoneId, report.branch.zone.name);
-      stateNames.set(stateId, report.branch.zone.state.name);
+      if (zoneId && report.branch.zone) {
+        zoneNames.set(zoneId, report.branch.zone.name);
+      }
+      stateNames.set(stateId, report.branch.state.name);
 
-      for (const [map, id] of [
+      const scopes: Array<[Map<string, AggregateTotals>, string]> = [
         [branchTotals, branchId],
-        [zoneTotals, zoneId],
         [stateTotals, stateId],
-      ] as const) {
+      ];
+      if (zoneId) scopes.push([zoneTotals, zoneId]);
+
+      for (const [map, id] of scopes) {
         const current = map.get(id) ?? this.emptyTotals();
         this.addReportToTotals(current, report);
         map.set(id, current);
@@ -295,8 +302,8 @@ export class SummariesService {
     report: ReportWithRelations,
   ): boolean {
     if (scopeType === SummaryScopeType.BRANCH) return report.branch.id === scopeId;
-    if (scopeType === SummaryScopeType.ZONE) return report.branch.zone.id === scopeId;
-    if (scopeType === SummaryScopeType.STATE) return report.branch.zone.state.id === scopeId;
+    if (scopeType === SummaryScopeType.ZONE) return report.branch.zone?.id === scopeId;
+    if (scopeType === SummaryScopeType.STATE) return report.branch.stateId === scopeId;
     return true;
   }
 
@@ -346,7 +353,7 @@ export class SummariesService {
     const branchesByState = new Map<string, Set<string>>();
     const weeklyReportsByState = new Map<string, number>();
     for (const report of reports) {
-      const stateId = report.branch.zone.state.id;
+      const stateId = report.branch.stateId;
       weeklyReportsByState.set(stateId, (weeklyReportsByState.get(stateId) ?? 0) + 1);
       const branchIds = branchesByState.get(stateId) ?? new Set<string>();
       branchIds.add(report.branch.id);
@@ -354,28 +361,15 @@ export class SummariesService {
     }
 
     const branchCounts = await this.prisma.branch.groupBy({
-      by: ["zoneId"],
+      by: ["stateId"],
       _count: { id: true },
       where: {
-        zone: {
-          stateId: { in: stateSummaries.map((summary) => summary.scopeId) },
-        },
+        stateId: { in: stateSummaries.map((summary) => summary.scopeId) },
       },
     });
-    const zones = await this.prisma.zone.findMany({
-      where: { id: { in: branchCounts.map((row) => row.zoneId) } },
-      select: { id: true, stateId: true },
-    });
-    const stateIdByZoneId = new Map(zones.map((zone) => [zone.id, zone.stateId]));
-    const branchesTotalByState = new Map<string, number>();
-    for (const row of branchCounts) {
-      const stateId = stateIdByZoneId.get(row.zoneId);
-      if (!stateId) continue;
-      branchesTotalByState.set(
-        stateId,
-        (branchesTotalByState.get(stateId) ?? 0) + row._count.id,
-      );
-    }
+    const branchesTotalByState = new Map(
+      branchCounts.map((row) => [row.stateId, row._count.id]),
+    );
 
     return stateSummaries
       .map((record) => ({
@@ -531,6 +525,45 @@ export class SummariesService {
       reports,
       SummaryScopeType.ZONE,
       user.zoneId,
+    );
+
+    return {
+      month,
+      year,
+      label: this.formatMonthLabel(month, year),
+      weeksReported: coverage.branchesReporting,
+      weeksExpected: coverage.branchesTotal,
+      totals: {
+        adult: totals.totalAdult,
+        teenage: totals.totalTeenage,
+        children: totals.totalChildren,
+        tithe: totals.totalTithe,
+        offering: totals.totalOffering,
+        other: totals.totalOther,
+        currency: totals.currency,
+      },
+    };
+  }
+
+  async getStateMonthSnapshot(user: AuthUser, month: number, year: number) {
+    if (user.role !== Role.STATE_PASTOR || !user.stateId) {
+      return null;
+    }
+
+    const { reports } = await this.computeMonthlySummaries(month, year);
+    const weeks = this.buildWeeklyBreakdown(reports, (report) =>
+      this.summaryMatchesReport(SummaryScopeType.STATE, user.stateId!, report),
+    );
+
+    const totals = this.emptyTotals();
+    for (const week of weeks) {
+      this.mergeTotals(totals, week);
+    }
+
+    const coverage = await this.buildCoverage(
+      reports,
+      SummaryScopeType.STATE,
+      user.stateId,
     );
 
     return {

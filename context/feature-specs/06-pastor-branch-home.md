@@ -118,10 +118,49 @@ feedback, forward).
 Dual-scope zonal pastors (`branchId` set): zone blocks **above** personal branch nudge +
 branch KPIs / trend / month snapshot.
 
-### State pastor (dual-scope)
+### State pastor
 
-Keep state summary card above branch blocks when `stateId` is set. Full state overview
-parity (like zonal) is a follow-up.
+Home answers **“How is my state doing?”** Reports remains the action surface (zone
+review, feedback, forward to HQ). Branch detail stays hidden until a zone forwards.
+
+```
+┌─────────────────────────────────────┐
+│ [Avatar]  Good evening, Ada         │
+│           Lagos State               │
+│           Home branch, if assigned   │
+├─────────────────────────────────────┤
+│ State action nudge                  │  → Reports tab
+│ (zones waiting / ready / sent)      │
+├─────────────────────────────────────┤
+│ THIS WEEK · LAGOS STATE             │
+│ attendance + finance from forwarded │
+│ zones only                          │
+├─────────────────────────────────────┤
+│ NEEDS ATTENTION                     │  ← zones that have not forwarded
+├─────────────────────────────────────┤
+│ ATTENDANCE TREND (6 weeks, state)   │  ← forwarded zones only
+├─────────────────────────────────────┤
+│ MONTH SNAPSHOT (branches reporting) │
+├─────────────────────────────────────┤
+│ RECENT ACTIVITY                     │
+└─────────────────────────────────────┘
+```
+
+Dual-scope state pastors (`branchId` set): state blocks **above** the personal branch
+nudge, branch KPIs, trend, and month snapshot.
+
+### Screens
+
+| Screen | State pastor sees |
+| ------ | ----------------- |
+| **Home** | State overview above. Optional home-branch blocks below when `branchId` is set |
+| **Reports** | Week picker, state review, zones waiting to forward, forward to HQ, zone drill-down |
+| **Report detail** | Forwarded branch report, feedback, reply |
+| **Library** | Shared pastor library |
+| **Profile** | Account, assignment, notifications shortcut |
+| **Notifications** | Same activity list as other pastors |
+
+No separate zone-admin or org-edit screens. Those stay with Admin.
 
 ## API
 
@@ -145,7 +184,7 @@ parity (like zonal) is a follow-up.
 3. Last N weekly reports for branch → `attendanceTrend`, `financeTrend` (optional v1)
 4. Current calendar month branch summary via existing summaries logic
 5. Zone summary + zone attendance trend + zone month snapshot (zonal pastor)
-6. State summary for current week (state pastor)
+6. State summary, state attendance trend, and state month snapshot (state pastor)
 7. Notifications (last 4, same as HQ home)
 
 **RBAC**
@@ -213,6 +252,8 @@ export type PastorDashboardResponse = {
   zoneAttendanceTrend: PastorHomeAttendancePoint[];
   zoneMonth: PastorHomeMonthSnapshot | null;
   state: StateSummaryResponse | null;
+  stateAttendanceTrend: PastorHomeAttendancePoint[];
+  stateMonth: PastorHomeMonthSnapshot | null;
   recentActivity: {
     unreadCount: number;
     items: HqHomeNotification[];
@@ -252,7 +293,8 @@ Reports tab (`weekly/index.tsx`) **unchanged** as the canonical submit/review su
 - [x] Reports tab still supports submit, edit, week navigation, and detail
 - [x] Zonal pastors see zone overview (nudge, KPIs, exceptions, trend, month snapshot)
 - [x] Dual-scope zonal pastors see zone blocks above personal branch blocks
-- [x] State pastors still see state summary card on Home (full state overview follow-up)
+- [x] State pastors see state overview (nudge, forwarded KPIs, zones waiting, trend, month snapshot)
+- [x] Dual-scope state pastors see state blocks above personal branch blocks
 - [x] `GET /dashboard/pastor` enforces branch/zone/state scope in NestJS guards
 - [x] `progress-tracker.md` updated
 

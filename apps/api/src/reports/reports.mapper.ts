@@ -59,6 +59,8 @@ export const weeklyReportInclude = {
       id: true,
       name: true,
       zoneId: true,
+      stateId: true,
+      state: { select: { id: true, name: true } },
       zone: { select: { id: true, name: true, stateId: true } },
     },
   },

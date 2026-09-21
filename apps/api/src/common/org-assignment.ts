@@ -25,15 +25,15 @@ export async function resolveAndValidateOrgAssignment(
       throw new BadRequestException("Branch not found");
     }
 
-    if (zoneId && zoneId !== branch.zoneId) {
+    if (zoneId && branch.zoneId && zoneId !== branch.zoneId) {
       throw new BadRequestException("Zone does not match selected branch");
     }
-    if (stateId && stateId !== branch.zone.stateId) {
+    if (stateId && stateId !== branch.stateId) {
       throw new BadRequestException("State does not match selected branch");
     }
 
     zoneId = branch.zoneId;
-    stateId = branch.zone.stateId;
+    stateId = branch.stateId;
   } else if (zoneId) {
     const zone = await prisma.zone.findUnique({ where: { id: zoneId } });
     if (!zone) {

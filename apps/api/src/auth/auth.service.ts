@@ -74,13 +74,13 @@ export class AuthService {
       { sub: user.id, email: user.email, role: user.role },
       {
         secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
-        expiresIn: this.config.get("JWT_ACCESS_EXPIRY", "15m") as `${number}m`,
+        expiresIn: this.config.get("JWT_ACCESS_EXPIRY", "1h") as `${number}m`,
       },
     );
 
     const refreshToken = randomBytes(48).toString("hex");
     const refreshExpiry = this.parseExpiry(
-      this.config.get<string>("JWT_REFRESH_EXPIRY", "7d"),
+      this.config.get<string>("JWT_REFRESH_EXPIRY", "90d"),
     );
 
     await this.prisma.refreshToken.create({
@@ -97,7 +97,7 @@ export class AuthService {
   private parseExpiry(value: string): Date {
     const match = /^(\d+)([smhd])$/.exec(value);
     if (!match) {
-      return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
     }
     const amount = Number(match[1]);
     const unit = match[2];

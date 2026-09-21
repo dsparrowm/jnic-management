@@ -23,7 +23,11 @@ export class CreateBranchDto {
 
   @IsString()
   @IsNotEmpty()
-  zoneId!: string;
+  stateId!: string;
+
+  @IsOptional()
+  @IsString()
+  zoneId?: string;
 
   @IsOptional()
   @IsString()

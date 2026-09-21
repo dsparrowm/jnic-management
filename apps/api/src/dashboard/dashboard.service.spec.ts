@@ -85,6 +85,18 @@ function createService(options?: {
       zones: [],
       summary: { total: 1, submitted: 1, missed: 0, pending: 0 },
     }),
+    getStatePastorInsights: async () => ({
+      attendanceTrend: [
+        {
+          weekOf: "2026-09-20",
+          weekLabel: "20 Sep",
+          adultCount: 200,
+          teenageCount: 40,
+          childrenCount: 60,
+          total: 300,
+        },
+      ],
+    }),
     getNationalSummary: async () => ({
       totals: {
         attendance: { adultCount: 10, teenageCount: 5, childrenCount: 3 },
@@ -134,6 +146,7 @@ function createService(options?: {
       }),
       getBranchMonthSnapshot: async () => options?.monthSnapshot ?? null,
       getZoneMonthSnapshot: async () => options?.monthSnapshot ?? null,
+      getStateMonthSnapshot: async () => options?.monthSnapshot ?? null,
     } as unknown as SummariesService,
     {
       listForUser: async () => ({ items: [], unreadCount: 0 }),
@@ -274,4 +287,38 @@ test("includes zone summary for zonal pastors", async () => {
   assert.equal(result.zoneAttendanceTrend[0]?.total, 150);
   assert.equal(result.zoneMonth?.weeksReported, 1);
   assert.equal(result.zoneMonth?.weeksExpected, 3);
+  assert.equal(result.state, null);
+  assert.deepEqual(result.stateAttendanceTrend, []);
+  assert.equal(result.stateMonth, null);
+});
+
+test("includes state overview for state pastors", async () => {
+  const result = await createService({
+    monthSnapshot: {
+      month: 9,
+      year: 2026,
+      label: "September 2026",
+      weeksReported: 4,
+      weeksExpected: 8,
+      totals: {
+        adult: 800,
+        teenage: 160,
+        children: 240,
+        tithe: 800000,
+        offering: 240000,
+        other: 0,
+        currency: "NGN",
+      },
+    },
+  }).getPastorDashboard(
+    user(Role.STATE_PASTOR, { stateId: "state-1" }),
+    "2026-09-20",
+    6,
+  );
+
+  assert.equal(result.state?.state.name, "Lagos State");
+  assert.equal(result.zone, null);
+  assert.equal(result.stateAttendanceTrend[0]?.total, 300);
+  assert.equal(result.stateMonth?.weeksReported, 4);
+  assert.equal(result.stateMonth?.weeksExpected, 8);
 });

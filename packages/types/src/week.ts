@@ -32,7 +32,7 @@ function getWeekdayIndexInLagos(date: string): number {
   return WEEKDAY_INDEX[weekday] ?? 0;
 }
 
-function addDays(date: string, days: number): string {
+export function addDays(date: string, days: number): string {
   const [year, month, day] = date.split("-").map(Number);
   const next = new Date(Date.UTC(year, month - 1, day + days, 12, 0, 0));
   return next.toISOString().slice(0, 10);
@@ -74,6 +74,16 @@ export function formatWeekChartLabel(weekOf: string): string {
     day: "numeric",
     month: "short",
   }).format(date);
+}
+
+/** Shift a Sunday `weekOf` by a whole number of weeks. */
+export function shiftWeekOf(weekOf: string, weeksDelta: number): string {
+  return addDays(weekOf, weeksDelta * 7);
+}
+
+/** Monday through Sunday dates for a Sunday `weekOf`. */
+export function listDaysOfWeek(weekOf: string): string[] {
+  return Array.from({ length: 7 }, (_, index) => addDays(weekOf, index - 6));
 }
 
 /**

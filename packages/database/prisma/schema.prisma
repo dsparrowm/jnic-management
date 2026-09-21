@@ -120,6 +120,7 @@ model State {
   statePastor    User?   @relation("StatePastor", fields: [statePastorId], references: [id])
 
   zones Zone[]
+  branches Branch[]
   users User[] @relation("UserState")
 
   createdAt DateTime @default(now())
@@ -147,8 +148,10 @@ model Branch {
   id             String @id @default(cuid())
   name           String
   address        String?
-  zoneId         String
-  zone           Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  stateId        String
+  state          State  @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  zoneId         String?
+  zone           Zone?  @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   branchPastorId String? @unique
   branchPastor   User?  @relation("BranchPastor", fields: [branchPastorId], references: [id])
 
@@ -158,7 +161,7 @@ model Branch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([zoneId, name])
+  @@unique([stateId, name])
 }
 
 model OrgChangeRequest {

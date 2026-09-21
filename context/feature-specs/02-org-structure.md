@@ -27,7 +27,7 @@ unlinked from navigation.
 | GET | `/org/tree` | Admin, Lead Pastor | Full hierarchy |
 | POST | `/org/states` | Admin | Create state |
 | POST | `/org/zones` | Admin | Create zone under state |
-| POST | `/org/branches` | Admin | Create branch under zone |
+| POST | `/org/branches` | Admin | Create branch in a state; zone is optional |
 | PATCH | `/org/states/:id` | Admin | Update state name |
 | PATCH | `/org/zones/:id` | Admin | Update zone name |
 | PATCH | `/org/branches/:id` | Admin | Update branch name/address |
