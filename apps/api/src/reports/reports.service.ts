@@ -558,6 +558,56 @@ export class ReportsService {
     };
   }
 
+  async getZonePastorInsights(user: AuthUser, weekOf: string, weeks: number) {
+    if (user.role !== Role.ZONAL_PASTOR || !user.zoneId) {
+      return null;
+    }
+
+    const zone = await this.prisma.zone.findUnique({
+      where: { id: user.zoneId },
+      include: { branches: true },
+    });
+    if (!zone) {
+      throw new NotFoundException("Zone not found");
+    }
+
+    const branchIds = zone.branches.map((branch) => branch.id);
+    const weekRange = listWeekRange(weekOf, weeks);
+    const reports = await this.prisma.weeklyReport.findMany({
+      where: {
+        branchId: { in: branchIds },
+        weekOf: { in: weekRange.map((weekKey) => parseReportDate(weekKey)) },
+      },
+      include: weeklyReportInclude,
+    });
+
+    const reportsByWeek = new Map<string, typeof reports>();
+    for (const report of reports) {
+      const weekKey = formatReportDate(report.weekOf);
+      const existing = reportsByWeek.get(weekKey) ?? [];
+      existing.push(report);
+      reportsByWeek.set(weekKey, existing);
+    }
+
+    const attendanceTrend = weekRange.map((weekKey) => {
+      const weekReports = reportsByWeek.get(weekKey) ?? [];
+      const attendance = this.sumAttendance(weekReports);
+      const total =
+        attendance.adultCount + attendance.teenageCount + attendance.childrenCount;
+
+      return {
+        weekOf: weekKey,
+        weekLabel: formatWeekChartLabel(weekKey),
+        adultCount: attendance.adultCount,
+        teenageCount: attendance.teenageCount,
+        childrenCount: attendance.childrenCount,
+        total,
+      };
+    });
+
+    return { attendanceTrend };
+  }
+
   async getWeeklyReport(user: AuthUser, reportId: string) {
     let report = await this.prisma.weeklyReport.findUnique({
       where: { id: reportId },

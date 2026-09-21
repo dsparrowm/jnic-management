@@ -78,11 +78,17 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 | **6 — Monthly Aggregation** | **In progress** |
 | **7 — Hardening** | **Week 1 in progress** |
 
+## Test accounts
+
+Zonal/state pastor credentials for mobile UI testing — see `context/test-accounts.md`. Run
+`DATABASE_URL=<render> pnpm db:provision-test-pastors` to create ACTIVE accounts on production.
+
 ## Open questions
 
 | Question | Status |
 | -------- | ------ |
 | Pastor Home → branch overview dashboard (trends + month snapshot; report nudge only) | Done — `GET /dashboard/pastor` + mobile overview Home |
+| Zonal pastor Home → zone overview (nudge, KPIs, exceptions, trend, month snapshot) | Done — `zoneAttendanceTrend` + `zoneMonth` on dashboard API; mobile `ZoneActionNudge` / `ZoneHomeMetrics` |
 
 ## Completed
 

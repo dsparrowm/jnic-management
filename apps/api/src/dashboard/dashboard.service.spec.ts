@@ -62,6 +62,18 @@ function createService(options?: {
       branches: [],
       summary: { total: 1, submitted: 1, missed: 0, pending: 0 },
     }),
+    getZonePastorInsights: async () => ({
+      attendanceTrend: [
+        {
+          weekOf: "2026-09-20",
+          weekLabel: "20 Sep",
+          adultCount: 100,
+          teenageCount: 20,
+          childrenCount: 30,
+          total: 150,
+        },
+      ],
+    }),
     getStateSummary: async () => ({
       weekOf: "2026-09-20",
       state: { id: "state-1", name: "Lagos State" },
@@ -121,6 +133,7 @@ function createService(options?: {
         })),
       }),
       getBranchMonthSnapshot: async () => options?.monthSnapshot ?? null,
+      getZoneMonthSnapshot: async () => options?.monthSnapshot ?? null,
     } as unknown as SummariesService,
     {
       listForUser: async () => ({ items: [], unreadCount: 0 }),
@@ -233,7 +246,24 @@ test("builds the branch pastor dashboard from branch insights", async () => {
 });
 
 test("includes zone summary for zonal pastors", async () => {
-  const result = await createService().getPastorDashboard(
+  const result = await createService({
+    monthSnapshot: {
+      month: 9,
+      year: 2026,
+      label: "September 2026",
+      weeksReported: 3,
+      weeksExpected: 12,
+      totals: {
+        adult: 360,
+        teenage: 90,
+        children: 135,
+        tithe: 360000,
+        offering: 135000,
+        other: 0,
+        currency: "NGN",
+      },
+    },
+  }).getPastorDashboard(
     user(Role.ZONAL_PASTOR, { zoneId: "zone-1" }),
     "2026-09-20",
     6,
@@ -241,4 +271,6 @@ test("includes zone summary for zonal pastors", async () => {
 
   assert.equal(result.zone?.zone.name, "VI Zone");
   assert.equal(result.branch, null);
+  assert.equal(result.zoneAttendanceTrend[0]?.total, 150);
+  assert.equal(result.zoneMonth?.weeksReported, 3);
 });

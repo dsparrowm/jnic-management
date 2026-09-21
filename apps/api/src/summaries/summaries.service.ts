@@ -512,6 +512,46 @@ export class SummariesService {
     }).format(new Date(Date.UTC(year, month - 1, 1, 12)));
   }
 
+  async getZoneMonthSnapshot(user: AuthUser, month: number, year: number) {
+    if (user.role !== Role.ZONAL_PASTOR || !user.zoneId) {
+      return null;
+    }
+
+    const { reports } = await this.computeMonthlySummaries(month, year);
+    const weeks = this.buildWeeklyBreakdown(reports, (report) =>
+      this.summaryMatchesReport(SummaryScopeType.ZONE, user.zoneId!, report),
+    );
+
+    const totals = this.emptyTotals();
+    for (const week of weeks) {
+      this.mergeTotals(totals, week);
+    }
+
+    const coverage = await this.buildCoverage(
+      reports,
+      SummaryScopeType.ZONE,
+      user.zoneId,
+    );
+    const sundays = this.countSundaysInMonth(month, year);
+
+    return {
+      month,
+      year,
+      label: this.formatMonthLabel(month, year),
+      weeksReported: coverage.weeklyReports,
+      weeksExpected: coverage.branchesTotal * sundays,
+      totals: {
+        adult: totals.totalAdult,
+        teenage: totals.totalTeenage,
+        children: totals.totalChildren,
+        tithe: totals.totalTithe,
+        offering: totals.totalOffering,
+        other: totals.totalOther,
+        currency: totals.currency,
+      },
+    };
+  }
+
   async getBranchMonthSnapshot(user: AuthUser, month: number, year: number) {
     if (!canSubmitWeeklyReports(user.role, user.branchId)) {
       return null;

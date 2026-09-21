@@ -89,10 +89,39 @@ this week?”
 
 Do **not** show the large gold “Submit report” / “Open report” primary button on Home.
 
-### Zonal / state pastor (dual-scope)
+### Zonal pastor Home
 
-Keep existing zone/state summary cards **above** branch overview blocks when the user has
-`zoneId` / `stateId`. Personal branch blocks only render when `canSubmitWeekly(user)`.
+Home answers **“How is my zone doing?”** Reports tab remains the action surface (review,
+feedback, forward).
+
+```
+┌─────────────────────────────────────┐
+│ [Avatar]  Good evening, Joyce       │
+│           Victoria Island           │
+│           Lagos State               │
+├─────────────────────────────────────┤
+│ Zone action nudge (rollup / misses) │  → Reports tab
+├─────────────────────────────────────┤
+│ THIS WEEK · VICTORIA ISLAND         │
+│ attendance + finance KPI grid       │  ← zone.totals
+├─────────────────────────────────────┤
+│ NEEDS ATTENTION (if exceptions)     │  ← outstanding branches, max implicit via card
+├─────────────────────────────────────┤
+│ ATTENDANCE TREND (6 weeks, zone)    │
+├─────────────────────────────────────┤
+│ MONTH SNAPSHOT (zone branch-reports)│
+├─────────────────────────────────────┤
+│ RECENT ACTIVITY                     │
+└─────────────────────────────────────┘
+```
+
+Dual-scope zonal pastors (`branchId` set): zone blocks **above** personal branch nudge +
+branch KPIs / trend / month snapshot.
+
+### State pastor (dual-scope)
+
+Keep state summary card above branch blocks when `stateId` is set. Full state overview
+parity (like zonal) is a follow-up.
 
 ## API
 
@@ -115,8 +144,9 @@ Keep existing zone/state summary cards **above** branch overview blocks when the
 2. Current-week branch report (if `branchId`)
 3. Last N weekly reports for branch → `attendanceTrend`, `financeTrend` (optional v1)
 4. Current calendar month branch summary via existing summaries logic
-5. Zone/state summary for current week (if applicable)
-6. Notifications (last 4, same as HQ home)
+5. Zone summary + zone attendance trend + zone month snapshot (zonal pastor)
+6. State summary for current week (state pastor)
+7. Notifications (last 4, same as HQ home)
 
 **RBAC**
 
@@ -180,6 +210,8 @@ export type PastorDashboardResponse = {
   attendanceTrend: PastorHomeAttendancePoint[];
   month: PastorHomeMonthSnapshot | null;
   zone: ZoneSummaryResponse | null;
+  zoneAttendanceTrend: PastorHomeAttendancePoint[];
+  zoneMonth: PastorHomeMonthSnapshot | null;
   state: StateSummaryResponse | null;
   recentActivity: {
     unreadCount: number;
@@ -218,7 +250,9 @@ Reports tab (`weekly/index.tsx`) **unchanged** as the canonical submit/review su
       month snapshot without a primary submit button
 - [x] Compact report nudge links to Reports (or submit when due)
 - [x] Reports tab still supports submit, edit, week navigation, and detail
-- [x] Zonal/state pastors still see zone/state cards on Home
+- [x] Zonal pastors see zone overview (nudge, KPIs, exceptions, trend, month snapshot)
+- [x] Dual-scope zonal pastors see zone blocks above personal branch blocks
+- [x] State pastors still see state summary card on Home (full state overview follow-up)
 - [x] `GET /dashboard/pastor` enforces branch/zone/state scope in NestJS guards
 - [x] `progress-tracker.md` updated
 

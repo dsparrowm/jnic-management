@@ -92,6 +92,8 @@ export type PastorDashboardResponse = {
   attendanceTrend: PastorHomeAttendancePoint[];
   month: PastorHomeMonthSnapshot | null;
   zone: ZoneSummaryResponse | null;
+  zoneAttendanceTrend: PastorHomeAttendancePoint[];
+  zoneMonth: PastorHomeMonthSnapshot | null;
   state: StateSummaryResponse | null;
   recentActivity: {
     unreadCount: number;

@@ -52,7 +52,7 @@ export class DashboardService {
     this.assertPastorRole(user);
     const { month, year } = this.currentMonthYearInLagos();
 
-    const [branchInsights, notifications, zone, state, monthSnapshot] =
+    const [branchInsights, notifications, zone, state, monthSnapshot, zoneInsights, zoneMonth] =
       await Promise.all([
         this.reportsService.getBranchPastorInsights(user, weekOf, weeks),
         this.notificationsService.listForUser(user.id, 4),
@@ -63,6 +63,12 @@ export class DashboardService {
           ? this.reportsService.getStateSummary(user, weekOf)
           : Promise.resolve(null),
         this.summariesService.getBranchMonthSnapshot(user, month, year),
+        user.role === Role.ZONAL_PASTOR
+          ? this.reportsService.getZonePastorInsights(user, weekOf, weeks)
+          : Promise.resolve(null),
+        user.role === Role.ZONAL_PASTOR
+          ? this.summariesService.getZoneMonthSnapshot(user, month, year)
+          : Promise.resolve(null),
       ]);
 
     const thisWeek: PastorHomeWeekSnapshot =
@@ -84,6 +90,8 @@ export class DashboardService {
       attendanceTrend: branchInsights?.attendanceTrend ?? [],
       month: monthSnapshot,
       zone: zone as ZoneSummaryResponse | null,
+      zoneAttendanceTrend: zoneInsights?.attendanceTrend ?? [],
+      zoneMonth,
       state: state as StateSummaryResponse | null,
       recentActivity: {
         unreadCount: notifications.unreadCount,
