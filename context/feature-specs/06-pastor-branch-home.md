@@ -109,7 +109,7 @@ feedback, forward).
 ├─────────────────────────────────────┤
 │ ATTENDANCE TREND (6 weeks, zone)    │
 ├─────────────────────────────────────┤
-│ MONTH SNAPSHOT (zone branch-reports)│
+│ MONTH SNAPSHOT (branches reporting) │
 ├─────────────────────────────────────┤
 │ RECENT ACTIVITY                     │
 └─────────────────────────────────────┘

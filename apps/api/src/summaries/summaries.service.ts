@@ -532,14 +532,13 @@ export class SummariesService {
       SummaryScopeType.ZONE,
       user.zoneId,
     );
-    const sundays = this.countSundaysInMonth(month, year);
 
     return {
       month,
       year,
       label: this.formatMonthLabel(month, year),
-      weeksReported: coverage.weeklyReports,
-      weeksExpected: coverage.branchesTotal * sundays,
+      weeksReported: coverage.branchesReporting,
+      weeksExpected: coverage.branchesTotal,
       totals: {
         adult: totals.totalAdult,
         teenage: totals.totalTeenage,

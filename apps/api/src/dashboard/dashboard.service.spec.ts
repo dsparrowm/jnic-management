@@ -251,8 +251,8 @@ test("includes zone summary for zonal pastors", async () => {
       month: 9,
       year: 2026,
       label: "September 2026",
-      weeksReported: 3,
-      weeksExpected: 12,
+      weeksReported: 1,
+      weeksExpected: 3,
       totals: {
         adult: 360,
         teenage: 90,
@@ -272,5 +272,6 @@ test("includes zone summary for zonal pastors", async () => {
   assert.equal(result.zone?.zone.name, "VI Zone");
   assert.equal(result.branch, null);
   assert.equal(result.zoneAttendanceTrend[0]?.total, 150);
-  assert.equal(result.zoneMonth?.weeksReported, 3);
+  assert.equal(result.zoneMonth?.weeksReported, 1);
+  assert.equal(result.zoneMonth?.weeksExpected, 3);
 });
