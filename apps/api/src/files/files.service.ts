@@ -4,80 +4,86 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v2 as cloudinary } from "cloudinary";
 import { randomUUID } from "crypto";
 import {
   PROFILE_PICTURE_CONTENT_TYPES,
   ProfilePictureContentType,
 } from "./dto/presign-profile-picture.dto";
 
-const EXTENSION_BY_CONTENT_TYPE: Record<ProfilePictureContentType, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-};
+const PROFILE_PUBLIC_ID_PREFIX = "jnlop/profiles";
+const UPLOAD_EXPIRES_IN_SECONDS = 300;
 
 @Injectable()
 export class FilesService {
-  private readonly client: S3Client | null;
-  private readonly bucket: string | null;
-  private readonly publicUrlBase: string | null;
+  private readonly configured: boolean;
+  private readonly cloudName: string | null;
+  private readonly apiKey: string | null;
+  private readonly apiSecret: string | null;
 
   constructor(private readonly config: ConfigService) {
-    const accountId = this.config.get<string>("R2_ACCOUNT_ID");
-    const accessKeyId = this.config.get<string>("R2_ACCESS_KEY_ID");
-    const secretAccessKey = this.config.get<string>("R2_SECRET_ACCESS_KEY");
-    const bucket = this.config.get<string>("R2_BUCKET_NAME");
-    const publicUrl = this.config.get<string>("R2_PUBLIC_URL");
+    const cloudName = this.config.get<string>("CLOUDINARY_CLOUD_NAME");
+    const apiKey = this.config.get<string>("CLOUDINARY_API_KEY");
+    const apiSecret = this.config.get<string>("CLOUDINARY_API_SECRET");
 
-    if (accountId && accessKeyId && secretAccessKey && bucket && publicUrl) {
-      this.client = new S3Client({
-        region: "auto",
-        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-        credentials: { accessKeyId, secretAccessKey },
+    if (cloudName && apiKey && apiSecret) {
+      this.configured = true;
+      this.cloudName = cloudName;
+      this.apiKey = apiKey;
+      this.apiSecret = apiSecret;
+      cloudinary.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+        secure: true,
       });
-      this.bucket = bucket;
-      this.publicUrlBase = publicUrl.replace(/\/$/, "");
     } else {
-      this.client = null;
-      this.bucket = null;
-      this.publicUrlBase = null;
+      this.configured = false;
+      this.cloudName = null;
+      this.apiKey = null;
+      this.apiSecret = null;
     }
   }
 
   isConfigured(): boolean {
-    return this.client !== null && this.bucket !== null && this.publicUrlBase !== null;
+    return this.configured;
   }
 
   assertConfigured(): void {
     if (!this.isConfigured()) {
       throw new ServiceUnavailableException(
-        "Profile picture uploads are not configured. Set R2 environment variables.",
+        "Profile picture uploads are not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
       );
     }
   }
 
-  buildPublicUrl(key: string): string {
+  buildPublicUrl(publicId: string): string {
     this.assertConfigured();
-    return `${this.publicUrlBase}/${key}`;
+    return cloudinary.url(publicId, {
+      secure: true,
+      transformation: [
+        { width: 400, height: 400, crop: "fill", gravity: "face" },
+        { fetch_format: "auto", quality: "auto" },
+      ],
+    });
   }
 
-  assertProfilePictureKeyForUser(key: string, userId: string): void {
-    const prefix = `profiles/${userId}/`;
-    if (!key.startsWith(prefix)) {
+  assertProfilePictureKeyForUser(publicId: string, userId: string): void {
+    const prefix = `${PROFILE_PUBLIC_ID_PREFIX}/${userId}/`;
+    if (!publicId.startsWith(prefix)) {
       throw new BadRequestException("Invalid profile picture key");
     }
 
-    const filename = key.slice(prefix.length);
-    if (!/^[a-f0-9-]+\.(jpg|png)$/i.test(filename)) {
+    const filename = publicId.slice(prefix.length);
+    if (!/^[a-f0-9-]+$/i.test(filename)) {
       throw new BadRequestException("Invalid profile picture key");
     }
   }
 
-  async createProfilePicturePresign(
+  createProfilePicturePresign(
     userId: string,
     contentType: ProfilePictureContentType,
-    fileSize: number,
+    _fileSize: number,
   ) {
     this.assertConfigured();
 
@@ -85,23 +91,24 @@ export class FilesService {
       throw new BadRequestException("Only JPG and PNG images are supported");
     }
 
-    const extension = EXTENSION_BY_CONTENT_TYPE[contentType];
-    const key = `profiles/${userId}/${randomUUID()}.${extension}`;
-
-    const command = new PutObjectCommand({
-      Bucket: this.bucket!,
-      Key: key,
-      ContentType: contentType,
-      ContentLength: fileSize,
-    });
-
-    const uploadUrl = await getSignedUrl(this.client!, command, { expiresIn: 300 });
+    const publicId = `${PROFILE_PUBLIC_ID_PREFIX}/${userId}/${randomUUID()}`;
+    const timestamp = Math.round(Date.now() / 1000);
+    const signature = cloudinary.utils.api_sign_request(
+      {
+        timestamp,
+        public_id: publicId,
+      },
+      this.apiSecret!,
+    );
 
     return {
-      uploadUrl,
-      key,
-      publicUrl: this.buildPublicUrl(key),
-      expiresIn: 300,
+      uploadUrl: `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`,
+      key: publicId,
+      publicUrl: this.buildPublicUrl(publicId),
+      expiresIn: UPLOAD_EXPIRES_IN_SECONDS,
+      apiKey: this.apiKey!,
+      timestamp,
+      signature,
     };
   }
 }

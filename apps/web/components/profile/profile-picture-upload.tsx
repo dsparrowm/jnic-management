@@ -12,6 +12,7 @@ import {
   prepareProfileImage,
   validateProfileImageFile,
 } from "@/lib/profile-image";
+import { uploadProfilePictureBlob } from "@/lib/profile-picture-storage";
 
 interface ProfilePictureUploadProps {
   user: UserRecord;
@@ -83,15 +84,7 @@ export function ProfilePictureUpload({ user, onUpdated }: ProfilePictureUploadPr
         fileSize: blob.size,
       });
 
-      const uploadResponse = await fetch(presign.uploadUrl, {
-        method: "PUT",
-        body: blob,
-        headers: { "Content-Type": "image/jpeg" },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error("Upload to storage failed");
-      }
+      await uploadProfilePictureBlob(presign, blob);
 
       const updated = await api.updateProfilePicture(token, { key: presign.key });
       onUpdated(updated);

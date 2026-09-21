@@ -7,7 +7,7 @@ Read `AGENTS.md` before starting.
 
 ## Scope
 
-Profile picture upload via Cloudflare R2 and Admin pastor directory with filters.
+Profile picture upload via Cloudinary and Admin pastor directory with filters.
 
 **Out of scope:** Full profile editing (bio, qualifications) — MVP is photo + directory only.
 
@@ -30,7 +30,7 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 
 | Method | Path | Role | Purpose |
 | ------ | ---- | ---- | ------- |
-| POST | `/files/profile-picture/presign` | Authenticated | Get R2 presigned upload URL |
+| POST | `/files/profile-picture/presign` | Authenticated | Get Cloudinary signed upload params |
 | PATCH | `/users/me/profile-picture` | Authenticated | Save `profilePicUrl` after upload |
 | GET | `/users/pastors` | Admin | Paginated pastor directory with filters |
 
@@ -45,7 +45,7 @@ Profile picture upload via Cloudflare R2 and Admin pastor directory with filters
 
 ## Data Model
 
-- `User.profilePicUrl` — R2 public or signed URL
+- `User.profilePicUrl` — Cloudinary delivery URL
 
 ## RBAC
 

@@ -109,7 +109,7 @@ persistence before production deployment.
 - [x] Rate limiting on auth endpoints
 - [x] Passwords hashed with bcrypt
 - [x] JWT secrets not committed to repo
-- [ ] R2 bucket access restricted to presigned URLs
+- [ ] Cloudinary signed uploads configured (API secret server-side only)
 - [x] CORS configured for production web origin only
 
 ### Quality

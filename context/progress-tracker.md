@@ -63,7 +63,7 @@ Testing: physical device via **Expo Go** + `npm run start:tunnel` (WSL); EAS Sim
 
 ## Current Goal
 
-Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend domain, R2) and Week 3 smoke e2e / UAT.
+Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend domain, Cloudinary) and Week 3 smoke e2e / UAT.
 
 ## Milestone Status
 
@@ -86,12 +86,22 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 
 ## Completed
 
+### Mobile profile screen (2026-09-21)
+
+- Profile tab matches Home light-shell patterns: centered hero, overline sections, `SurfaceCard` rows
+- `ProfileHero` with role badge, assignment summary, and camera badge for photo upload
+- Account card (`email`, `phone`, member since) loaded via `GET /users/me`
+- Assignment card reflects role hierarchy and dual-scope home-branch footnote
+- App shortcuts: Notifications, Weekly reports, Library (pastors), Pastors (Admin), Summaries (LP)
+- Profile photo upload: presign → Cloudinary POST → `PATCH /users/me/profile-picture` (`expo-image-picker`)
+
 ### Pastor branch overview Home (2026-09-21)
 
 - `GET /dashboard/pastor` composes branch insights, month snapshot, zone/state summaries,
   and notifications in one round-trip
 - Mobile pastor Home is overview-first: compact report nudge, this-week KPIs, attendance
   trend, month snapshot, and recent activity; submit/edit stays on Reports
+- Notifications bell (top-right) + full `/notifications` list with mark-read
 
 ### Mobile pastor reporting UX pass (2026-09-21)
 
@@ -260,9 +270,16 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 - Nav + dashboard link for branch submitters
 - `pnpm build` passes
 
+### Profile pictures → Cloudinary (2026-09-21)
+
+- Replaced Cloudflare R2 with Cloudinary signed direct uploads
+- API returns `uploadUrl`, `key` (public_id), `apiKey`, `timestamp`, `signature`
+- Web and mobile POST multipart to Cloudinary, then `PATCH /users/me/profile-picture`
+- Delivery URLs use face-crop + auto format/quality transforms
+
 ### Phase 3 profile pictures (2026-07-12)
 
-- NestJS `files` module — R2 presigned upload (`POST /files/profile-picture/presign`)
+- NestJS `files` module — presigned upload (`POST /files/profile-picture/presign`)
 - `PATCH /users/me/profile-picture` — save `profilePicUrl` after upload
 - `/profile` page — account details, center-crop upload, default avatar fallback
 - Nav: Profile link for all roles; header avatar + profile menu item
@@ -332,7 +349,7 @@ Phase 7 week 1 hardening. Next: Week 2 hosting (paid API/DB, Vercel, Resend doma
 
 ## Next Up
 
-1. Phase 7 week 2 — paid API/DB host, Vercel web, Resend domain, R2 env, backups
+1. Phase 7 week 2 — paid API/DB host, Vercel web, Resend domain, Cloudinary env, backups
 2. Phase 7 week 3 — smoke e2e, httpOnly cookies (or documented XSS risk), docs/UAT
 3. Phase 6 — BullMQ monthly aggregation cron (still deferred)
 

@@ -74,6 +74,9 @@ export interface ProfilePicturePresignResponse {
   key: string;
   publicUrl: string;
   expiresIn: number;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
 }
 
 export interface WeeklyReportAttendance {

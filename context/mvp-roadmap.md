@@ -43,7 +43,7 @@ Phase 2 — Org + Lead Pastor Approvals
 └── OrgChangeRequest workflow
         ↓
 Phase 3 — Profiles (Epic 2)
-├── R2 profile pictures
+├── Cloudinary profile pictures
 └── Pastor directory
         ↓
 Phase 4 — Weekly Reports (Epics 3.1, 4)
@@ -135,7 +135,7 @@ Phase 7 — Hardening & Deploy
 
 | Item | User story |
 | ---- | ---------- |
-| R2 presigned upload (JPG/PNG, size limit) | US-2.1 |
+| Cloudinary signed upload (JPG/PNG, size limit) | US-2.1 |
 | Default avatar | US-2.1 |
 | Pastor directory with filters | US-2.2 |
 

@@ -6,7 +6,7 @@ This repository is the **JNLOP MVP** — Jubilee Nation Leadership & Operations 
 for JNIC (Jubilee Nation International Churches).
 
 **Greenfield Turborepo:** `apps/web` (Next.js 15), `apps/api` (NestJS), shared packages.
-Real persistence (PostgreSQL + Prisma), JWT auth, Redis/BullMQ jobs, Cloudflare R2 for
+Real persistence (PostgreSQL + Prisma), JWT auth, Redis/BullMQ jobs, Cloudinary for
 profile pictures.
 
 **Current milestone: Phase 0 only.** Do not implement later phases until prior phase

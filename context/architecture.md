@@ -5,12 +5,13 @@
 | Layer | Technology | Role |
 | ----- | ---------- | ---- |
 | Monorepo | Turborepo | Shared types, coordinated builds |
-| Frontend | Next.js 15 App Router + TypeScript | Dashboard UI, SSR where helpful |
+| Frontend | Next.js 15 App Router + TypeScript | Dashboard UI, SSR where helpful; web reporting fallback |
+| Mobile | Expo (React Native) at `/home/davies/jnic-mobile` | Primary weekly reporting client; HQ Admin/LP operations |
 | Backend | NestJS (modular monolith) | REST API, RBAC guards, business logic |
 | Database | PostgreSQL 16 | Relational org hierarchy and reports |
 | ORM | Prisma (`packages/database`) | Schema, migrations, type-safe queries |
 | Cache / Queue | Redis 7 + BullMQ | Sessions cache, background jobs |
-| File storage | Cloudflare R2 | Profile pictures (S3-compatible) |
+| File storage | Cloudinary | Profile pictures (signed direct upload) |
 | Auth | JWT (access + refresh) | Stateless API auth |
 | Email | Resend | Onboarding links, feedback notifications |
 | UI | Tailwind CSS 4 + shadcn/ui | Components and design tokens |
@@ -52,28 +53,31 @@ jnic_management/
 ## System Boundaries
 
 ```
-┌─────────────────┐
-│   apps/web       │  ← Role-aware dashboard, forms, drill-down views
-└────────┬─────────┘
-         │ REST / HTTPS (JWT)
-┌────────▼─────────┐
-│   apps/api       │  ← RBAC guards, business rules, job producers
-└───┬───────┬──────┘
-    │       │
-┌───▼───┐ ┌─▼─────┐   ┌──────────────┐
-│Postgres│ │ Redis │   │ Cloudflare R2 │
-└────────┘ └───┬───┘   └──────────────┘
-               │
-        ┌──────▼──────┐
-        │ BullMQ jobs  │
-        └──────────────┘
+┌─────────────────┐   ┌─────────────────┐
+│   apps/web       │   │  jnic-mobile     │
+│  web fallback    │   │  primary reports │
+└────────┬─────────┘   └────────┬─────────┘
+         │ REST / HTTPS (JWT)   │
+         └──────────┬───────────┘
+            ┌───────▼────────┐
+            │   apps/api      │  ← RBAC guards, business rules, job producers
+            └───┬───────┬─────┘
+                │       │
+        ┌───▼───┐ ┌─▼─────┐   ┌──────────────┐
+        │Postgres│ │ Redis │   │  Cloudinary   │
+        └────────┘ └───┬───┘   └──────────────┘
+                       │
+                ┌──────▼──────┐
+                │ BullMQ jobs  │
+                └──────────────┘
 ```
 
-- **`apps/web`** owns routing, page composition, client state, and API client calls
+- **`apps/web`** owns routing, page composition, client state, and API client calls (HQ admin + reporting fallback)
+- **`jnic-mobile`** is the primary weekly-reporting client for all pastor roles; HQ Admin/LP keep directory, org, and monthly approval tabs
 - **`apps/api`** owns authorization, validation, persistence, and job enqueueing
 - Global guards: `ThrottlerGuard` → `JwtAuthGuard` → `RolesGuard`. Public auth/onboarding endpoints are limited to 5 requests/minute. `GET /health` skips throttle and pings Postgres.
 - **`packages/database`** owns Prisma schema and generated client — sole DB access path
-- **`packages/types`** owns shared enums (`Role`, `ReportStatus`, etc.) used by both apps
+- **`packages/types`** owns shared enums and report DTOs (`Role`, `ReportStatus`, weekly/zone/state/national/feedback contracts) used by web and mobile
 
 ## NestJS Modules
 
@@ -87,7 +91,7 @@ jnic_management/
 | `feedback` | Create/list feedback on reports |
 | `summaries` | Monthly aggregation reads + HQ approval workflow |
 | `notifications` | In-app list + email dispatch via queue |
-| `files` | R2 presigned URLs for profile pictures |
+| `files` | Cloudinary signed uploads for profile pictures |
 | `dashboard` | Consolidated, role-aware HQ home data for the mobile command center |
 
 ## Core Data Model
