@@ -27,7 +27,8 @@ All components use CSS custom properties in `apps/web/app/globals.css`.
 | Muted text | `--text-muted` / `--muted-foreground` | `#6B7280` |
 | Primary accent (gold) | `--accent-primary` / `--primary` | `#C9A050` |
 | Accent hover | `--accent-hover` | `#B8903A` |
-| Accent foreground | `--accent-foreground` / `--primary-foreground` | `#FFFFFF` |
+| On gold (button text) | `--on-gold` / `--primary-foreground` | `#0D1B3E` |
+| Accent foreground | `--accent-foreground` | `#0D1B3E` on gold CTAs; shadcn muted accent still uses primary text |
 | Border default | `--border-default` / `--border` | `#E5E7EB` |
 | Success | `--state-success` | `#16A34A` |
 | Warning | `--state-warning` | `#D97706` |
@@ -47,7 +48,7 @@ All components use CSS custom properties in `apps/web/app/globals.css`.
 ### Auth pages (login, onboard)
 
 Auth cards on `--bg-surface` over `--bg-base` page background. Primary buttons use
-`--accent-primary` with `--accent-foreground` text.
+`--accent-primary` with navy `--on-gold` text for contrast.
 
 Login uses a **split layout** (jubilee-nation reference): navy `--sidebar-gradient` hero panel
 on large screens, form card on the right with `--shadow-lg-token`. Sign-in CTA uses
@@ -100,7 +101,7 @@ Use shared `Button` from `components/ui/button.tsx`.
 
 | Variant | Style |
 | ------- | ----- |
-| Primary (default) | `bg-primary text-primary-foreground hover:bg-primary/90` |
+| Primary (default) | `bg-primary text-primary-foreground hover:bg-primary/90` (navy text on gold) |
 | Outline | `border border-border bg-background` |
 | Secondary | `bg-secondary text-secondary-foreground` |
 | Ghost | `text-muted-foreground hover:bg-muted` |
@@ -159,6 +160,14 @@ All Expo routes extend the Home visual language through shared mobile primitives
 - Native form sheets include a drag handle, close action, safe-area spacing, and guarded dismissal
 - Login sits on navy without a wrapping form card: JNIC logo, JNLOP, on-navy fields, and
   gold Sign in. Unavailable and not-found use the same tokens without the tab layout
+- Weekly reporting lives on the light authenticated sheet: week picker, status pills,
+  expandable hierarchy, and a keyboard-safe submit stack. Submit is a Sunday-default
+  date picker, Naira fields, live totals, no-service guard, confirm sheet, and success
+  receipt. Nested report screens hide the tab dock; re-opening Reports returns to this week.
+  Pastor shell tabs are **Home · Reports · Library · Profile** with a light system tab bar
+  (gold active). Pastor Home is a light greeting + this-week card (Peloton-inspired), not a
+  navy command center. Library is upcoming HQ sermons/books. HQ Home remains the command center
+- Nested Weekly screens handle Android Back first; tab-root Back still returns to Home
 
 ### Android Back contract
 

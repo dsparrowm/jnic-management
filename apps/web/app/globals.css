@@ -44,7 +44,8 @@
   --text-muted: #6b7280;
   --accent-primary: #c9a050;
   --accent-hover: #b8903a;
-  --accent-foreground: #ffffff;
+  --on-gold: #0d1b3e;
+  --accent-foreground: #0d1b3e;
   --border-default: #e5e7eb;
   --state-success: #16a34a;
   --state-warning: #d97706;
@@ -66,7 +67,7 @@
   --popover: #ffffff;
   --popover-foreground: var(--text-primary);
   --primary: var(--accent-primary);
-  --primary-foreground: var(--accent-foreground);
+  --primary-foreground: var(--on-gold);
   --secondary: var(--bg-subtle);
   --secondary-foreground: var(--text-primary);
   --muted: #f3f4f6;

@@ -72,6 +72,9 @@ export function OrgCascadeSelectors({
             onChange={(zoneId) => onChange({ ...values, zoneId })}
             disabled={stateRequired && !values.stateId}
             showStatePrefix={showAllZones}
+            allowEmpty={!zoneRequired}
+            emptyLabel="No zone"
+            placeholder={zoneRequired ? "Select zone" : "No zone"}
           />
         </div>
       )}

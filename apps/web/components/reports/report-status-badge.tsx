@@ -1,25 +1,25 @@
-import { BranchSubmissionState, ReportStatus } from "@repo/types";
-import { Badge } from "@/components/ui/badge";
+"use client";
 
-const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
-  [ReportStatus.SUBMITTED]: "Submitted",
-  [ReportStatus.ZONE_REVIEWED]: "Zone reviewed",
-  [ReportStatus.STATE_REVIEWED]: "State reviewed",
-  [ReportStatus.HQ_REVIEWED]: "HQ reviewed",
-};
+import {
+  BranchSubmissionState,
+  ReportStatus,
+  reportStatusLabel,
+  submissionLabel,
+} from "@repo/types";
+import { Badge } from "@/components/ui/badge";
 
 const REPORT_STATUS_VARIANT: Record<
   ReportStatus,
   "warning" | "success" | "secondary" | "default"
 > = {
-  [ReportStatus.SUBMITTED]: "warning",
-  [ReportStatus.ZONE_REVIEWED]: "success",
+  [ReportStatus.SUBMITTED]: "success",
+  [ReportStatus.ZONE_REVIEWED]: "secondary",
   [ReportStatus.STATE_REVIEWED]: "secondary",
   [ReportStatus.HQ_REVIEWED]: "default",
 };
 
 export function ReportStatusBadge({ status }: { status: ReportStatus }) {
-  return <Badge variant={REPORT_STATUS_VARIANT[status]}>{REPORT_STATUS_LABELS[status]}</Badge>;
+  return <Badge variant={REPORT_STATUS_VARIANT[status]}>{reportStatusLabel(status)}</Badge>;
 }
 
 export function SubmissionStateBadge({
@@ -30,13 +30,13 @@ export function SubmissionStateBadge({
   reportStatus?: ReportStatus | null;
 }) {
   if (submissionState === "MISSED") {
-    return <Badge variant="destructive">Missed</Badge>;
+    return <Badge variant="destructive">{submissionLabel("MISSED")}</Badge>;
   }
   if (submissionState === "PENDING") {
-    return <Badge variant="muted">Pending</Badge>;
+    return <Badge variant="muted">{submissionLabel("PENDING")}</Badge>;
   }
   if (reportStatus) {
     return <ReportStatusBadge status={reportStatus} />;
   }
-  return <Badge variant="success">Submitted</Badge>;
+  return <Badge variant="success">{submissionLabel("SUBMITTED")}</Badge>;
 }

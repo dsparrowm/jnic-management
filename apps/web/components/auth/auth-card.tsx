@@ -73,7 +73,7 @@ export function PrimaryButton({
       type={type}
       disabled={disabled}
       className="w-full rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60"
-      style={{ background: "var(--accent-primary)", color: "var(--accent-foreground)" }}
+      style={{ background: "var(--accent-primary)", color: "var(--on-gold)" }}
     >
       {children}
     </button>

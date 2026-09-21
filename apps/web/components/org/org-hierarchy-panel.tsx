@@ -81,7 +81,7 @@ export function OrgHierarchyPanel({ orgTree, onAddState }: OrgHierarchyPanelProp
 
               {stateOpen && (
                 <div className="border-t border-border bg-muted/20">
-                  {state.zones.length === 0 ? (
+                  {state.zones.length === 0 && (state.branches?.length ?? 0) === 0 ? (
                     <p className="px-12 py-4 text-sm text-muted-foreground">No zones in this state</p>
                   ) : (
                     state.zones.map((zone) => {
@@ -140,6 +140,18 @@ export function OrgHierarchyPanel({ orgTree, onAddState }: OrgHierarchyPanelProp
                       );
                     })
                   )}
+                  {(state.branches ?? []).map((branch) => (
+                    <div
+                      key={branch.id}
+                      className="flex items-start gap-2 border-t border-border py-2.5 pl-10 pr-4 text-sm"
+                    >
+                      <GitBranch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div>
+                        <span className="font-medium text-foreground">{branch.name}</span>
+                        <p className="text-xs text-muted-foreground">No zone</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

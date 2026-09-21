@@ -1,6 +1,6 @@
 "use client";
 
-import { ZoneReportBranchRow } from "@/lib/api";
+import { sortBranchesForReview, submissionLabel, type ZoneReportBranchRow } from "@repo/types";
 import { SubmissionStateBadge } from "@/components/reports/report-status-badge";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,12 @@ function totalAttendance(row: ZoneReportBranchRow): number {
   if (!row.report?.attendance) return 0;
   const { adultCount, teenageCount, childrenCount } = row.report.attendance;
   return adultCount + teenageCount + childrenCount;
+}
+
+function totalFinance(row: ZoneReportBranchRow): number {
+  if (!row.report?.finance) return 0;
+  const { tithe, offering, other } = row.report.finance;
+  return tithe + offering + other;
 }
 
 function formatMoney(amount: number, currency: string) {
@@ -39,13 +45,13 @@ export function ZoneReportsTable({ branches, onViewReport }: ZoneReportsTablePro
           <tr>
             <th className="px-5 py-3 text-left font-medium">Branch</th>
             <th className="px-3 py-3 text-right font-medium">Attendance</th>
-            <th className="px-3 py-3 text-right font-medium">Tithe</th>
+            <th className="px-3 py-3 text-right font-medium">Income</th>
             <th className="px-3 py-3 text-left font-medium">Status</th>
             <th className="px-5 py-3 text-right font-medium">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {branches.map((row) => {
+          {sortBranchesForReview(branches).map((row) => {
             const currency = row.report?.finance?.currency ?? "NGN";
             return (
               <tr key={row.branch.id} className="hover:bg-muted/30">
@@ -54,9 +60,7 @@ export function ZoneReportsTable({ branches, onViewReport }: ZoneReportsTablePro
                   {row.report ? totalAttendance(row) : "—"}
                 </td>
                 <td className="px-3 py-3 text-right font-mono">
-                  {row.report?.finance
-                    ? formatMoney(row.report.finance.tithe, currency)
-                    : "—"}
+                  {row.report?.finance ? formatMoney(totalFinance(row), currency) : "—"}
                 </td>
                 <td className="px-3 py-3">
                   <SubmissionStateBadge
@@ -75,7 +79,9 @@ export function ZoneReportsTable({ branches, onViewReport }: ZoneReportsTablePro
                       View
                     </Button>
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-muted-foreground">
+                      {submissionLabel(row.submissionState)}
+                    </span>
                   )}
                 </td>
               </tr>

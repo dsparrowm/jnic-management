@@ -356,7 +356,8 @@ export interface OrgBranch {
   id: string;
   name: string;
   address: string | null;
-  zoneId: string;
+  zoneId: string | null;
+  stateId?: string;
 }
 
 export interface OrgZone {
@@ -370,6 +371,7 @@ export interface OrgState {
   id: string;
   name: string;
   zones: OrgZone[];
+  branches?: OrgBranch[];
 }
 
 export interface OrgChangeRequest {
@@ -635,7 +637,7 @@ export const api = {
 
   createBranch: (
     token: string,
-    data: { name: string; zoneId: string; address?: string },
+    data: { name: string; stateId: string; zoneId?: string; address?: string },
   ) =>
     request<OrgBranch>("/org/branches", {
       method: "POST",

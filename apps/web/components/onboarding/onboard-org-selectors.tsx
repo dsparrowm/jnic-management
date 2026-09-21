@@ -29,6 +29,10 @@ interface OnboardOrgSelectorsProps {
 
 function findBranchInTree(orgTree: OrgState[], branchId: string) {
   for (const state of orgTree) {
+    const unzoned = state.branches?.find((b) => b.id === branchId);
+    if (unzoned) {
+      return { stateId: state.id, zoneId: "", branchId: unzoned.id };
+    }
     for (const zone of state.zones) {
       const branch = zone.branches.find((b) => b.id === branchId);
       if (branch) {
@@ -105,9 +109,12 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
   const zonesForState = selectedState?.zones ?? [];
   const branchesForZone =
     zonesForState.find((z) => z.id === values.zoneId)?.branches ?? [];
-  const branchesForState = zonesForState.flatMap((z) =>
-    z.branches.map((b) => ({ ...b, zoneName: z.name })),
-  );
+  const branchesForState = [
+    ...zonesForState.flatMap((z) =>
+      z.branches.map((b) => ({ ...b, zoneName: z.name })),
+    ),
+    ...(selectedState?.branches ?? []).map((b) => ({ ...b, zoneName: undefined })),
+  ];
   const branchOptions =
     values.role === Role.STATE_PASTOR
       ? branchesForState

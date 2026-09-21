@@ -61,7 +61,8 @@ export function CreateBranchSheet({
     try {
       await api.createBranch(token, {
         name: name.trim(),
-        zoneId,
+        stateId,
+        zoneId: zoneId || undefined,
         address: address.trim() || undefined,
       });
       onSuccess?.(name.trim());
@@ -81,8 +82,7 @@ export function CreateBranchSheet({
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">New branch</p>
           <SheetTitle>Add branch</SheetTitle>
           <SheetDescription>
-            Create a new branch under an existing zone. Optionally filter zones by state to narrow
-            the list.
+            A branch belongs to a state. Linking it to a zone is optional.
           </SheetDescription>
         </SheetHeader>
 
@@ -95,8 +95,8 @@ export function CreateBranchSheet({
               setStateId(v.stateId);
               setZoneId(v.zoneId);
             }}
-            stateOptional
-            zoneRequired
+            stateRequired
+            zoneRequired={false}
           />
           <div className="space-y-2">
             <Label htmlFor="branch-name">Branch name</Label>
@@ -124,7 +124,7 @@ export function CreateBranchSheet({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="create-branch-form" disabled={loading || !zoneId}>
+          <Button type="submit" form="create-branch-form" disabled={loading || !stateId || name.trim().length < 2}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Create branch
           </Button>
