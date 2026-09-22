@@ -32,7 +32,8 @@ Profile picture upload via Cloudinary and Admin pastor directory with filters.
 | ------ | ---- | ---- | ------- |
 | POST | `/files/profile-picture/presign` | Authenticated | Get Cloudinary signed upload params |
 | PATCH | `/users/me/profile-picture` | Authenticated | Save `profilePicUrl` after upload |
-| GET | `/users/pastors` | Admin, state, zonal, and branch pastors | Paginated pastor directory with filters |
+| GET | `/users/pastors` | Admin, Lead Pastor, state, zonal, and branch pastors | Paginated pastor directory with filters |
+| GET | `/users/pastors/:id` | Admin, Lead Pastor, state, zonal, and branch pastors | Single pastor detail (contact + branch address) |
 | GET | `/org/areas` | Authenticated pastors and HQ | State and zone names for directory filters |
 
 ## Web Routes
@@ -51,8 +52,9 @@ Profile picture upload via Cloudinary and Admin pastor directory with filters.
 ## RBAC
 
 - Any authenticated pastor can update own profile picture
-- Admin, state pastors, zonal pastors, and branch pastors can read the pastor directory
+- Admin, Lead Pastor, state pastors, zonal pastors, and branch pastors can read the pastor directory and open pastor detail
 - Directory search matches name, email, or phone, and filters by role, state, zone, and branch
+- Pastor detail includes phone and branch address for locating a church
 - Onboard, reassign, and deactivate stay Admin-only
 
 ## Acceptance

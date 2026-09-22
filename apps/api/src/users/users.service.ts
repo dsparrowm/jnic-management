@@ -12,6 +12,13 @@ import { sanitizeUser } from "../common/user.mapper";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
 import { ReassignUserDto } from "./dto/users.dto";
 
+const DIRECTORY_ROLES: Role[] = [
+  Role.LEAD_PASTOR,
+  Role.STATE_PASTOR,
+  Role.ZONAL_PASTOR,
+  Role.BRANCH_PASTOR,
+];
+
 function toPastorRecord(
   user: Prisma.UserGetPayload<{
     include: { state: true; zone: true; branch: true };
@@ -28,7 +35,13 @@ function toPastorRecord(
     createdAt: user.createdAt,
     state: user.state ? { id: user.state.id, name: user.state.name } : null,
     zone: user.zone ? { id: user.zone.id, name: user.zone.name } : null,
-    branch: user.branch ? { id: user.branch.id, name: user.branch.name } : null,
+    branch: user.branch
+      ? {
+          id: user.branch.id,
+          name: user.branch.name,
+          address: user.branch.address,
+        }
+      : null,
   };
 }
 
@@ -49,7 +62,6 @@ function buildPastorWhere(
   if (dto.stateId) where.stateId = dto.stateId;
   if (dto.zoneId) where.zoneId = dto.zoneId;
   if (dto.branchId) where.branchId = dto.branchId;
-  if (dto.role) where.role = dto.role;
   if (!options?.excludeStatus && dto.status) where.status = dto.status;
 
   return where;
@@ -83,8 +95,14 @@ export class UsersService {
   async listPastors(dto: ListPastorsDto) {
     const page = dto.page ?? 1;
     const perPage = dto.perPage ?? 20;
-    const where = buildPastorWhere(dto);
-    const baseWhere = buildPastorWhere(dto, { excludeStatus: true });
+    const where: Prisma.UserWhereInput = {
+      ...buildPastorWhere(dto),
+      role: dto.role ?? { in: DIRECTORY_ROLES },
+    };
+    const baseWhere: Prisma.UserWhereInput = {
+      ...buildPastorWhere(dto, { excludeStatus: true }),
+      role: dto.role ?? { in: DIRECTORY_ROLES },
+    };
 
     const [items, total, active, pending, deactivated] = await Promise.all([
       this.prisma.user.findMany({
@@ -118,6 +136,17 @@ export class UsersService {
         deactivated,
       },
     };
+  }
+
+  async getPastor(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { state: true, zone: true, branch: true },
+    });
+    if (!user || !DIRECTORY_ROLES.includes(user.role as Role)) {
+      throw new NotFoundException("Pastor not found");
+    }
+    return toPastorRecord(user);
   }
 
   async deactivate(userId: string) {

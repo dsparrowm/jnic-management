@@ -41,6 +41,19 @@ export class UsersController {
     return this.usersService.listPastors(query);
   }
 
+  @Get("pastors/:id")
+  @UseGuards(RolesGuard)
+  @Roles(
+    Role.ADMIN,
+    Role.LEAD_PASTOR,
+    Role.STATE_PASTOR,
+    Role.ZONAL_PASTOR,
+    Role.BRANCH_PASTOR,
+  )
+  getPastor(@Param("id") id: string) {
+    return this.usersService.getPastor(id);
+  }
+
   @Get()
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)

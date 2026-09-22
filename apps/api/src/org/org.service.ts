@@ -36,14 +36,26 @@ export class OrgService {
             stateId: true,
             branches: {
               orderBy: { name: "asc" },
-              select: { id: true, name: true, zoneId: true, stateId: true },
+              select: {
+                id: true,
+                name: true,
+                address: true,
+                zoneId: true,
+                stateId: true,
+              },
             },
           },
         },
         branches: {
           where: { zoneId: null },
           orderBy: { name: "asc" },
-          select: { id: true, name: true, zoneId: true, stateId: true },
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            zoneId: true,
+            stateId: true,
+          },
         },
       },
     });

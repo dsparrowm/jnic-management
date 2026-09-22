@@ -38,6 +38,7 @@ export interface UserRecord {
 export interface PastorOrgRef {
   id: string;
   name: string;
+  address?: string | null;
 }
 
 export interface PastorRecord {
