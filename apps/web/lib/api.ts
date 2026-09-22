@@ -574,6 +574,9 @@ export const api = {
     return request<PastorListResponse>(`/users/pastors${qs ? `?${qs}` : ""}`, {}, token);
   },
 
+  getPastor: (token: string, id: string) =>
+    request<PastorRecord>(`/users/pastors/${id}`, {}, token),
+
   createOnboardingUser: (
     token: string,
     data: {

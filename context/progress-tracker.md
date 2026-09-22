@@ -110,6 +110,8 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 - State, zonal, and branch pastors have a Pastors tab listing every active pastor
 - Filters are a sheet for role, state, zone, and branch, plus search by name, email, or phone
+- Tapping a row opens `/directory/[id]` with contact, phone (tap to call), and branch address
+- `GET /users/pastors/:id` loads a single pastor for all directory roles
 - Admin onboard, reassign, and deactivate stay on the admin Pastors tab
 
 ### HQ growth analytics (2026-09-22)
@@ -132,8 +134,8 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ### Pastor detail (2026-09-22)
 
-- Tapping a pastor on the mobile directory opens `/pastors/[id]` instead of an action prompt
-- Detail shows contact, assignment, and joined date; resend, reassign, and deactivate live on that page
+- Admin pastor detail uses `/pastors/[id]` with contact, assignment, branch address, and admin actions
+- Pastor-facing detail is `/directory/[id]` (read-only + message)
 
 ### Mobile profile screen (2026-09-21)
 
