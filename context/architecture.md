@@ -93,7 +93,7 @@ jnic_management/
 | `notifications` | In-app list + email dispatch via queue |
 | `files` | Cloudinary signed uploads for profile pictures |
 | `dashboard` | Consolidated, role-aware HQ home data for the mobile command center |
-| `chat` | Pastor inbox, direct/zone/state conversations, text messages |
+| `chat` | Pastor inbox, direct/zone/state conversations, text messages, Socket.IO realtime |
 
 ## Core Data Model
 

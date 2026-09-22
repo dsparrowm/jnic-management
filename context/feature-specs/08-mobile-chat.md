@@ -60,4 +60,4 @@ Search on the pastor directory matches name, email, or phone.
 - [x] Branch pastors see their zone room, or state room when unzoned
 - [x] Private chat opens from the directory message icon
 - [x] Unread badge on the floating button
-- [x] Text send and poll refresh on the conversation screen
+- [x] Text send with live Socket.IO delivery on the conversation screen
