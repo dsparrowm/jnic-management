@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
+import { ChatModule } from "./chat/chat.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { FilesModule } from "./files/files.module";
 import { HealthModule } from "./health/health.module";
@@ -29,6 +30,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     PrismaModule,
     HealthModule,
     AuthModule,
+    ChatModule,
     DashboardModule,
     OnboardingModule,
     OrgModule,

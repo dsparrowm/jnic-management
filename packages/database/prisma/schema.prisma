@@ -66,6 +66,12 @@ enum NotificationType {
   ROLLUP_FORWARDED
 }
 
+enum ConversationType {
+  DIRECT
+  ZONE
+  STATE
+}
+
 model User {
   id                     String     @id @default(cuid())
   email                  String     @unique
@@ -102,6 +108,8 @@ model User {
   summaryApprovals   MonthlySummary[]   @relation("SummaryApprovedBy")
   rollupsForwarded   HierarchyWeeklyRollup[] @relation("RollupForwardedBy")
   refreshTokens      RefreshToken[]
+  conversationParticipants ConversationParticipant[]
+  chatMessages             ChatMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,6 +130,7 @@ model State {
   zones Zone[]
   branches Branch[]
   users User[] @relation("UserState")
+  conversations Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -137,6 +146,7 @@ model Zone {
 
   branches Branch[]
   users    User[]   @relation("UserZone")
+  conversations Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -299,4 +309,48 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Conversation {
+  id            String           @id @default(cuid())
+  type          ConversationType
+  title         String?
+  directKey     String?          @unique
+  zoneId        String?          @unique
+  zone          Zone?            @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  stateId       String?          @unique
+  state         State?           @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  participants ConversationParticipant[]
+  messages     ChatMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }

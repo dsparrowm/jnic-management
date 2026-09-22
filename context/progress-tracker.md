@@ -96,6 +96,13 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ## Completed
 
+### Mobile pastor chat (2026-09-22)
+
+- Floating chat button opens `/messages` with unread badge
+- Private chats, zone rooms, and state rooms backed by new chat tables
+- Pastors directory message icon starts a direct chat
+- Text-only MVP; membership syncs from org assignment on inbox load
+
 ### Pastor church directory (2026-09-22)
 
 - State, zonal, and branch pastors have a Pastors tab listing every active pastor

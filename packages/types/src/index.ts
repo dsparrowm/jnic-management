@@ -59,6 +59,16 @@ export enum NotificationType {
   ROLLUP_FORWARDED = "ROLLUP_FORWARDED",
 }
 
+export { ConversationType } from "./chat";
+export type {
+  ChatInboxResponse,
+  ChatMessagePreview,
+  ChatMessageRecord,
+  ChatMessagesResponse,
+  ChatParticipantPreview,
+  ConversationListItem,
+} from "./chat";
+
 /** API health check response */
 export interface HealthResponse {
   status: "ok";
