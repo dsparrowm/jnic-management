@@ -43,6 +43,7 @@ function buildPastorWhere(
     where.OR = [
       { name: { contains: term, mode: "insensitive" } },
       { email: { contains: term, mode: "insensitive" } },
+      { phone: { contains: term, mode: "insensitive" } },
     ];
   }
   if (dto.stateId) where.stateId = dto.stateId;

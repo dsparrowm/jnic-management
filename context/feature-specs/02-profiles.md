@@ -52,6 +52,7 @@ Profile picture upload via Cloudinary and Admin pastor directory with filters.
 
 - Any authenticated pastor can update own profile picture
 - Admin, state pastors, zonal pastors, and branch pastors can read the pastor directory
+- Directory search matches name, email, or phone, and filters by role, state, zone, and branch
 - Onboard, reassign, and deactivate stay Admin-only
 
 ## Acceptance

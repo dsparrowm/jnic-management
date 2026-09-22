@@ -30,7 +30,20 @@ export class OrgService {
         name: true,
         zones: {
           orderBy: { name: "asc" },
-          select: { id: true, name: true, stateId: true },
+          select: {
+            id: true,
+            name: true,
+            stateId: true,
+            branches: {
+              orderBy: { name: "asc" },
+              select: { id: true, name: true, zoneId: true, stateId: true },
+            },
+          },
+        },
+        branches: {
+          where: { zoneId: null },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, zoneId: true, stateId: true },
         },
       },
     });
