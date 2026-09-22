@@ -40,6 +40,7 @@ Testing: physical device via **Expo Go** + `npm run start:tunnel` (WSL); EAS Sim
 | Currency | NGN default; `currency` field stored on finance records |
 | Multi-branch pastors | 1:1 for MVP |
 | Report cutoff | Sunday week end; missed flag Monday 23:59 Africa/Lagos |
+| No-service note | Required free-text reason when weekly totals are all zero |
 | UX reference | `rokswood-hive-web` shell (patterns only); `jubilee-nation` for report forms only |
 
 ## Phase Completion Checklist
@@ -107,6 +108,12 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - Direct chat header shows the peer's profile picture from `conversation.peer`
 - Group chats show each sender's profile picture beside their name and messages
 - Membership syncs from org assignment on inbox load
+
+### Weekly no-service reason (2026-09-22)
+
+- Marking “No service this week” requires a free-text note (3–500 chars)
+- API rejects all-zero reports without `noServiceNote`; clears the note when totals are non-zero
+- Note shown on mobile/web report detail and submit receipt
 
 ### Pastor church directory (2026-09-22)
 

@@ -117,7 +117,7 @@ jnic_management/
 
 ### Reporting
 
-- **WeeklyReport** — `branchId`, `serviceDate`, `weekOf`, `status`
+- **WeeklyReport** — `branchId`, `serviceDate`, `weekOf`, `status`, optional `noServiceNote` (required when all totals are zero)
   (SUBMITTED → ZONE_REVIEWED → STATE_REVIEWED → HQ_REVIEWED), `submittedById`
 - **Attendance** — `adultCount`, `teenageCount`, `childrenCount` (1:1 with report)
 - **Finance** — `tithe`, `offering`, `other`, `currency` (default NGN)

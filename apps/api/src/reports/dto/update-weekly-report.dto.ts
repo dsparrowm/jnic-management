@@ -1,5 +1,14 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Length, Min } from "class-validator";
+import {
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  MaxLength,
+  Min,
+} from "class-validator";
 
 export class UpdateWeeklyReportDto {
   @IsOptional()
@@ -46,4 +55,9 @@ export class UpdateWeeklyReportDto {
   @IsString()
   @Length(3, 3)
   currency?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  noServiceNote?: string | null;
 }

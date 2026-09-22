@@ -68,7 +68,7 @@ Enforced in NestJS guards. Mobile hides tabs it cannot use; it must not be the o
 
 - [x] Branch / zonal / state pastors reach Home instead of the HQ-only unavailable screen
 - [x] Weekly submit/edit matches web fields (attendance + finance, NGN default, week from service date)
-- [x] Submit UX: Sunday default, Naira formatting, live totals, no-service guard, confirm, receipt
+- [x] Submit UX: Sunday default, Naira formatting, live totals, no-service guard with required reason note, confirm, receipt
 - [x] Locked reports cannot be patched
 - [x] Dual-scope pastors with `branchId` can submit from Weekly
 

@@ -80,6 +80,13 @@ export function WeeklyReportDetailSheet({
               </span>
             </div>
 
+            {report.noServiceNote ? (
+              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">No service</h3>
+                <p className="text-sm text-foreground">{report.noServiceNote}</p>
+              </section>
+            ) : null}
+
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">Attendance</h3>
               <dl className="grid grid-cols-3 gap-4">

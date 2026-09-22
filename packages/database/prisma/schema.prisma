@@ -217,6 +217,8 @@ model WeeklyReport {
   status        ReportStatus @default(SUBMITTED)
   submittedById String
   submittedBy   User         @relation("ReportSubmittedBy", fields: [submittedById], references: [id])
+  /// Required when attendance and finance are all zero (no service that week).
+  noServiceNote String?
 
   attendance Attendance?
   finance    Finance?

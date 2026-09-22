@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Length,
+  MaxLength,
   Min,
 } from "class-validator";
 
@@ -71,4 +72,9 @@ export class CreateWeeklyReportDto extends AttendanceFieldsDto {
   @IsString()
   @Length(3, 3)
   currency?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  noServiceNote?: string | null;
 }

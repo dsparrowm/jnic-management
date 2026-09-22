@@ -1,7 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { computeWeekOf, formatWeekEndingLabel } from "@repo/types";
+import {
+  computeWeekOf,
+  formatWeekEndingLabel,
+  NO_SERVICE_NOTE_MAX,
+  resolveNoServiceNote,
+} from "@repo/types";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,6 +25,7 @@ const weeklyReportSchema = z.object({
   offering: z.coerce.number().min(0),
   other: z.coerce.number().min(0),
   currency: z.string().length(3),
+  noServiceNote: z.string().max(NO_SERVICE_NOTE_MAX).optional(),
 });
 
 export type WeeklyReportFormValues = z.infer<typeof weeklyReportSchema>;
@@ -99,7 +105,7 @@ export function WeeklyReportForm({
   onSubmit,
 }: WeeklyReportFormProps) {
   const locked = existingReport ? !existingReport.editable : false;
-  const [noService, setNoService] = useState(false);
+  const [noService, setNoService] = useState(() => Boolean(existingReport?.noServiceNote));
   const [confirming, setConfirming] = useState(false);
   const [blockError, setBlockError] = useState<string>();
 
@@ -113,6 +119,7 @@ export function WeeklyReportForm({
       offering: existingReport?.finance?.offering ?? 0,
       other: existingReport?.finance?.other ?? 0,
       currency: existingReport?.finance?.currency ?? "NGN",
+      noServiceNote: existingReport?.noServiceNote ?? "",
     }),
     [defaultServiceDate, existingReport],
   );
@@ -131,10 +138,10 @@ export function WeeklyReportForm({
 
   useEffect(() => {
     reset(defaultValues);
-    setNoService(false);
+    setNoService(Boolean(existingReport?.noServiceNote));
     setConfirming(false);
     setBlockError(undefined);
-  }, [defaultValues, reset]);
+  }, [defaultValues, existingReport?.noServiceNote, reset]);
 
   const serviceDate = watch("serviceDate");
   const adultCount = Number(watch("adultCount") || 0);
@@ -143,13 +150,14 @@ export function WeeklyReportForm({
   const tithe = Number(watch("tithe") || 0);
   const offering = Number(watch("offering") || 0);
   const other = Number(watch("other") || 0);
+  const noServiceNote = watch("noServiceNote") ?? "";
   const attendanceTotal = adultCount + teenageCount + childrenCount;
   const financeTotal = tithe + offering + other;
   const weekEnding = serviceDate ? formatWeekEndingLabel(computeWeekOf(serviceDate)) : "";
 
   async function submitValues(values: WeeklyReportFormValues) {
     setBlockError(undefined);
-    const payload = noService
+    const payload: WeeklyReportFormValues = noService
       ? {
           ...values,
           adultCount: 0,
@@ -160,7 +168,7 @@ export function WeeklyReportForm({
           other: 0,
           currency: "NGN",
         }
-      : values;
+      : { ...values, noServiceNote: "" };
     const allZero =
       payload.adultCount +
         payload.teenageCount +
@@ -173,6 +181,25 @@ export function WeeklyReportForm({
       setBlockError("If the branch did not meet this week, mark No service before sending.");
       setConfirming(false);
       return;
+    }
+    if (noService) {
+      const resolved = resolveNoServiceNote(
+        {
+          adultCount: 0,
+          teenageCount: 0,
+          childrenCount: 0,
+          tithe: 0,
+          offering: 0,
+          other: 0,
+        },
+        values.noServiceNote,
+      );
+      if (resolved.error || !resolved.note) {
+        setBlockError(resolved.error ?? "Explain why there was no service this week.");
+        setConfirming(false);
+        return;
+      }
+      payload.noServiceNote = resolved.note;
     }
     if (!confirming) {
       setConfirming(true);
@@ -228,17 +255,36 @@ export function WeeklyReportForm({
                   setValue("tithe", 0);
                   setValue("offering", 0);
                   setValue("other", 0);
+                } else {
+                  setValue("noServiceNote", "");
                 }
               }}
             />
             <span>
               <span className="font-medium text-foreground">No service this week</span>
               <span className="mt-0.5 block text-muted-foreground">
-                Sends zeros if the branch did not meet.
+                Sends zeros if the branch did not meet. A reason is required.
               </span>
             </span>
           </label>
         )}
+        {noService && !locked ? (
+          <div className="space-y-2">
+            <Label htmlFor="noServiceNote">Why was there no service?</Label>
+            <textarea
+              id="noServiceNote"
+              rows={3}
+              maxLength={NO_SERVICE_NOTE_MAX}
+              disabled={loading}
+              className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="e.g. Venue closed for renovations"
+              {...register("noServiceNote")}
+            />
+            <p className="text-xs text-muted-foreground">
+              {noServiceNote.trim().length}/{NO_SERVICE_NOTE_MAX}
+            </p>
+          </div>
+        ) : null}
       </FormSection>
 
       <FormSection title="Attendance" description="Headcounts from the main service.">
@@ -275,7 +321,7 @@ export function WeeklyReportForm({
       {confirming && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           {noService
-            ? "No service will be recorded for this week. Confirm to send zeros."
+            ? `No service will be recorded. Reason: ${noServiceNote.trim()}`
             : `Sending ${attendanceTotal.toLocaleString()} people and ${formatNaira(financeTotal)} for the week ending ${weekEnding}.`}
         </div>
       )}

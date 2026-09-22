@@ -158,6 +158,7 @@ export default function SubmitWeeklyReportPage() {
         offering: values.offering,
         other: values.other,
         currency: values.currency,
+        noServiceNote: values.noServiceNote ?? null,
       };
 
       if (sameWeek && existingReport?.editable) {

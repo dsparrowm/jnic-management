@@ -104,6 +104,7 @@ export interface WeeklyReportRecord {
   submittedBy: { id: string; name: string; email: string };
   attendance: WeeklyReportAttendance | null;
   finance: WeeklyReportFinance | null;
+  noServiceNote: string | null;
   editable: boolean;
   createdAt: string;
   updatedAt: string;
@@ -125,6 +126,7 @@ export interface WeeklyReportInput {
   offering: number;
   other: number;
   currency?: string;
+  noServiceNote?: string | null;
 }
 
 export interface ZoneReportBranchRow {

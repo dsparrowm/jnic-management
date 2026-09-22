@@ -26,6 +26,8 @@ export type WeeklyReportRecord = {
   submittedBy: { id: string; name: string; email: string };
   attendance: WeeklyReportAttendance | null;
   finance: WeeklyReportFinance | null;
+  /** Present when the branch marked no service (zeros) for the week. */
+  noServiceNote: string | null;
   editable: boolean;
   createdAt: string;
   updatedAt: string;
@@ -47,7 +49,62 @@ export type WeeklyReportInput = {
   offering: number;
   other: number;
   currency?: string;
+  /** Required when all attendance and finance fields are zero. */
+  noServiceNote?: string | null;
 };
+
+export const NO_SERVICE_NOTE_MIN = 3;
+export const NO_SERVICE_NOTE_MAX = 500;
+
+export function isZeroWeeklyTotals(input: {
+  adultCount: number;
+  teenageCount: number;
+  childrenCount: number;
+  tithe: number;
+  offering: number;
+  other: number;
+}): boolean {
+  return (
+    input.adultCount +
+      input.teenageCount +
+      input.childrenCount +
+      input.tithe +
+      input.offering +
+      input.other ===
+    0
+  );
+}
+
+/** Normalize note for persistence; returns null when the week had a service. */
+export function resolveNoServiceNote(
+  totals: {
+    adultCount: number;
+    teenageCount: number;
+    childrenCount: number;
+    tithe: number;
+    offering: number;
+    other: number;
+  },
+  note: string | null | undefined,
+): { note: string | null; error: string | null } {
+  if (!isZeroWeeklyTotals(totals)) {
+    return { note: null, error: null };
+  }
+  const trimmed = note?.trim() ?? "";
+  if (trimmed.length < NO_SERVICE_NOTE_MIN) {
+    return {
+      note: null,
+      error: "Explain why there was no service this week (at least a few words).",
+    };
+  }
+  if (trimmed.length > NO_SERVICE_NOTE_MAX) {
+    return {
+      note: null,
+      error: `Keep the no-service note under ${NO_SERVICE_NOTE_MAX} characters.`,
+    };
+  }
+  return { note: trimmed, error: null };
+}
 
 export type ZoneReportBranchRow = {
   branch: { id: string; name: string };

@@ -47,6 +47,7 @@ export function toWeeklyReportView(
           currency: report.finance.currency,
         }
       : null,
+    noServiceNote: report.noServiceNote,
     editable,
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,

@@ -127,6 +127,10 @@ export {
 export {
   canLeaveFeedback,
   canReplyToFeedback,
+  isZeroWeeklyTotals,
+  NO_SERVICE_NOTE_MAX,
+  NO_SERVICE_NOTE_MIN,
+  resolveNoServiceNote,
 } from "./reports";
 export type {
   CreateFeedbackInput,
@@ -135,13 +139,19 @@ export type {
   FeedbackRecord,
   GrowthMetric,
   NationalGrowthResponse,
+  ReportCountSummary,
   StateGrowthResponse,
   StateGrowthRow,
   StateSummaryResponse,
   StateZoneSummary,
   WeeklyReportAttendance,
   WeeklyReportFinance,
+  WeeklyReportInput,
+  WeeklyReportListResponse,
   WeeklyReportRecord,
   ZoneReportBranchRow,
   ZoneSummaryResponse,
+  RollupInfo,
+  NationalStateSummary,
+  NationalSummaryResponse,
 } from "./reports";

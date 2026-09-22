@@ -24,6 +24,7 @@ import {
   formatReportDate,
   formatWeekEndingLabel,
   shiftWeekOf,
+  resolveNoServiceNote,
 } from "@repo/types";
 import { isRollupVisibleToUpstream, toRollupView } from "./rollup.mapper";
 import { AuthUser } from "../common/auth.types";
@@ -288,6 +289,20 @@ export class ReportsService {
     const serviceDate = parseReportDate(dto.serviceDate);
     const weekOf = parseReportDate(computeWeekOf(dto.serviceDate));
     const currency = dto.currency ?? "NGN";
+    const resolvedNote = resolveNoServiceNote(
+      {
+        adultCount: dto.adultCount,
+        teenageCount: dto.teenageCount,
+        childrenCount: dto.childrenCount,
+        tithe: dto.tithe,
+        offering: dto.offering,
+        other: dto.other,
+      },
+      dto.noServiceNote,
+    );
+    if (resolvedNote.error) {
+      throw new BadRequestException(resolvedNote.error);
+    }
 
     const existing = await this.prisma.weeklyReport.findUnique({
       where: { branchId_weekOf: { branchId, weekOf } },
@@ -304,6 +319,7 @@ export class ReportsService {
           weekOf,
           status: PrismaReportStatus.SUBMITTED,
           submittedById: user.id,
+          noServiceNote: resolvedNote.note,
         },
       });
 
@@ -387,12 +403,29 @@ export class ReportsService {
       }
     }
 
+    const nextTotals = {
+      adultCount: dto.adultCount ?? report.attendance?.adultCount ?? 0,
+      teenageCount: dto.teenageCount ?? report.attendance?.teenageCount ?? 0,
+      childrenCount: dto.childrenCount ?? report.attendance?.childrenCount ?? 0,
+      tithe: dto.tithe ?? Number(report.finance?.tithe ?? 0),
+      offering: dto.offering ?? Number(report.finance?.offering ?? 0),
+      other: dto.other ?? Number(report.finance?.other ?? 0),
+    };
+    const resolvedNote = resolveNoServiceNote(
+      nextTotals,
+      dto.noServiceNote !== undefined ? dto.noServiceNote : report.noServiceNote,
+    );
+    if (resolvedNote.error) {
+      throw new BadRequestException(resolvedNote.error);
+    }
+
     const updated = await this.prisma.$transaction(async (tx) => {
       await tx.weeklyReport.update({
         where: { id: reportId },
         data: {
           ...(serviceDate ? { serviceDate } : {}),
           ...(weekOf ? { weekOf } : {}),
+          noServiceNote: resolvedNote.note,
         },
       });
 

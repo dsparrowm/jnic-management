@@ -24,6 +24,7 @@ Implemented as part of the weekly report entity — not separate standalone form
 - [x] Fields: `tithe`, `offering`, `other`
 - [x] `currency` defaults to `NGN`; stored on record for future configurability
 - [x] Submitted together with attendance in one weekly report
+- [x] No-service weeks (all zeros) require `noServiceNote` explaining why the branch did not meet
 
 ### US-4.3 — Aggregates + missed flags
 
