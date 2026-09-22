@@ -104,6 +104,7 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - Text messages deliver in real time over Socket.IO (`/chat` namespace)
 - Delivered and read receipts on thread bubbles and chat list (single / double muted / double green ticks)
 - Chat list shows receipt ticks when the last message was sent by you; live updates via `chat:receipt`
+- Direct chat header shows the peer's profile picture from `conversation.peer`
 - Membership syncs from org assignment on inbox load
 
 ### Pastor church directory (2026-09-22)
