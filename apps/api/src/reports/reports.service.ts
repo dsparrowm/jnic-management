@@ -23,6 +23,7 @@ import {
   parseReportDate,
   formatReportDate,
   formatWeekEndingLabel,
+  shiftWeekOf,
 } from "@repo/types";
 import { isRollupVisibleToUpstream, toRollupView } from "./rollup.mapper";
 import { AuthUser } from "../common/auth.types";
@@ -1305,6 +1306,239 @@ export class ReportsService {
       weeks: weekRange.length,
       attendanceTrend,
       financeByState: states.map((state) => financeByState.get(state.id)!),
+    };
+  }
+
+  private growthMetric(current: number, previous: number) {
+    const change = current - previous;
+    return {
+      current,
+      previous,
+      change,
+      changePercent: previous > 0 ? Math.round((change / previous) * 100) : null,
+    };
+  }
+
+  private reportAttendance(report: {
+    attendance: {
+      adultCount: number;
+      teenageCount: number;
+      childrenCount: number;
+    } | null;
+  }) {
+    if (!report.attendance) return 0;
+    return (
+      report.attendance.adultCount +
+      report.attendance.teenageCount +
+      report.attendance.childrenCount
+    );
+  }
+
+  private reportFinance(report: {
+    finance: { tithe: unknown; offering: unknown; other: unknown; currency: string } | null;
+  }) {
+    if (!report.finance) return { total: 0, currency: "NGN" };
+    return {
+      total:
+        Number(report.finance.tithe) +
+        Number(report.finance.offering) +
+        Number(report.finance.other),
+      currency: report.finance.currency || "NGN",
+    };
+  }
+
+  private async loadGrowthReports(weekOf: string, previousWeekOf: string) {
+    return this.prisma.weeklyReport.findMany({
+      where: {
+        weekOf: {
+          in: [parseReportDate(weekOf), parseReportDate(previousWeekOf)],
+        },
+      },
+      include: {
+        attendance: true,
+        finance: true,
+        branch: { select: { id: true, name: true, stateId: true, zoneId: true } },
+      },
+    });
+  }
+
+  async getNationalGrowth(user: AuthUser, weekOf: string) {
+    this.assertHqViewer(user);
+    const previousWeekOf = shiftWeekOf(weekOf, -1);
+    const currentKey = weekOf;
+    const previousKey = previousWeekOf;
+
+    const [states, reports] = await Promise.all([
+      this.prisma.state.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          statePastor: { select: { name: true } },
+          branches: { select: { id: true } },
+        },
+      }),
+      this.loadGrowthReports(weekOf, previousWeekOf),
+    ]);
+
+    const byState = new Map<
+      string,
+      { attendanceCurrent: number; attendancePrevious: number; financeCurrent: number; financePrevious: number; reporting: Set<string> }
+    >();
+    for (const state of states) {
+      byState.set(state.id, {
+        attendanceCurrent: 0,
+        attendancePrevious: 0,
+        financeCurrent: 0,
+        financePrevious: 0,
+        reporting: new Set(),
+      });
+    }
+
+    let attendanceCurrent = 0;
+    let attendancePrevious = 0;
+    let financeCurrent = 0;
+    let financePrevious = 0;
+    let currency = "NGN";
+
+    for (const report of reports) {
+      const bucket = byState.get(report.branch.stateId);
+      if (!bucket) continue;
+      const weekKey = formatReportDate(report.weekOf);
+      const people = this.reportAttendance(report);
+      const money = this.reportFinance(report);
+      currency = money.currency || currency;
+      const isCurrent = weekKey === currentKey;
+      if (isCurrent) {
+        bucket.attendanceCurrent += people;
+        bucket.financeCurrent += money.total;
+        bucket.reporting.add(report.branchId);
+        attendanceCurrent += people;
+        financeCurrent += money.total;
+      } else if (weekKey === previousKey) {
+        bucket.attendancePrevious += people;
+        bucket.financePrevious += money.total;
+        attendancePrevious += people;
+        financePrevious += money.total;
+      }
+    }
+
+    const stateRows = states
+      .map((state) => {
+        const bucket = byState.get(state.id)!;
+        return {
+          stateId: state.id,
+          stateName: state.name,
+          statePastorName: state.statePastor?.name ?? null,
+          attendance: this.growthMetric(bucket.attendanceCurrent, bucket.attendancePrevious),
+          finance: this.growthMetric(bucket.financeCurrent, bucket.financePrevious),
+          branchesReporting: bucket.reporting.size,
+          branchesTotal: state.branches.length,
+        };
+      })
+      .sort((a, b) => a.attendance.change - b.attendance.change || a.finance.change - b.finance.change);
+
+    return {
+      weekOf,
+      previousWeekOf,
+      weekLabel: formatWeekEndingLabel(weekOf),
+      previousWeekLabel: formatWeekEndingLabel(previousWeekOf),
+      attendance: this.growthMetric(attendanceCurrent, attendancePrevious),
+      finance: this.growthMetric(financeCurrent, financePrevious),
+      currency,
+      states: stateRows,
+    };
+  }
+
+  async getStateGrowth(user: AuthUser, stateId: string, weekOf: string) {
+    this.assertHqViewer(user);
+    const previousWeekOf = shiftWeekOf(weekOf, -1);
+    const state = await this.prisma.state.findUnique({
+      where: { id: stateId },
+      include: {
+        statePastor: { select: { name: true } },
+        branches: {
+          orderBy: { name: "asc" },
+          include: { zone: { select: { name: true } } },
+        },
+      },
+    });
+    if (!state) {
+      throw new NotFoundException("State not found");
+    }
+
+    const reports = await this.loadGrowthReports(weekOf, previousWeekOf);
+    const branchIds = new Set(state.branches.map((branch) => branch.id));
+    const byBranch = new Map<
+      string,
+      { attendanceCurrent: number; attendancePrevious: number; financeCurrent: number; financePrevious: number }
+    >();
+    for (const branch of state.branches) {
+      byBranch.set(branch.id, {
+        attendanceCurrent: 0,
+        attendancePrevious: 0,
+        financeCurrent: 0,
+        financePrevious: 0,
+      });
+    }
+
+    let currency = "NGN";
+    for (const report of reports) {
+      if (!branchIds.has(report.branchId)) continue;
+      const bucket = byBranch.get(report.branchId);
+      if (!bucket) continue;
+      const weekKey = formatReportDate(report.weekOf);
+      const people = this.reportAttendance(report);
+      const money = this.reportFinance(report);
+      currency = money.currency || currency;
+      if (weekKey === weekOf) {
+        bucket.attendanceCurrent += people;
+        bucket.financeCurrent += money.total;
+      } else if (weekKey === previousWeekOf) {
+        bucket.attendancePrevious += people;
+        bucket.financePrevious += money.total;
+      }
+    }
+
+    const branches = state.branches
+      .map((branch) => {
+        const bucket = byBranch.get(branch.id)!;
+        return {
+          branchId: branch.id,
+          branchName: branch.name,
+          zoneName: branch.zone?.name ?? null,
+          attendance: this.growthMetric(bucket.attendanceCurrent, bucket.attendancePrevious),
+          finance: this.growthMetric(bucket.financeCurrent, bucket.financePrevious),
+        };
+      })
+      .sort(
+        (a, b) =>
+          Math.abs(b.attendance.change) - Math.abs(a.attendance.change) ||
+          Math.abs(b.finance.change) - Math.abs(a.finance.change) ||
+          a.branchName.localeCompare(b.branchName),
+      );
+
+    const attendance = this.growthMetric(
+      branches.reduce((sum, branch) => sum + branch.attendance.current, 0),
+      branches.reduce((sum, branch) => sum + branch.attendance.previous, 0),
+    );
+    const finance = this.growthMetric(
+      branches.reduce((sum, branch) => sum + branch.finance.current, 0),
+      branches.reduce((sum, branch) => sum + branch.finance.previous, 0),
+    );
+
+    return {
+      weekOf,
+      previousWeekOf,
+      weekLabel: formatWeekEndingLabel(weekOf),
+      previousWeekLabel: formatWeekEndingLabel(previousWeekOf),
+      state: {
+        id: state.id,
+        name: state.name,
+        pastorName: state.statePastor?.name ?? null,
+      },
+      attendance,
+      finance,
+      currency,
+      branches,
     };
   }
 

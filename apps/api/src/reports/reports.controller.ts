@@ -93,6 +93,24 @@ export class ReportsController {
     return this.reportsService.getNationalSummary(user, query.weekOf);
   }
 
+  @Get("national/growth")
+  @UseGuards(RolesGuard)
+  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  getNationalGrowth(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
+    return this.reportsService.getNationalGrowth(user, query.weekOf);
+  }
+
+  @Get("national/growth/states/:stateId")
+  @UseGuards(RolesGuard)
+  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  getStateGrowth(
+    @CurrentUser() user: AuthUser,
+    @Param("stateId") stateId: string,
+    @Query() query: WeekSummaryQueryDto,
+  ) {
+    return this.reportsService.getStateGrowth(user, stateId, query.weekOf);
+  }
+
   @Get("national/analytics")
   @UseGuards(RolesGuard)
   @Roles(Role.LEAD_PASTOR, Role.ADMIN)

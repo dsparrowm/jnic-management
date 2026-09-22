@@ -97,6 +97,8 @@ Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards t
 | GET | `/reports/state/summary` | State Pastor+ | State aggregates (gated by zone forward) |
 | **POST** | **`/reports/state/:weekOf/forward`** | **State Pastor** | **Forward state bundle to HQ** |
 | GET | `/reports/national/summary` | Lead Pastor, Admin | Full state/zone/branch tree, including unforwarded. Totals stay on forwarded rollups. |
+| GET | `/reports/national/growth` | Lead Pastor, Admin | Week-over-week attendance and giving by state |
+| GET | `/reports/national/growth/states/:stateId` | Lead Pastor, Admin | Branch contribution to that state's growth |
 | POST | `/reports/:id/feedback` | Zonal+, State+, LP, Admin | Add feedback |
 | GET | `/reports/:id/feedback` | Scoped | List feedback thread |
 | GET | `/summaries/monthly` | Scoped | Monthly summaries |

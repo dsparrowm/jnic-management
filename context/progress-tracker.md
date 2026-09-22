@@ -96,6 +96,12 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ## Completed
 
+### HQ growth analytics (2026-09-22)
+
+- Admin and Lead Pastor Growth tab compares this week with the previous week
+- States are ordered with the weakest attendance change first, with the state pastor named
+- Opening a state lists branches by how much their attendance and giving moved
+
 ### Admin report drill-down (2026-09-22)
 
 - National reports list every state, zone, and branch, including ones that have not forwarded

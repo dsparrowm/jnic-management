@@ -119,8 +119,13 @@ export {
 } from "./reports";
 export type {
   CreateFeedbackInput,
+  BranchGrowthRow,
   FeedbackListResponse,
   FeedbackRecord,
+  GrowthMetric,
+  NationalGrowthResponse,
+  StateGrowthResponse,
+  StateGrowthRow,
   StateSummaryResponse,
   StateZoneSummary,
   WeeklyReportAttendance,

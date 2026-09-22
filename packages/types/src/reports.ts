@@ -128,6 +128,54 @@ export type NationalSummaryResponse = {
   coverage: ReportCountSummary;
 };
 
+export type GrowthMetric = {
+  current: number;
+  previous: number;
+  change: number;
+  changePercent: number | null;
+};
+
+export type StateGrowthRow = {
+  stateId: string;
+  stateName: string;
+  statePastorName: string | null;
+  attendance: GrowthMetric;
+  finance: GrowthMetric;
+  branchesReporting: number;
+  branchesTotal: number;
+};
+
+export type NationalGrowthResponse = {
+  weekOf: string;
+  previousWeekOf: string;
+  weekLabel: string;
+  previousWeekLabel: string;
+  attendance: GrowthMetric;
+  finance: GrowthMetric;
+  currency: string;
+  states: StateGrowthRow[];
+};
+
+export type BranchGrowthRow = {
+  branchId: string;
+  branchName: string;
+  zoneName: string | null;
+  attendance: GrowthMetric;
+  finance: GrowthMetric;
+};
+
+export type StateGrowthResponse = {
+  weekOf: string;
+  previousWeekOf: string;
+  weekLabel: string;
+  previousWeekLabel: string;
+  state: { id: string; name: string; pastorName: string | null };
+  attendance: GrowthMetric;
+  finance: GrowthMetric;
+  currency: string;
+  branches: BranchGrowthRow[];
+};
+
 export type FeedbackRecord = {
   id: string;
   reportId: string;
