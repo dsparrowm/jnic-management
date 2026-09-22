@@ -87,6 +87,7 @@ export {
   getSubmissionDeadlineUtc,
   getTodayInLagos,
   isSubmissionDeadlinePassed,
+  listDaysOfWeek,
   listWeekRange,
   parseReportDate,
   shiftWeekOf,
