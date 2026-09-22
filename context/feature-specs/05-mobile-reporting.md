@@ -46,8 +46,10 @@ those routes.
 | `/library` | Pastor — upcoming HQ sermons/books |
 | `/profile` | Assignment + session |
 | Approve / Summaries | Lead Pastor monthly (unchanged, retitled Summaries) |
-| `/messages` | Pastor inbox (floating button) — see `08-mobile-chat.md` |
 | `/directory` | State, zonal, and branch pastors — church directory filtered by state, zone, and name |
+| `/directory/[id]` | Pastor detail (read-only) with optional direct message |
+| `/messages` | Pastor inbox (floating button) — see `08-mobile-chat.md` |
+| `/messages/new` | Start a direct message by choosing a pastor |
 | `/pastors` | Admin pastor directory |
 | `/pastors/[id]` | Admin pastor detail: contact, assignment, resend, reassign, deactivate |
 | Org | Admin (unchanged) |

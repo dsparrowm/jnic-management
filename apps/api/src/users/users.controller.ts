@@ -30,7 +30,13 @@ export class UsersController {
 
   @Get("pastors")
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.STATE_PASTOR, Role.ZONAL_PASTOR, Role.BRANCH_PASTOR)
+  @Roles(
+    Role.ADMIN,
+    Role.LEAD_PASTOR,
+    Role.STATE_PASTOR,
+    Role.ZONAL_PASTOR,
+    Role.BRANCH_PASTOR,
+  )
   listPastors(@Query() query: ListPastorsDto) {
     return this.usersService.listPastors(query);
   }
