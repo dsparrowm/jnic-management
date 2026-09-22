@@ -6,7 +6,7 @@ import {
   NotFoundException,
   forwardRef,
 } from "@nestjs/common";
-import { ConversationType, Role, UserStatus } from "@repo/types";
+import { ConversationType, ChatReceiptStatus, Role, UserStatus } from "@repo/types";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthUser } from "../common/auth.types";
 import { ChatGateway } from "./chat.gateway";
@@ -198,6 +198,7 @@ export class ChatService {
         where: { conversationId },
         include: {
           sender: { select: { id: true, name: true, profilePicUrl: true } },
+          receipts: { select: { deliveredAt: true, readAt: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * perPage,
@@ -215,6 +216,10 @@ export class ChatService {
         senderProfilePicUrl: message.sender.profilePicUrl,
         createdAt: message.createdAt.toISOString(),
         mine: message.senderId === user.id,
+        receiptStatus:
+          message.senderId === user.id
+            ? this.aggregateReceiptStatus(message.receipts)
+            : null,
       })),
       total,
       page,
@@ -235,15 +240,27 @@ export class ChatService {
       throw new BadRequestException("Message cannot be empty");
     }
 
+    const participants = await this.prisma.conversationParticipant.findMany({
+      where: { conversationId },
+      select: { userId: true },
+    });
+    const recipientIds = participants
+      .map((p) => p.userId)
+      .filter((id) => id !== user.id);
+
     const message = await this.prisma.$transaction(async (tx) => {
       const created = await tx.chatMessage.create({
         data: {
           conversationId,
           senderId: user.id,
           body,
+          receipts: {
+            create: recipientIds.map((userId) => ({ userId })),
+          },
         },
         include: {
           sender: { select: { id: true, name: true, profilePicUrl: true } },
+          receipts: { select: { deliveredAt: true, readAt: true } },
         },
       });
       await tx.conversation.update({
@@ -265,13 +282,8 @@ export class ChatService {
       senderProfilePicUrl: message.sender.profilePicUrl,
       createdAt: message.createdAt.toISOString(),
       mine: true,
+      receiptStatus: this.aggregateReceiptStatus(message.receipts),
     };
-
-    const participants = await this.prisma.conversationParticipant.findMany({
-      where: { conversationId },
-      select: { userId: true },
-    });
-    const recipientIds = participants.map((p) => p.userId);
 
     this.chatGateway.emitMessage(conversationId, {
       conversationId,
@@ -282,11 +294,47 @@ export class ChatService {
         senderName: payload.senderName,
         senderProfilePicUrl: payload.senderProfilePicUrl,
         createdAt: payload.createdAt,
+        receiptStatus: null,
       },
     });
-    this.chatGateway.emitInboxBump(recipientIds, conversationId);
+    this.chatGateway.emitInboxBump(
+      participants.map((p) => p.userId),
+      conversationId,
+    );
 
     return payload;
+  }
+
+  async markDelivered(userId: string, messageId: string) {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true, senderId: true },
+    });
+    if (!message) {
+      throw new NotFoundException("Message not found");
+    }
+    if (message.senderId === userId) {
+      return { ok: true };
+    }
+    await this.assertParticipant(userId, message.conversationId);
+
+    const now = new Date();
+    await this.prisma.chatMessageReceipt.updateMany({
+      where: {
+        messageId,
+        userId,
+        deliveredAt: null,
+      },
+      data: { deliveredAt: now },
+    });
+
+    const status = await this.getMessageReceiptStatus(messageId);
+    this.chatGateway.emitReceipt({
+      conversationId: message.conversationId,
+      messageId,
+      status,
+    });
+    return { ok: true, status };
   }
 
   async markRead(userId: string, conversationId: string) {
@@ -295,10 +343,44 @@ export class ChatService {
       where: { conversationId },
       orderBy: { createdAt: "desc" },
     });
+    const now = new Date();
     await this.prisma.conversationParticipant.updateMany({
       where: { conversationId, userId },
-      data: { lastReadAt: lastMessage?.createdAt ?? new Date() },
+      data: { lastReadAt: lastMessage?.createdAt ?? now },
     });
+
+    const pending = await this.prisma.chatMessageReceipt.findMany({
+      where: {
+        userId,
+        readAt: null,
+        message: { conversationId, senderId: { not: userId } },
+      },
+      select: { messageId: true },
+    });
+    if (pending.length === 0) {
+      return { ok: true };
+    }
+
+    await this.prisma.chatMessageReceipt.updateMany({
+      where: {
+        userId,
+        messageId: { in: pending.map((row) => row.messageId) },
+      },
+      data: {
+        deliveredAt: now,
+        readAt: now,
+      },
+    });
+
+    const uniqueMessageIds = [...new Set(pending.map((row) => row.messageId))];
+    for (const messageId of uniqueMessageIds) {
+      const status = await this.getMessageReceiptStatus(messageId);
+      this.chatGateway.emitReceipt({
+        conversationId,
+        messageId,
+        status,
+      });
+    }
     return { ok: true };
   }
 
@@ -313,6 +395,23 @@ export class ChatService {
 
   async assertUserInConversation(userId: string, conversationId: string) {
     await this.assertParticipant(userId, conversationId);
+  }
+
+  private aggregateReceiptStatus(
+    receipts: { deliveredAt: Date | null; readAt: Date | null }[],
+  ): ChatReceiptStatus {
+    if (receipts.length === 0) return ChatReceiptStatus.SENT;
+    if (receipts.every((row) => row.readAt)) return ChatReceiptStatus.READ;
+    if (receipts.every((row) => row.deliveredAt)) return ChatReceiptStatus.DELIVERED;
+    return ChatReceiptStatus.SENT;
+  }
+
+  private async getMessageReceiptStatus(messageId: string): Promise<ChatReceiptStatus> {
+    const receipts = await this.prisma.chatMessageReceipt.findMany({
+      where: { messageId },
+      select: { deliveredAt: true, readAt: true },
+    });
+    return this.aggregateReceiptStatus(receipts);
   }
 
   private conversationTitle(

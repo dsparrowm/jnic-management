@@ -4,6 +4,13 @@ export enum ConversationType {
   STATE = "STATE",
 }
 
+/** Aggregate receipt status shown to the sender (WhatsApp-style). */
+export enum ChatReceiptStatus {
+  SENT = "SENT",
+  DELIVERED = "DELIVERED",
+  READ = "READ",
+}
+
 export type ChatParticipantPreview = {
   id: string;
   name: string;
@@ -42,6 +49,8 @@ export type ChatMessageRecord = {
   senderProfilePicUrl: string | null;
   createdAt: string;
   mine: boolean;
+  /** Present for the sender's own messages. */
+  receiptStatus: ChatReceiptStatus | null;
 };
 
 export type ChatMessagesResponse = {
@@ -51,4 +60,10 @@ export type ChatMessagesResponse = {
     type: ConversationType;
     title: string;
   };
+};
+
+export type ChatReceiptUpdate = {
+  conversationId: string;
+  messageId: string;
+  status: ChatReceiptStatus;
 };

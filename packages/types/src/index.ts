@@ -59,13 +59,14 @@ export enum NotificationType {
   ROLLUP_FORWARDED = "ROLLUP_FORWARDED",
 }
 
-export { ConversationType } from "./chat";
+export { ConversationType, ChatReceiptStatus } from "./chat";
 export type {
   ChatInboxResponse,
   ChatMessagePreview,
   ChatMessageRecord,
   ChatMessagesResponse,
   ChatParticipantPreview,
+  ChatReceiptUpdate,
   ConversationListItem,
 } from "./chat";
 

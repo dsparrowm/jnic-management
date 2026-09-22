@@ -10,7 +10,7 @@ import {
 import { Inject, Logger, forwardRef } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { UserStatus } from "@repo/types";
+import { UserStatus, type ChatReceiptStatus } from "@repo/types";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthUser } from "../common/auth.types";
@@ -29,7 +29,14 @@ export type ChatMessageEvent = {
     senderName: string;
     senderProfilePicUrl: string | null;
     createdAt: string;
+    receiptStatus: ChatReceiptStatus | null;
   };
+};
+
+export type ChatReceiptEvent = {
+  conversationId: string;
+  messageId: string;
+  status: ChatReceiptStatus;
 };
 
 function socketCorsOrigin(
@@ -111,10 +118,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { ok: true };
   }
 
+  @SubscribeMessage("chat:delivered")
+  async markDelivered(
+    @ConnectedSocket() client: ChatSocket,
+    @MessageBody() body: { messageId?: string },
+  ) {
+    const user = client.data.user;
+    if (!user || !body?.messageId) return { ok: false };
+    return this.chatService.markDelivered(user.id, body.messageId);
+  }
+
   emitMessage(conversationId: string, event: ChatMessageEvent) {
     this.server
       .to(this.conversationRoom(conversationId))
       .emit("chat:message", event);
+  }
+
+  emitReceipt(event: ChatReceiptEvent) {
+    this.server
+      .to(this.conversationRoom(event.conversationId))
+      .emit("chat:receipt", event);
   }
 
   emitInboxBump(userIds: string[], conversationId: string) {

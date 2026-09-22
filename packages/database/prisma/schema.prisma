@@ -110,6 +110,7 @@ model User {
   refreshTokens      RefreshToken[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
+  chatMessageReceipts      ChatMessageReceipt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -352,5 +353,21 @@ model ChatMessage {
   body           String
   createdAt      DateTime     @default(now())
 
+  receipts ChatMessageReceipt[]
+
   @@index([conversationId, createdAt])
+}
+
+model ChatMessageReceipt {
+  id          String      @id @default(cuid())
+  messageId   String
+  message     ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  @@unique([messageId, userId])
+  @@index([userId, readAt])
+  @@index([messageId])
 }
