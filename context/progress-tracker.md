@@ -101,7 +101,8 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - Floating chat button opens `/messages` with unread badge
 - Private chats, zone rooms, and state rooms backed by new chat tables
 - Pastors directory message icon starts a direct chat
-- Text-only MVP; membership syncs from org assignment on inbox load
+- Text messages deliver in real time over Socket.IO (`/chat` namespace)
+- Membership syncs from org assignment on inbox load
 
 ### Pastor church directory (2026-09-22)
 

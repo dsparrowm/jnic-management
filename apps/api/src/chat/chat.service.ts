@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from "@nestjs/common";
 import { ConversationType, Role, UserStatus } from "@repo/types";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthUser } from "../common/auth.types";
+import { ChatGateway } from "./chat.gateway";
 import { ListChatMessagesDto, SendChatMessageDto } from "./dto/chat.dto";
 
 const MESSAGING_ROLES: Role[] = [
@@ -23,7 +26,11 @@ function directKeyFor(userA: string, userB: string): string {
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   async getUnreadCount(userId: string) {
     await this.syncRoomsForUser(userId);
@@ -167,11 +174,24 @@ export class ChatService {
 
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { zone: true, state: true },
+      include: {
+        zone: true,
+        state: true,
+        participants: {
+          include: {
+            user: { select: { id: true, name: true } },
+          },
+        },
+      },
     });
     if (!conversation) {
       throw new NotFoundException("Conversation not found");
     }
+
+    const peerName =
+      conversation.type === ConversationType.DIRECT
+        ? (conversation.participants.find((p) => p.userId !== user.id)?.user.name ?? null)
+        : null;
 
     const [items, total] = await Promise.all([
       this.prisma.chatMessage.findMany({
@@ -202,7 +222,7 @@ export class ChatService {
       conversation: {
         id: conversation.id,
         type: conversation.type,
-        title: this.conversationTitle(conversation, null),
+        title: this.conversationTitle(conversation, peerName),
       },
     };
   }
@@ -237,7 +257,7 @@ export class ChatService {
       return created;
     });
 
-    return {
+    const payload = {
       id: message.id,
       body: message.body,
       senderId: message.senderId,
@@ -246,6 +266,27 @@ export class ChatService {
       createdAt: message.createdAt.toISOString(),
       mine: true,
     };
+
+    const participants = await this.prisma.conversationParticipant.findMany({
+      where: { conversationId },
+      select: { userId: true },
+    });
+    const recipientIds = participants.map((p) => p.userId);
+
+    this.chatGateway.emitMessage(conversationId, {
+      conversationId,
+      message: {
+        id: payload.id,
+        body: payload.body,
+        senderId: payload.senderId,
+        senderName: payload.senderName,
+        senderProfilePicUrl: payload.senderProfilePicUrl,
+        createdAt: payload.createdAt,
+      },
+    });
+    this.chatGateway.emitInboxBump(recipientIds, conversationId);
+
+    return payload;
   }
 
   async markRead(userId: string, conversationId: string) {
@@ -259,6 +300,19 @@ export class ChatService {
       data: { lastReadAt: lastMessage?.createdAt ?? new Date() },
     });
     return { ok: true };
+  }
+
+  async listConversationIdsForUser(userId: string): Promise<string[]> {
+    await this.syncRoomsForUser(userId);
+    const rows = await this.prisma.conversationParticipant.findMany({
+      where: { userId },
+      select: { conversationId: true },
+    });
+    return rows.map((row) => row.conversationId);
+  }
+
+  async assertUserInConversation(userId: string, conversationId: string) {
+    await this.assertParticipant(userId, conversationId);
   }
 
   private conversationTitle(
