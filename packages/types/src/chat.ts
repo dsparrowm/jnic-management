@@ -61,6 +61,8 @@ export type ChatMessagesResponse = {
     id: string;
     type: ConversationType;
     title: string;
+    /** Other participant in a direct chat; null for group rooms. */
+    peer: ChatParticipantPreview | null;
   };
 };
 

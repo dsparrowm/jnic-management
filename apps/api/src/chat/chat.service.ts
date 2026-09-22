@@ -186,7 +186,9 @@ export class ChatService {
         state: true,
         participants: {
           include: {
-            user: { select: { id: true, name: true } },
+            user: {
+              select: { id: true, name: true, profilePicUrl: true, role: true },
+            },
           },
         },
       },
@@ -195,9 +197,10 @@ export class ChatService {
       throw new NotFoundException("Conversation not found");
     }
 
-    const peerName =
+    const peerUser =
       conversation.type === ConversationType.DIRECT
-        ? (conversation.participants.find((p) => p.userId !== user.id)?.user.name ?? null)
+        ? (conversation.participants.find((p) => p.userId !== user.id)?.user ??
+          null)
         : null;
 
     const [items, total] = await Promise.all([
@@ -234,7 +237,15 @@ export class ChatService {
       conversation: {
         id: conversation.id,
         type: conversation.type,
-        title: this.conversationTitle(conversation, peerName),
+        title: this.conversationTitle(conversation, peerUser?.name ?? null),
+        peer: peerUser
+          ? {
+              id: peerUser.id,
+              name: peerUser.name,
+              profilePicUrl: peerUser.profilePicUrl,
+              role: peerUser.role,
+            }
+          : null,
       },
     };
   }
