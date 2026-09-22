@@ -24,6 +24,8 @@ export type ChatMessagePreview = {
   senderId: string;
   senderName: string;
   createdAt: string;
+  /** Present when the viewer sent this last message. */
+  receiptStatus: ChatReceiptStatus | null;
 };
 
 export type ConversationListItem = {

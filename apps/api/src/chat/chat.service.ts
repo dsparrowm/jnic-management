@@ -63,7 +63,10 @@ export class ChatService {
             messages: {
               orderBy: { createdAt: "desc" },
               take: 1,
-              include: { sender: { select: { id: true, name: true } } },
+              include: {
+                sender: { select: { id: true, name: true } },
+                receipts: { select: { deliveredAt: true, readAt: true } },
+              },
             },
             participants: {
               include: {
@@ -107,6 +110,10 @@ export class ChatService {
                 senderId: last.senderId,
                 senderName: last.sender.name,
                 createdAt: last.createdAt.toISOString(),
+                receiptStatus:
+                  last.senderId === user.id
+                    ? this.aggregateReceiptStatus(last.receipts)
+                    : null,
               }
             : null,
           unreadCount,
