@@ -96,6 +96,12 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 
 ## Completed
 
+### Pastor church directory (2026-09-22)
+
+- State, zonal, and branch pastors have a Pastors tab listing every active pastor
+- Filters are state, zone, and name search
+- Admin onboard, reassign, and deactivate stay on the admin Pastors tab
+
 ### HQ growth analytics (2026-09-22)
 
 - Admin and Lead Pastor Growth tab compares this week with the previous week

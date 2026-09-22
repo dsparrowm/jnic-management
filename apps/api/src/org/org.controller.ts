@@ -29,6 +29,19 @@ export class OrgController {
     return this.orgService.getTree();
   }
 
+  @Get("areas")
+  @UseGuards(RolesGuard)
+  @Roles(
+    Role.ADMIN,
+    Role.LEAD_PASTOR,
+    Role.STATE_PASTOR,
+    Role.ZONAL_PASTOR,
+    Role.BRANCH_PASTOR,
+  )
+  listAreas() {
+    return this.orgService.listAreas();
+  }
+
   @Post("states")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)

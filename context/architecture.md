@@ -86,7 +86,7 @@ jnic_management/
 | `auth` | Login, JWT refresh, password set via onboarding token, guards, auth rate limits |
 | `users` | Profile, deactivate, reassign, pastor directory |
 | `onboarding` | Admin creates pending user, token, resend, email job |
-| `org` | States, zones, branches; `OrgChangeRequest` workflow |
+| `org` | States, zones, branches; `OrgChangeRequest` workflow; `GET /org/areas` for directory filters |
 | `reports` | Weekly report CRUD, status progression, edit lock, national analytics |
 | `feedback` | Create/list feedback on reports |
 | `summaries` | Monthly aggregation reads + HQ approval workflow |

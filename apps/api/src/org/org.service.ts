@@ -22,6 +22,21 @@ import { OrgChangeRequestView, OrgTreeState, toChangeRequestView } from "./org.t
 export class OrgService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async listAreas() {
+    const states = await this.prisma.state.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        zones: {
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, stateId: true },
+        },
+      },
+    });
+    return states;
+  }
+
   async getTree(): Promise<OrgTreeState[]> {
     const states = await this.prisma.state.findMany({
       orderBy: { name: "asc" },
