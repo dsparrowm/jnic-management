@@ -1,6 +1,6 @@
 "use client";
 
-import { ZoneReportBranchRow } from "@/lib/api";
+import { RollupInfo, ZoneReportBranchRow } from "@/lib/api";
 import { ZoneReportsTable } from "@/components/reports/zone-reports-table";
 import { RollupStatusBadge } from "@/components/reports/rollup-status-badge";
 
@@ -10,7 +10,7 @@ interface ZoneReportsSectionProps {
   summary: { submitted: number; missed: number; pending: number; total: number };
   forwarded?: boolean;
   revealBranches?: boolean;
-  rollup?: { status: "IN_REVIEW" | "FORWARDED" | "STALE"; version: number; forwardedAt: string | null };
+  rollup?: RollupInfo;
   onViewReport: (reportId: string) => void;
 }
 
