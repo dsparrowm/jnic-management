@@ -455,3 +455,4 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - 2026-07-10: API deployed to Render — build via `scripts/render-build.sh`, health check live
 - 2026-07-10: Phase 1 auth + onboarding implemented; build passes
 - 2026-07-10: Phase 2 org module + web pages started
+- 2026-10-22: Exported `NotificationRecord`/`NotificationListResponse` from `@repo/types` (needed by jnic-mobile); fixed `apps/web` type errors failing `next build`/Vercel — `RollupInfo.status` uses shared `RollupStatus` enum, `AuthUser`/`UserRecord` declare `stateName`/`zoneName`/`branchName`, `ZoneReportsSection` uses shared `RollupInfo`

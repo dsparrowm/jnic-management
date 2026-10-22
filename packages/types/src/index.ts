@@ -140,6 +140,8 @@ export type {
   FeedbackRecord,
   GrowthMetric,
   NationalGrowthResponse,
+  NotificationListResponse,
+  NotificationRecord,
   ReportCountSummary,
   StateGrowthResponse,
   StateGrowthRow,

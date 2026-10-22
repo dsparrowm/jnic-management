@@ -1,4 +1,4 @@
-import { BranchSubmissionState, NotificationType, OrgChangeType, ReportStatus, Role, UserStatus } from "@repo/types";
+import { BranchSubmissionState, NotificationType, OrgChangeType, ReportStatus, Role, RollupStatus, UserStatus } from "@repo/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -11,6 +11,9 @@ export interface AuthUser {
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
+  stateName?: string | null;
+  zoneName?: string | null;
+  branchName?: string | null;
   profilePicUrl?: string | null;
 }
 
@@ -31,6 +34,9 @@ export interface UserRecord {
   stateId: string | null;
   zoneId: string | null;
   branchId: string | null;
+  stateName?: string | null;
+  zoneName?: string | null;
+  branchName?: string | null;
   onboardingTokenExpiry: string | null;
   createdAt: string;
 }
@@ -144,7 +150,7 @@ export interface ReportCountSummary {
 }
 
 export interface RollupInfo {
-  status: "IN_REVIEW" | "FORWARDED" | "STALE";
+  status: RollupStatus;
   version: number;
   forwardedAt: string | null;
 }
