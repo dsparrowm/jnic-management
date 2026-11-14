@@ -181,9 +181,20 @@ export class SummariesService {
         },
       });
 
+      const totalsUnchanged =
+        existing != null &&
+        existing.totalAdult === totals.totalAdult &&
+        existing.totalTeenage === totals.totalTeenage &&
+        existing.totalChildren === totals.totalChildren &&
+        Number(existing.totalTithe) === totals.totalTithe &&
+        Number(existing.totalOffering) === totals.totalOffering &&
+        Number(existing.totalOther) === totals.totalOther;
+
       const status =
-        existing?.status === PrismaMonthlySummaryStatus.APPROVED
-          ? PrismaMonthlySummaryStatus.APPROVED
+        existing?.status === PrismaMonthlySummaryStatus.APPROVED ||
+        (existing?.status === PrismaMonthlySummaryStatus.RETURNED &&
+          totalsUnchanged)
+          ? existing.status
           : defaultStatus;
 
       await this.prisma.monthlySummary.upsert({

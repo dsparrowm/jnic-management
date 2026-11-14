@@ -103,6 +103,7 @@ Late branch submissions mark the parent rollup **STALE**; reviewer re-forwards t
 | GET | `/reports/:id/feedback` | Scoped | List feedback thread |
 | GET | `/summaries/monthly` | Scoped | Monthly summaries |
 | POST | `/summaries/monthly/:id/approve` | Lead Pastor | Approve national summary |
+| POST | `/summaries/monthly/:id/return` | Lead Pastor | Return national summary for changes, optional `note` (≤500 chars); status `RETURNED` until recomputed totals change |
 
 ## Web Routes (desktop fallback)
 
