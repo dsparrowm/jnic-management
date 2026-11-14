@@ -26,7 +26,7 @@ org, and monthly summary approval.
 2. Enable branch-level weekly attendance + finance submission
 3. Roll reports up Branch → Zone → State → HQ with drill-down at each level
 4. Support non-blocking feedback and notifications between hierarchy levels
-5. Auto-aggregate monthly summaries; Lead Pastor approves national summaries
+5. Auto-aggregate monthly summaries; Lead Pastor approves or returns national summaries for changes
 6. Lead Pastor approves major org changes (new states/zones) proposed by Admin
 
 ## User Roles

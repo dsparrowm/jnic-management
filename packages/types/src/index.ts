@@ -49,6 +49,7 @@ export enum MonthlySummaryStatus {
   PENDING = "PENDING",
   PENDING_LP_APPROVAL = "PENDING_LP_APPROVAL",
   APPROVED = "APPROVED",
+  RETURNED = "RETURNED",
 }
 
 export enum NotificationType {
