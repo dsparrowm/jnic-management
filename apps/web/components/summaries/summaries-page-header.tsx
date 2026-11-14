@@ -17,6 +17,12 @@ function statusBadge(status: string) {
       className: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }
+  if (status === "RETURNED") {
+    return {
+      label: "Returned for changes",
+      className: "border-red-200 bg-red-50 text-red-700",
+    };
+  }
   return {
     label: "Pending",
     className: "border-border bg-muted text-muted-foreground",

@@ -675,6 +675,8 @@ export class SummariesService {
           year: record.year,
           status: record.status,
           approvedAt: record.approvedAt?.toISOString() ?? null,
+          returnNote: record.returnNote,
+          returnedAt: record.returnedAt?.toISOString() ?? null,
           totals: this.mapSummaryTotals(record),
           weeks,
           coverage,
@@ -713,6 +715,8 @@ export class SummariesService {
         month: item.month,
         year: item.year,
         status: item.status,
+        returnNote: item.returnNote,
+        returnedAt: item.returnedAt?.toISOString() ?? null,
         totals: {
           adult: item.totalAdult,
           teenage: item.totalTeenage,
@@ -748,6 +752,40 @@ export class SummariesService {
         status: PrismaMonthlySummaryStatus.APPROVED,
         approvedById: user.id,
         approvedAt: new Date(),
+      },
+    });
+  }
+
+  async returnMonthlySummary(
+    user: AuthUser,
+    id: string,
+    note?: string,
+  ): Promise<MonthlySummary> {
+    if (user.role !== Role.LEAD_PASTOR) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+
+    const summary = await this.prisma.monthlySummary.findUnique({ where: { id } });
+    if (!summary) {
+      throw new NotFoundException("Monthly summary not found");
+    }
+    if (summary.scopeType !== PrismaSummaryScopeType.HQ) {
+      throw new ForbiddenException("Only national summaries can be returned");
+    }
+    if (summary.status === PrismaMonthlySummaryStatus.APPROVED) {
+      throw new BadRequestException("Approved summaries cannot be returned");
+    }
+    if (summary.status === PrismaMonthlySummaryStatus.RETURNED) {
+      return summary;
+    }
+
+    return this.prisma.monthlySummary.update({
+      where: { id },
+      data: {
+        status: PrismaMonthlySummaryStatus.RETURNED,
+        returnedById: user.id,
+        returnedAt: new Date(),
+        returnNote: note?.trim() || null,
       },
     });
   }

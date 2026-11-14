@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { MonthlySummary } from "@repo/database";
 import { Role } from "@repo/types";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
@@ -7,6 +7,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
 import { ListMonthlySummariesDto } from "./dto/list-monthly-summaries.dto";
+import { ReturnMonthlySummaryDto } from "./dto/return-monthly-summary.dto";
 import { SummariesService } from "./summaries.service";
 
 @Controller("summaries")
@@ -42,5 +43,16 @@ export class SummariesController {
   @Roles(Role.LEAD_PASTOR)
   approveMonthly(@CurrentUser() user: AuthUser, @Param("id") id: string): Promise<MonthlySummary> {
     return this.summariesService.approveMonthlySummary(user, id);
+  }
+
+  @Post("monthly/:id/return")
+  @UseGuards(RolesGuard)
+  @Roles(Role.LEAD_PASTOR)
+  returnMonthly(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: ReturnMonthlySummaryDto,
+  ): Promise<MonthlySummary> {
+    return this.summariesService.returnMonthlySummary(user, id, dto.note);
   }
 }
