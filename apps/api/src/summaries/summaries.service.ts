@@ -183,6 +183,7 @@ export class SummariesService {
 
       const totalsUnchanged =
         existing != null &&
+        existing.currency === totals.currency &&
         existing.totalAdult === totals.totalAdult &&
         existing.totalTeenage === totals.totalTeenage &&
         existing.totalChildren === totals.totalChildren &&
