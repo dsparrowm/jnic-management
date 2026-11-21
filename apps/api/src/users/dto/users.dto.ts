@@ -29,4 +29,8 @@ export class ReassignUserDto {
   @IsOptional()
   @IsString()
   branchId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

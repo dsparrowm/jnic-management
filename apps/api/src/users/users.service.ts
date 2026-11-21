@@ -4,11 +4,15 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma, UserStatus } from "@repo/database";
-import { ONBOARDABLE_ROLES, Role } from "@repo/types";
+import { ONBOARDABLE_ROLES, PersonnelMoveKind, Role } from "@repo/types";
 import { FilesService } from "../files/files.service";
 import { resolveAndValidateOrgAssignment } from "../common/org-assignment";
 import { PrismaService } from "../prisma/prisma.service";
 import { isHrPersonnel } from "../common/guards/hr-personnel.guard";
+import {
+  recordMove,
+  territoryLabel,
+} from "../common/personnel-moves";
 import { sanitizeUser } from "../common/user.mapper";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
 import { ReassignUserDto } from "./dto/users.dto";
@@ -187,7 +191,7 @@ export class UsersService {
     return toPastorRecord(user);
   }
 
-  async deactivate(userId: string) {
+  async deactivate(userId: string, actorId: string, note?: string | null) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException("User not found");
@@ -215,11 +219,22 @@ export class UsersService {
       where: { id: userId },
       data: { status: UserStatus.DEACTIVATED },
     });
+    await recordMove(this.prisma, {
+      kind: PersonnelMoveKind.STATUS,
+      userId,
+      actorId,
+      summary: "Active → Deactivated",
+      detail: { from: { status: "ACTIVE" }, to: { status: "DEACTIVATED" } },
+      note,
+    });
     return sanitizeUser(updated);
   }
 
-  async reassign(userId: string, dto: ReassignUserDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async reassign(userId: string, dto: ReassignUserDto, actorId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: pastorInclude,
+    });
     if (!user) {
       throw new NotFoundException("User not found");
     }
@@ -245,6 +260,7 @@ export class UsersService {
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
+      include: pastorInclude,
       data: {
         role: targetRole,
         ...(dto.title !== undefined ? { title: dto.title } : {}),
@@ -255,7 +271,35 @@ export class UsersService {
         branchId: org.branchId,
       },
     });
+    await recordMove(this.prisma, {
+      kind: PersonnelMoveKind.TERRITORY,
+      userId,
+      actorId,
+      summary: `${territoryLabel(user)} → ${territoryLabel(updated)}`,
+      detail: {
+        from: { role: user.role, regionId: user.regionId, stateId: user.stateId, zoneId: user.zoneId, districtId: user.districtId, branchId: user.branchId },
+        to: { role: updated.role, regionId: updated.regionId, stateId: updated.stateId, zoneId: updated.zoneId, districtId: updated.districtId, branchId: updated.branchId },
+      },
+      note: dto.note,
+    });
     return sanitizeUser(updated);
+  }
+
+  async listMoves(userId: string) {
+    const moves = await this.prisma.personnelMove.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { actor: { select: { id: true, name: true } } },
+    });
+    return moves.map((m) => ({
+      id: m.id,
+      kind: m.kind,
+      summary: m.summary,
+      note: m.note,
+      actor: m.actor,
+      createdAt: m.createdAt,
+    }));
   }
 
   async updateProfilePicture(userId: string, key: string) {

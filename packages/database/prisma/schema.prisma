@@ -113,6 +113,13 @@ enum ConversationType {
   STATE
 }
 
+enum PersonnelMoveKind {
+  TERRITORY
+  SEAT
+  UNIT
+  STATUS
+}
+
 model User {
   id                    String     @id @default(cuid())
   email                 String     @unique
@@ -161,6 +168,8 @@ model User {
   summaryApprovals         MonthlySummary[]          @relation("SummaryApprovedBy")
   summaryFilings           MonthlySummary[]          @relation("SummaryFiledBy")
   rollupsForwarded         HierarchyWeeklyRollup[]   @relation("RollupForwardedBy")
+  personnelMoves           PersonnelMove[]           @relation("PersonnelMoveSubject")
+  personnelMovesActed      PersonnelMove[]           @relation("PersonnelMoveActor")
   refreshTokens            RefreshToken[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
@@ -634,4 +643,22 @@ model TemplateReport {
 
   @@index([directorateId, status])
   @@index([templateId, periodKey])
+}
+
+/// HR audit trail: every personnel move (territory reassign, directorate
+/// seat change, unit-coordinator change, deactivation) with actor + note.
+model PersonnelMove {
+  id        String            @id @default(cuid())
+  kind      PersonnelMoveKind
+  user      User              @relation("PersonnelMoveSubject", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  actor     User              @relation("PersonnelMoveActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId   String
+  summary   String
+  detail    Json?
+  note      String?
+  createdAt DateTime          @default(now())
+
+  @@index([userId])
+  @@index([actorId])
 }

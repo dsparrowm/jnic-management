@@ -5,9 +5,16 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { DirectorateOffice, Prisma, UserStatus } from "@repo/database";
+import { PersonnelMoveKind } from "@repo/types";
 import { PrismaService } from "../prisma/prisma.service";
 import {
+  recordMove,
+  seatFacetLabel,
+  unitFacetLabel,
+} from "../common/personnel-moves";
+import {
   CreateServiceUnitDto,
+  TransferAssignmentDto,
   UpdateAssignmentDto,
   UpdateServiceUnitDto,
   UpsertAssignmentDto,
@@ -92,13 +99,24 @@ export class DirectoratesService {
   }
 
   /** Assign or re-seat a user inside a directorate. One seat per person. */
-  async upsertAssignment(directorateId: string, dto: UpsertAssignmentDto) {
-    await this.ensureDirectorate(directorateId);
+  async upsertAssignment(
+    directorateId: string,
+    dto: UpsertAssignmentDto,
+    actorId: string,
+  ) {
+    const directorate = await this.ensureDirectorate(directorateId);
     const deskId = await this.resolveDesk(directorateId, dto.deskId);
 
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
-      include: { directorateAssignment: true },
+      include: {
+        directorateAssignment: {
+          include: {
+            directorate: { select: { name: true } },
+            desk: { select: { name: true } },
+          },
+        },
+      },
     });
     if (!user) {
       throw new NotFoundException("User not found");
@@ -138,12 +156,138 @@ export class DirectoratesService {
       },
       include: { user: { select: memberUserSelect } },
     });
+
+    const deskName = deskId
+      ? (
+          await this.prisma.desk.findUnique({
+            where: { id: deskId },
+            select: { name: true },
+          })
+        )?.name ?? null
+      : null;
+    const from = existing?.isActive
+      ? seatFacetLabel({
+          office: existing.office,
+          directorateName: existing.directorate.name,
+          deskName: existing.desk?.name,
+        })
+      : "No seat";
+    const to = seatFacetLabel({
+      office: dto.office,
+      directorateName: directorate.name,
+      deskName,
+    });
+    if (from !== to) {
+      await recordMove(this.prisma, {
+        kind: PersonnelMoveKind.SEAT,
+        userId: dto.userId,
+        actorId,
+        summary: `${from} → ${to}`,
+        detail: {
+          from: existing
+            ? {
+                directorateId: existing.directorateId,
+                deskId: existing.deskId,
+                office: existing.office,
+              }
+            : null,
+          to: { directorateId, deskId, office: dto.office },
+        },
+        note: dto.note,
+      });
+    }
     return this.toMemberRecord(assignment);
   }
 
-  async updateAssignment(assignmentId: string, dto: UpdateAssignmentDto) {
+  /** Moves a person's seat to another directorate in one audited step. */
+  async transferAssignment(
+    directorateId: string,
+    dto: TransferAssignmentDto,
+    actorId: string,
+  ) {
+    const directorate = await this.ensureDirectorate(directorateId);
+    const deskId = await this.resolveDesk(directorateId, dto.deskId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+      include: {
+        directorateAssignment: {
+          include: {
+            directorate: { select: { name: true } },
+            desk: { select: { name: true } },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException("User not found");
+    if (user.status === UserStatus.DEACTIVATED) {
+      throw new BadRequestException("Cannot transfer a deactivated user");
+    }
+    const existing = user.directorateAssignment;
+    if (!existing?.isActive) {
+      throw new BadRequestException("User has no active seat to transfer");
+    }
+    if (existing.directorateId === directorateId) {
+      throw new BadRequestException("User already belongs to this directorate");
+    }
+
+    const assignment = await this.prisma.directorateAssignment.update({
+      where: { id: existing.id },
+      data: {
+        directorateId,
+        deskId,
+        office: dto.office,
+        agreedWeeklyHours: dto.agreedWeeklyHours ?? null,
+        termYears: dto.termYears ?? null,
+      },
+      include: { user: { select: memberUserSelect } },
+    });
+
+    const deskName = deskId
+      ? (
+          await this.prisma.desk.findUnique({
+            where: { id: deskId },
+            select: { name: true },
+          })
+        )?.name ?? null
+      : null;
+    await recordMove(this.prisma, {
+      kind: PersonnelMoveKind.SEAT,
+      userId: dto.userId,
+      actorId,
+      summary: `${seatFacetLabel({
+        office: existing.office,
+        directorateName: existing.directorate.name,
+        deskName: existing.desk?.name,
+      })} → ${seatFacetLabel({
+        office: dto.office,
+        directorateName: directorate.name,
+        deskName,
+      })}`,
+      detail: {
+        from: {
+          directorateId: existing.directorateId,
+          deskId: existing.deskId,
+          office: existing.office,
+        },
+        to: { directorateId, deskId, office: dto.office },
+      },
+      note: dto.note,
+    });
+    return this.toMemberRecord(assignment);
+  }
+
+  async updateAssignment(
+    assignmentId: string,
+    dto: UpdateAssignmentDto,
+    actorId: string,
+  ) {
     const assignment = await this.prisma.directorateAssignment.findUnique({
       where: { id: assignmentId },
+      include: {
+        directorate: { select: { name: true } },
+        desk: { select: { name: true } },
+      },
     });
     if (!assignment) {
       throw new NotFoundException("Assignment not found");
@@ -166,19 +310,73 @@ export class DirectoratesService {
     const updated = await this.prisma.directorateAssignment.update({
       where: { id: assignmentId },
       data,
-      include: { user: { select: memberUserSelect } },
+      include: {
+        user: { select: memberUserSelect },
+        desk: { select: { name: true } },
+      },
     });
+    const from = seatFacetLabel({
+      office: assignment.office,
+      directorateName: assignment.directorate.name,
+      deskName: assignment.desk?.name,
+    });
+    const to = seatFacetLabel({
+      office: updated.office,
+      directorateName: assignment.directorate.name,
+      deskName: updated.desk?.name,
+    });
+    const statusChange =
+      dto.isActive !== undefined && dto.isActive !== assignment.isActive
+        ? dto.isActive
+          ? " (reactivated)"
+          : " (unseated)"
+        : "";
+    if (from !== to || statusChange) {
+      await recordMove(this.prisma, {
+        kind: PersonnelMoveKind.SEAT,
+        userId: assignment.userId,
+        actorId,
+        summary: `${from} → ${to}${statusChange}`,
+        detail: {
+          from: { deskId: assignment.deskId, office: assignment.office, isActive: assignment.isActive },
+          to: { deskId: updated.deskId, office: updated.office, isActive: updated.isActive },
+        },
+        note: dto.note,
+      });
+    }
     return this.toMemberRecord(updated);
   }
 
-  async removeAssignment(assignmentId: string) {
+  async removeAssignment(assignmentId: string, actorId: string) {
     const assignment = await this.prisma.directorateAssignment.findUnique({
       where: { id: assignmentId },
+      include: {
+        directorate: { select: { name: true } },
+        desk: { select: { name: true } },
+      },
     });
     if (!assignment) {
       throw new NotFoundException("Assignment not found");
     }
     await this.prisma.directorateAssignment.delete({ where: { id: assignmentId } });
+    await recordMove(this.prisma, {
+      kind: PersonnelMoveKind.SEAT,
+      userId: assignment.userId,
+      actorId,
+      summary: `${seatFacetLabel({
+        office: assignment.office,
+        directorateName: assignment.directorate.name,
+        deskName: assignment.desk?.name,
+      })} → No seat`,
+      detail: {
+        from: {
+          directorateId: assignment.directorateId,
+          deskId: assignment.deskId,
+          office: assignment.office,
+        },
+        to: null,
+      },
+    });
     return { removed: true };
   }
 
@@ -202,7 +400,7 @@ export class DirectoratesService {
     }));
   }
 
-  async createServiceUnit(dto: CreateServiceUnitDto) {
+  async createServiceUnit(dto: CreateServiceUnitDto, actorId: string) {
     const [branch, unitType] = await Promise.all([
       this.prisma.branch.findUnique({ where: { id: dto.branchId } }),
       this.prisma.branchUnitType.findUnique({ where: { id: dto.unitTypeId } }),
@@ -220,24 +418,116 @@ export class DirectoratesService {
       throw new ConflictException("This unit already exists in the branch");
     }
 
-    return this.prisma.serviceUnit.create({
+    const created = await this.prisma.serviceUnit.create({
       data: {
         branchId: dto.branchId,
         unitTypeId: dto.unitTypeId,
         coordinatorId: dto.coordinatorId ?? null,
       },
     });
+    if (dto.coordinatorId) {
+      await this.recordUnitMove({
+        actorId,
+        coordinatorId: dto.coordinatorId,
+        unitLabel: unitFacetLabel({
+          unitTypeName: unitType.name,
+          branchName: branch.name,
+        }),
+        unitId: created.id,
+        note: dto.note,
+      });
+    }
+    return created;
   }
 
-  async updateServiceUnit(id: string, dto: UpdateServiceUnitDto) {
-    const unit = await this.prisma.serviceUnit.findUnique({ where: { id } });
+  async updateServiceUnit(id: string, dto: UpdateServiceUnitDto, actorId: string) {
+    const unit = await this.prisma.serviceUnit.findUnique({
+      where: { id },
+      include: {
+        branch: { select: { name: true } },
+        unitType: { select: { name: true } },
+        coordinator: { select: { id: true, name: true } },
+      },
+    });
     if (!unit) throw new NotFoundException("Service unit not found");
     if (dto.coordinatorId) {
       await this.ensureActiveUser(dto.coordinatorId);
     }
-    return this.prisma.serviceUnit.update({
+
+    const previousId = unit.coordinatorId;
+    const nextId = dto.coordinatorId ?? null;
+    const updated = await this.prisma.serviceUnit.update({
       where: { id },
-      data: { coordinatorId: dto.coordinatorId ?? null },
+      data: { coordinatorId: nextId },
+    });
+
+    if (nextId !== previousId) {
+      const label = unitFacetLabel({
+        unitTypeName: unit.unitType.name,
+        branchName: unit.branch.name,
+      });
+      if (previousId) {
+        await recordMove(this.prisma, {
+          kind: PersonnelMoveKind.UNIT,
+          userId: previousId,
+          actorId,
+          summary: `${label} → No unit`,
+          detail: { from: { unitId: id }, to: null },
+          note: dto.note,
+        });
+      }
+      if (nextId) {
+        await this.recordUnitMove({
+          actorId,
+          coordinatorId: nextId,
+          unitLabel: label,
+          unitId: id,
+          note: dto.note,
+        });
+      }
+    }
+    return updated;
+  }
+
+  /** Clears the person's other coordinator seats and audits the move. */
+  private async recordUnitMove(args: {
+    actorId: string;
+    coordinatorId: string;
+    unitLabel: string;
+    unitId: string;
+    note?: string | null;
+  }) {
+    const held = await this.prisma.serviceUnit.findMany({
+      where: { coordinatorId: args.coordinatorId, id: { not: args.unitId } },
+      include: {
+        branch: { select: { name: true } },
+        unitType: { select: { name: true } },
+      },
+    });
+    for (const unit of held) {
+      await this.prisma.serviceUnit.update({
+        where: { id: unit.id },
+        data: { coordinatorId: null },
+      });
+      await recordMove(this.prisma, {
+        kind: PersonnelMoveKind.UNIT,
+        userId: args.coordinatorId,
+        actorId: args.actorId,
+        summary: `${unitFacetLabel({ unitTypeName: unit.unitType.name, branchName: unit.branch.name })} → No unit`,
+        detail: { from: { unitId: unit.id }, to: null },
+        note: args.note,
+      });
+    }
+    await recordMove(this.prisma, {
+      kind: PersonnelMoveKind.UNIT,
+      userId: args.coordinatorId,
+      actorId: args.actorId,
+      summary: `${held.length ? unitFacetLabel({ unitTypeName: held[0].unitType.name, branchName: held[0].branch.name }) : "No unit"} → ${args.unitLabel}`,
+      detail: {
+        from: held.length ? { unitId: held[0].id } : null,
+        to: { unitId: args.unitId },
+      },
+      note: args.note,
     });
   }
 

@@ -78,6 +78,13 @@ export enum NotificationType {
   ROLLUP_FORWARDED = "ROLLUP_FORWARDED",
 }
 
+export enum PersonnelMoveKind {
+  TERRITORY = "TERRITORY",
+  SEAT = "SEAT",
+  UNIT = "UNIT",
+  STATUS = "STATUS",
+}
+
 export { ConversationType, ChatReceiptStatus } from "./chat";
 export type {
   ChatInboxResponse,

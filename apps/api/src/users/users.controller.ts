@@ -69,14 +69,29 @@ export class UsersController {
   @Patch(":id/deactivate")
   @AllowHrPersonnel()
   @Roles(Role.ADMIN)
-  deactivate(@Param("id") id: string) {
-    return this.usersService.deactivate(id);
+  deactivate(
+    @CurrentUser() actor: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: { note?: string },
+  ) {
+    return this.usersService.deactivate(id, actor.id, dto?.note);
   }
 
   @Patch(":id/reassign")
   @AllowHrPersonnel()
   @Roles(Role.ADMIN)
-  reassign(@Param("id") id: string, @Body() dto: ReassignUserDto) {
-    return this.usersService.reassign(id, dto);
+  reassign(
+    @CurrentUser() actor: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: ReassignUserDto,
+  ) {
+    return this.usersService.reassign(id, dto, actor.id);
+  }
+
+  @Get(":id/moves")
+  @AllowHrPersonnel()
+  @Roles(Role.ADMIN)
+  listMoves(@Param("id") id: string) {
+    return this.usersService.listMoves(id);
   }
 }

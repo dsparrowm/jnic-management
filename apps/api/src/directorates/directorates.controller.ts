@@ -14,9 +14,12 @@ import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AllowHrPersonnel } from "../common/decorators/allow-hr-personnel.decorator";
+import { CurrentUser } from "../common/decorators/current-user.decorator";
+import type { AuthUser } from "../common/auth.types";
 import { DirectoratesService } from "./directorates.service";
 import {
   CreateServiceUnitDto,
+  TransferAssignmentDto,
   UpdateAssignmentDto,
   UpdateServiceUnitDto,
   UpsertAssignmentDto,
@@ -45,40 +48,69 @@ export class DirectoratesController {
   @Post(":id/assignments")
   @AllowHrPersonnel()
   @Roles(Role.ADMIN)
-  upsertAssignment(@Param("id") id: string, @Body() dto: UpsertAssignmentDto) {
-    return this.directoratesService.upsertAssignment(id, dto);
+  upsertAssignment(
+    @CurrentUser() actor: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpsertAssignmentDto,
+  ) {
+    return this.directoratesService.upsertAssignment(id, dto, actor.id);
+  }
+
+  @Post(":id/assignments/transfer")
+  @AllowHrPersonnel()
+  @Roles(Role.ADMIN)
+  transferAssignment(
+    @CurrentUser() actor: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: TransferAssignmentDto,
+  ) {
+    return this.directoratesService.transferAssignment(id, dto, actor.id);
   }
 
   @Patch("assignments/:assignmentId")
   @AllowHrPersonnel()
   @Roles(Role.ADMIN)
-  updateAssignment(@Param("assignmentId") id: string, @Body() dto: UpdateAssignmentDto) {
-    return this.directoratesService.updateAssignment(id, dto);
+  updateAssignment(
+    @CurrentUser() actor: AuthUser,
+    @Param("assignmentId") id: string,
+    @Body() dto: UpdateAssignmentDto,
+  ) {
+    return this.directoratesService.updateAssignment(id, dto, actor.id);
   }
 
   @Delete("assignments/:assignmentId")
   @AllowHrPersonnel()
   @Roles(Role.ADMIN)
-  removeAssignment(@Param("assignmentId") id: string) {
-    return this.directoratesService.removeAssignment(id);
+  removeAssignment(
+    @CurrentUser() actor: AuthUser,
+    @Param("assignmentId") id: string,
+  ) {
+    return this.directoratesService.removeAssignment(id, actor.id);
   }
 
   @Post("units")
-  @UseGuards(RolesGuard)
+  @AllowHrPersonnel()
   @Roles(Role.ADMIN, Role.BRANCH_PASTOR)
-  createServiceUnit(@Body() dto: CreateServiceUnitDto) {
-    return this.directoratesService.createServiceUnit(dto);
+  createServiceUnit(
+    @CurrentUser() actor: AuthUser,
+    @Body() dto: CreateServiceUnitDto,
+  ) {
+    return this.directoratesService.createServiceUnit(dto, actor.id);
   }
 
   @Patch("units/:id")
-  @UseGuards(RolesGuard)
+  @AllowHrPersonnel()
   @Roles(Role.ADMIN, Role.BRANCH_PASTOR)
-  updateServiceUnit(@Param("id") id: string, @Body() dto: UpdateServiceUnitDto) {
-    return this.directoratesService.updateServiceUnit(id, dto);
+  updateServiceUnit(
+    @CurrentUser() actor: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpdateServiceUnitDto,
+  ) {
+    return this.directoratesService.updateServiceUnit(id, dto, actor.id);
   }
 
   @Delete("units/:id")
-  @UseGuards(RolesGuard)
+  @AllowHrPersonnel()
   @Roles(Role.ADMIN, Role.BRANCH_PASTOR)
   removeServiceUnit(@Param("id") id: string) {
     return this.directoratesService.removeServiceUnit(id);
