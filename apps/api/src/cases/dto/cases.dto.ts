@@ -1,4 +1,5 @@
 import { PersonnelCaseKind, PersonnelCaseStatus } from "@repo/database";
+import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CreateCaseDto {
@@ -50,11 +51,13 @@ export class CaseCountsQuery {
   @IsEnum(PersonnelCaseKind)
   kind!: PersonnelCaseKind;
 
+  @Type(() => Number)
   @IsInt()
   @Min(2000)
   @Max(2100)
   year!: number;
 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(12)
