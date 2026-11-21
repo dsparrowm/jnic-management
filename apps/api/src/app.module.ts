@@ -2,6 +2,7 @@ import { join } from "path";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
+import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { ChatModule } from "./chat/chat.module";
@@ -13,6 +14,7 @@ import { NotificationsModule } from "./notifications/notifications.module";
 import { OnboardingModule } from "./onboarding/onboarding.module";
 import { OrgModule } from "./org/org.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { RemindersModule } from "./reminders/reminders.module";
 import { ReportsModule } from "./reports/reports.module";
 import { ReportTemplatesModule } from "./report-templates/report-templates.module";
 import { SummariesModule } from "./summaries/summaries.module";
@@ -29,6 +31,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     ThrottlerModule.forRoot({
       throttlers: [{ name: "default", ttl: 60_000, limit: 60 }],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -42,6 +45,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     ReportTemplatesModule,
     NotificationsModule,
     SummariesModule,
+    RemindersModule,
     UsersModule,
   ],
   providers: [
