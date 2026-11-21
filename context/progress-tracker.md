@@ -486,3 +486,9 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - **Seed**: D1/D2 field lists per-directorate from `context/directorates-seed.json`; D3–D6 shared templates.
 - **Units-active checklist**: B1 `unitsActive` now derives from ticked ServiceUnits (`activeUnitIds` on Attendance); number input remains the fallback when a branch has no chartered units. Web + mobile.
 - **Mobile**: `/weekly/duties` screen — "Due from me" (generic template form), "Awaiting my review" queue, "My submissions". Entry card on the Weekly tab.
+
+## Mobile admin — directorates (2026-11-21, jnic-mobile)
+
+- Org tab gains a **Territory | Directorates** segment: the Directorates side lists all ten directorates (director, desk/unit/member counts) and pushes a detail screen.
+- New `app/directorates/[id].tsx`: mandate, leadership roster, desks with heads, member list, and a "Branch units & coordinators" section (ADMIN sees all branches' units; BRANCH_PASTOR sees own branch's).
+- ADMIN can assign/remove directorate seats (person search over `GET /users`, office chips, desk pick for desk offices) and set unit coordinators (`PATCH /directorates/units/:id`); branch pastors set coordinators on their own units via `GET /users/pastors?branchId=`.
