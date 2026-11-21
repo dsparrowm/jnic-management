@@ -100,6 +100,16 @@ export class ReportsService {
     return user.stateId;
   }
 
+  private async scopeHasActivePastor(
+    where: { districtId?: string; zoneId?: string; stateId?: string; regionId?: string },
+    role: Role,
+  ): Promise<boolean> {
+    const count = await this.prisma.user.count({
+      where: { role, status: "ACTIVE", ...where },
+    });
+    return count > 0;
+  }
+
   private assertDistrictPastor(user: AuthUser): string {
     if (user.role !== Role.DISTRICT_PASTOR) {
       throw new ForbiddenException("Insufficient permissions");
@@ -181,15 +191,21 @@ export class ReportsService {
         throw new ForbiddenException("Insufficient permissions");
       }
       if (report.branch.districtId) {
-        const districtRollup = await this.getRollup(
-          SummaryScopeType.DISTRICT,
-          report.branch.districtId,
-          report.weekOf,
+        const districtManned = await this.scopeHasActivePastor(
+          { districtId: report.branch.districtId },
+          Role.DISTRICT_PASTOR,
         );
-        if (!isRollupVisibleToUpstream(districtRollup)) {
-          throw new ForbiddenException(
-            "Branch report is not yet available — district has not forwarded",
+        if (districtManned) {
+          const districtRollup = await this.getRollup(
+            SummaryScopeType.DISTRICT,
+            report.branch.districtId,
+            report.weekOf,
           );
+          if (!isRollupVisibleToUpstream(districtRollup)) {
+            throw new ForbiddenException(
+              "Branch report is not yet available — district has not forwarded",
+            );
+          }
         }
       }
       return;
@@ -200,6 +216,13 @@ export class ReportsService {
         throw new ForbiddenException("Insufficient permissions");
       }
       if (!report.branch.zoneId) {
+        return;
+      }
+      const zoneManned = await this.scopeHasActivePastor(
+        { zoneId: report.branch.zoneId },
+        Role.ZONAL_PASTOR,
+      );
+      if (!zoneManned) {
         return;
       }
       const zoneRollup = await this.getRollup(
@@ -225,6 +248,13 @@ export class ReportsService {
       });
       if (state?.regionId !== user.regionId) {
         throw new ForbiddenException("Insufficient permissions");
+      }
+      const stateManned = await this.scopeHasActivePastor(
+        { stateId: report.branch.stateId },
+        Role.STATE_PASTOR,
+      );
+      if (!stateManned) {
+        return;
       }
       const stateRollup = await this.getRollup(
         SummaryScopeType.STATE,
@@ -426,7 +456,8 @@ export class ReportsService {
           firstTimeVisitors: dto.firstTimeVisitors ?? 0,
           newConverts: dto.newConverts ?? 0,
           followUpVisits: dto.followUpVisits ?? 0,
-          unitsActive: dto.unitsActive ?? 0,
+          unitsActive: dto.unitsActive ?? (dto.activeUnitIds?.length ?? 0),
+          activeUnitIds: dto.activeUnitIds ?? undefined,
           outreachHeld: dto.outreachHeld ?? 0,
         },
       });
@@ -556,7 +587,8 @@ export class ReportsService {
         firstTimeVisitors: dto.firstTimeVisitors,
         newConverts: dto.newConverts,
         followUpVisits: dto.followUpVisits,
-        unitsActive: dto.unitsActive,
+        unitsActive: dto.unitsActive ?? (dto.activeUnitIds ? dto.activeUnitIds.length : undefined),
+        activeUnitIds: dto.activeUnitIds ?? undefined,
         outreachHeld: dto.outreachHeld,
       };
       if (Object.values(attendancePatch).some((v) => v !== undefined)) {
@@ -962,7 +994,19 @@ export class ReportsService {
         ? existing.version + 1
         : 1;
     const now = new Date();
+    const statePastors = await this.prisma.user.findMany({
+      where: {
+        role: Role.STATE_PASTOR,
+        status: "ACTIVE",
+        stateId: { in: region.states.map((s) => s.id) },
+      },
+      select: { stateId: true },
+    });
+    const mannedStates = new Set(statePastors.map((u) => u.stateId));
     const branchIds = region.states.flatMap((s) => s.branches.map((b) => b.id));
+    const unmannedStateBranchIds = region.states
+      .filter((s) => !mannedStates.has(s.id))
+      .flatMap((s) => s.branches.map((b) => b.id));
 
     await this.prisma.$transaction(async (tx) => {
       await tx.hierarchyWeeklyRollup.upsert({
@@ -994,7 +1038,19 @@ export class ReportsService {
         where: {
           weekOf: weekOfDate,
           branchId: { in: branchIds },
-          status: PrismaReportStatus.STATE_REVIEWED,
+          OR: [
+            { status: PrismaReportStatus.STATE_REVIEWED },
+            {
+              status: {
+                in: [
+                  PrismaReportStatus.SUBMITTED,
+                  PrismaReportStatus.DISTRICT_REVIEWED,
+                  PrismaReportStatus.ZONE_REVIEWED,
+                ],
+              },
+              branchId: { in: unmannedStateBranchIds },
+            },
+          ],
         },
         data: { status: PrismaReportStatus.REGIONAL_REVIEWED },
       });
@@ -1023,6 +1079,46 @@ export class ReportsService {
     if (!zone) {
       throw new NotFoundException("Zone not found");
     }
+
+    const districtIds = [
+      ...new Set(
+        zone.branches
+          .map((branch) => branch.districtId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const [districtPastors, districtRollups] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          role: Role.DISTRICT_PASTOR,
+          status: "ACTIVE",
+          districtId: { in: districtIds },
+        },
+        select: { districtId: true },
+      }),
+      this.prisma.hierarchyWeeklyRollup.findMany({
+        where: {
+          weekOf: weekOfDate,
+          scopeType: PrismaSummaryScopeType.DISTRICT,
+          scopeId: { in: districtIds },
+        },
+      }),
+    ]);
+    const mannedDistricts = new Set(districtPastors.map((u) => u.districtId));
+    const forwardedDistricts = new Set(
+      districtRollups.filter(isRollupVisibleToUpstream).map((r) => r.scopeId),
+    );
+    // Branches a manned district still holds (not yet forwarded): zone leaves them alone.
+    const gatedBranchIds = new Set(
+      zone.branches
+        .filter(
+          (branch) =>
+            branch.districtId &&
+            mannedDistricts.has(branch.districtId) &&
+            !forwardedDistricts.has(branch.districtId),
+        )
+        .map((branch) => branch.id),
+    );
 
     const existing = await this.getRollup(SummaryScopeType.ZONE, zoneId, weekOfDate);
     const nextVersion =
@@ -1061,9 +1157,13 @@ export class ReportsService {
         where: {
           weekOf: weekOfDate,
           branchId: { in: zone.branches.map((branch) => branch.id) },
-          status: {
-            in: [PrismaReportStatus.SUBMITTED, PrismaReportStatus.DISTRICT_REVIEWED],
-          },
+          OR: [
+            { status: PrismaReportStatus.DISTRICT_REVIEWED },
+            {
+              status: PrismaReportStatus.SUBMITTED,
+              branchId: { notIn: [...gatedBranchIds] },
+            },
+          ],
         },
         data: { status: PrismaReportStatus.ZONE_REVIEWED },
       });
@@ -1117,9 +1217,22 @@ export class ReportsService {
         ? existing.version + 1
         : 1;
     const now = new Date();
+    const zonalPastors = await this.prisma.user.findMany({
+      where: {
+        role: Role.ZONAL_PASTOR,
+        status: "ACTIVE",
+        zoneId: { in: state.zones.map((zone) => zone.id) },
+      },
+      select: { zoneId: true },
+    });
+    const mannedZones = new Set(zonalPastors.map((u) => u.zoneId));
+    const unzonedBranchIds = state.branches.filter((b) => !b.zoneId).map((b) => b.id);
+    const unmannedZoneBranchIds = state.zones
+      .filter((zone) => !mannedZones.has(zone.id))
+      .flatMap((zone) => zone.branches.map((branch) => branch.id));
     const branchIds = [
       ...state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id)),
-      ...state.branches.filter((b) => !b.zoneId).map((b) => b.id),
+      ...unzonedBranchIds,
     ];
 
     await this.prisma.$transaction(async (tx) => {
@@ -1152,9 +1265,19 @@ export class ReportsService {
         where: {
           weekOf: weekOfDate,
           branchId: { in: branchIds },
-          status: {
-            in: [PrismaReportStatus.ZONE_REVIEWED, PrismaReportStatus.STATE_REVIEWED],
-          },
+          OR: [
+            {
+              status: {
+                in: [PrismaReportStatus.ZONE_REVIEWED, PrismaReportStatus.STATE_REVIEWED],
+              },
+            },
+            {
+              status: {
+                in: [PrismaReportStatus.SUBMITTED, PrismaReportStatus.DISTRICT_REVIEWED],
+              },
+              branchId: { in: [...unzonedBranchIds, ...unmannedZoneBranchIds] },
+            },
+          ],
         },
         data: {
           status: state.regionId
@@ -1290,9 +1413,14 @@ export class ReportsService {
       stateRollups.map((rollup) => [rollup.scopeId, rollup]),
     );
 
-    const states = region.states.map((state) => {
+    const states = await Promise.all(
+      region.states.map(async (state) => {
       const stateRollup = stateRollupById.get(state.id) ?? null;
-      const forwarded = isRollupVisibleToUpstream(stateRollup);
+      const stateManned = await this.scopeHasActivePastor(
+        { stateId: state.id },
+        Role.STATE_PASTOR,
+      );
+      const forwarded = isRollupVisibleToUpstream(stateRollup) || !stateManned;
       const stateReports = reports.filter(
         (report) => report.branch.stateId === state.id,
       );
@@ -1331,7 +1459,8 @@ export class ReportsService {
           ? this.countSummary(branches)
           : { total: state.branches.length, submitted: 0, missed: 0, pending: 0 },
       };
-    });
+      }),
+    );
 
     const visibleReports = reports.filter((report) => {
       const stateRollup = stateRollupById.get(report.branch.stateId);
@@ -1374,7 +1503,41 @@ export class ReportsService {
       include: weeklyReportInclude,
     });
 
-    const branches = this.buildBranchRows(zone.branches, reports, weekOf);
+    const districtIds = [
+      ...new Set(
+        zone.branches
+          .map((branch) => branch.districtId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const [districtPastors, districtRollups] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          role: Role.DISTRICT_PASTOR,
+          status: "ACTIVE",
+          districtId: { in: districtIds },
+        },
+        select: { districtId: true },
+      }),
+      this.prisma.hierarchyWeeklyRollup.findMany({
+        where: {
+          weekOf: weekOfDate,
+          scopeType: PrismaSummaryScopeType.DISTRICT,
+          scopeId: { in: districtIds },
+        },
+      }),
+    ]);
+    const mannedDistricts = new Set(districtPastors.map((u) => u.districtId));
+    const forwardedDistricts = new Set(
+      districtRollups.filter(isRollupVisibleToUpstream).map((r) => r.scopeId),
+    );
+    const visibleReports = reports.filter((report) => {
+      const districtId = report.branch.districtId;
+      if (!districtId || !mannedDistricts.has(districtId)) return true;
+      return forwardedDistricts.has(districtId);
+    });
+
+    const branches = this.buildBranchRows(zone.branches, visibleReports, weekOf);
     const rollup = await this.getRollup(SummaryScopeType.ZONE, zoneId, weekOfDate);
 
     return {
@@ -1382,8 +1545,8 @@ export class ReportsService {
       zone: { id: zone.id, name: zone.name },
       rollup: toRollupView(rollup),
       totals: {
-        attendance: this.sumAttendance(reports),
-        finance: this.sumFinance(reports),
+        attendance: this.sumAttendance(visibleReports),
+        finance: this.sumFinance(visibleReports),
       },
       branches,
       summary: this.countSummary(branches),

@@ -53,3 +53,9 @@ Everywhere LEAD_PASTOR was enforced now uses `isHqPastor()`/`HQ_PASTOR_ROLES`.
 - Summaries: `/reports/district/summary` and `/reports/region/summary` with
   rollup gating identical to the zone→state gate.
 - MonthlySummary keeps new totals: totalMen/Women/Youth/Visitors/Converts.
+
+## Slice C — report-template engine (implemented)
+
+`ReportTemplate` rows carry each directorate's D1–D6: level (UNIT → desk heads, DESK → directorate officers, DIRECTORATE → resident pastor, COUNCIL → senior pastor), cadence, dueDay and a JSON field list (`{key,label,type}`). `TemplateReport` stores submissions with `periodKey`, `data`, and a review status (`SUBMITTED → DESK_REVIEWED → DIRECTOR_REVIEWED → RESIDENT_REVIEWED → SENIOR_REVIEWED`); each review writes the next status for that level and notifies the next reviewers.
+
+B1 service units: `Attendance.activeUnitIds` stores which chartered units were active; `unitsActive` derives from it when the branch has units.

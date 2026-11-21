@@ -14,7 +14,7 @@ import { ErrorText } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { WeeklyReportRecord } from "@/lib/api";
+import { WeeklyReportRecord , ServiceUnitRecord } from "@/lib/api";
 
 const weeklyReportSchema = z.object({
   serviceDate: z.string().min(1, "Service date is required"),
@@ -27,6 +27,7 @@ const weeklyReportSchema = z.object({
   newConverts: z.coerce.number().int().min(0),
   followUpVisits: z.coerce.number().int().min(0),
   unitsActive: z.coerce.number().int().min(0),
+  activeUnitIds: z.array(z.string()).optional(),
   outreachHeld: z.coerce.number().int().min(0),
   tithe: z.coerce.number().min(0),
   offering: z.coerce.number().min(0),
@@ -44,6 +45,7 @@ interface WeeklyReportFormProps {
   existingReport?: WeeklyReportRecord | null;
   defaultServiceDate: string;
   branchName?: string | null;
+  serviceUnits?: ServiceUnitRecord[];
   loading?: boolean;
   error?: string;
   onSubmit: (values: WeeklyReportFormValues) => Promise<void>;
@@ -110,10 +112,25 @@ export function WeeklyReportForm({
   existingReport,
   defaultServiceDate,
   branchName,
+  serviceUnits,
   loading,
   error,
   onSubmit,
 }: WeeklyReportFormProps) {
+  const [activeUnitIds, setActiveUnitIds] = useState<string[]>(
+    () => existingReport?.attendance?.activeUnitIds ?? [],
+  );
+  const hasUnitList = (serviceUnits?.length ?? 0) > 0;
+  const toggleUnit = (id: string) => {
+    setActiveUnitIds((current) => {
+      const next = current.includes(id)
+        ? current.filter((u) => u !== id)
+        : [...current, id];
+      setValue("unitsActive", next.length, { shouldDirty: true });
+      setValue("activeUnitIds" as keyof WeeklyReportFormValues, next as never);
+      return next;
+    });
+  };
   const locked = existingReport ? !existingReport.editable : false;
   const [noService, setNoService] = useState(() => Boolean(existingReport?.noServiceNote));
   const [confirming, setConfirming] = useState(false);
@@ -131,6 +148,7 @@ export function WeeklyReportForm({
       newConverts: existingReport?.attendance?.newConverts ?? 0,
       followUpVisits: existingReport?.attendance?.followUpVisits ?? 0,
       unitsActive: existingReport?.attendance?.unitsActive ?? 0,
+      activeUnitIds: existingReport?.attendance?.activeUnitIds ?? [],
       outreachHeld: existingReport?.attendance?.outreachHeld ?? 0,
       tithe: existingReport?.finance?.tithe ?? 0,
       offering: existingReport?.finance?.offering ?? 0,
@@ -344,7 +362,36 @@ export function WeeklyReportForm({
           <NumberField id="firstTimeVisitors" label="First-time visitors" register={register} disabled={locked || loading || noService} />
           <NumberField id="newConverts" label="New converts" register={register} disabled={locked || loading || noService} />
           <NumberField id="followUpVisits" label="Follow-up visits" register={register} disabled={locked || loading || noService} />
-          <NumberField id="unitsActive" label="Service units active" register={register} disabled={locked || loading || noService} />
+          {hasUnitList ? (
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Service units active ({activeUnitIds.length})</Label>
+              <div className="rounded-md border border-input p-3 space-y-2">
+                {serviceUnits!.map((unit) => {
+                  const checked = activeUnitIds.includes(unit.id);
+                  return (
+                    <label
+                      key={unit.id}
+                      className="flex cursor-pointer items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={checked}
+                        disabled={locked || loading || noService}
+                        onChange={() => toggleUnit(unit.id)}
+                      />
+                      <span>{unit.unitType.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {unit.directorate.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <NumberField id="unitsActive" label="Service units active" register={register} disabled={locked || loading || noService} />
+          )}
           <NumberField id="outreachHeld" label="Outreach held" register={register} disabled={locked || loading || noService} />
         </div>
       </FormSection>

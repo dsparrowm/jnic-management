@@ -14,7 +14,7 @@ import {
 } from "@/components/reports/weekly-report-form";
 import { WeekPicker } from "@/components/reports/week-picker";
 import { Button } from "@/components/ui/button";
-import { api, ApiError, AuthUser, WeeklyReportRecord } from "@/lib/api";
+import { api, ApiError, AuthUser, ServiceUnitRecord, WeeklyReportRecord } from "@/lib/api";
 import {
   getAccessToken,
   getStoredUser,
@@ -37,6 +37,7 @@ export default function SubmitWeeklyReportPage() {
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [serviceUnits, setServiceUnits] = useState<ServiceUnitRecord[]>([]);
 
   const loadReportForWeek = useCallback(
     async (user: AuthUser, selectedWeekOf: string) => {
@@ -53,6 +54,10 @@ export default function SubmitWeeklyReportPage() {
           perPage: 1,
         });
         setExistingReport(response.items[0] ?? null);
+        api
+          .listServiceUnits(token, user.branchId!)
+          .then(setServiceUnits)
+          .catch(() => setServiceUnits([]));
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           router.replace("/login");
@@ -160,6 +165,7 @@ export default function SubmitWeeklyReportPage() {
         newConverts: values.newConverts,
         followUpVisits: values.followUpVisits,
         unitsActive: values.unitsActive,
+        activeUnitIds: values.activeUnitIds,
         outreachHeld: values.outreachHeld,
         tithe: values.tithe,
         offering: values.offering,
@@ -267,6 +273,7 @@ export default function SubmitWeeklyReportPage() {
                     existingReport={existingReport}
                     defaultServiceDate={defaultServiceDate}
                     branchName={sessionUser.branchName ?? existingReport?.branch.name}
+                    serviceUnits={serviceUnits}
                     loading={loading}
                     error={submitError}
                     onSubmit={handleSubmit}

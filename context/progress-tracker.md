@@ -477,3 +477,12 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
   - Monthly aggregation writes the new totals alongside legacy; `mapSummaryTotals` returns men/women/youth/visitors/converts.
   - Web: submit form v2 sections, detail sheet + totals card show new split + notes blocks, zone page totals; summary tab shows new split.
   - Mobile: submit form v2 grouped sections + notes fields, district/region review sections with forward buttons, API client district/region calls, totals/home metrics show new split.
+- 2026-11-21: **Skip-empty-level routing.** A level that doesn't exist or has no active pastor seated no longer blocks the chain: zone view gate skipped when a district is uncreated/unmanned, state gate likewise for zones, region gate for states. Forward sweeps only pull earlier-status reports from scopes whose next level is unmanned (zone forward leaves manned-but-unforwarded district branches alone; state forward picks up SUBMITTED from unzoned/unmanned-zone branches; region forward picks up SUBMITTED+/DISTRICT/ZONE_REVIEWED from unmanned states).
+
+## Structure v2 — Slice C (2026-11-21)
+
+- **Report-template engine**: `ReportTemplate` (code D1–D6 per directorate: level UNIT/DESK/DIRECTORATE/COUNCIL, cadence, dueDay, field list as JSON) + `TemplateReport` submissions. Migrations `report_templates` + `attendance_active_units`.
+- **API `report-templates` module**: `GET /report-templates/mine` (templates submittable by the caller's seats), `POST :id/submit`, `GET review-queue`, `POST reports/:id/review`, `GET reports`. Routing: unit coordinator → desk heads (UNIT), desk heads → directorate officers (DESK), directorate officers → resident pastor (DIRECTORATE), directors → senior pastor (COUNCIL). Notifications at each hop.
+- **Seed**: D1/D2 field lists per-directorate from `context/directorates-seed.json`; D3–D6 shared templates.
+- **Units-active checklist**: B1 `unitsActive` now derives from ticked ServiceUnits (`activeUnitIds` on Attendance); number input remains the fallback when a branch has no chartered units. Web + mobile.
+- **Mobile**: `/weekly/duties` screen — "Due from me" (generic template form), "Awaiting my review" queue, "My submissions". Entry card on the Weekly tab.

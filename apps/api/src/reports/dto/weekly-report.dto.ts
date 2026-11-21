@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import {
+  IsArray,
   IsDateString,
   IsInt,
   IsNumber,
@@ -66,6 +67,11 @@ export class AttendanceFieldsDto {
   @IsInt()
   @Min(0)
   outreachHeld?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  activeUnitIds?: string[];
 }
 
 export class FinanceFieldsDto {
