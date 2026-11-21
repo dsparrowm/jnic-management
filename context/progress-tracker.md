@@ -547,3 +547,10 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - Mobile: optional "Move note" on reassign / assign-seat / coordinator sheets;
   seat assign auto-promotes to transfer on the 409 "already belongs" conflict;
   "Move history" action on the People roster opens `/moves`.
+
+### Welfare + disciplinary case registers (2026-11-23)
+
+- `PersonnelCase` (kind WELFARE|DISCIPLINE, status OPEN|RESOLVED|CLOSED, optional subject → User) + `/cases` API — open/list/update/resolve.
+- Access: admin, HR leadership, and the matching desk head/deputy (`isHrCaseOfficer` — Pastoral Welfare and Care desk → WELFARE, Ethics/Conduct/Discipline desk → DISCIPLINE).
+- `GET /cases/counts` returns non-identifying opened/closed/openNow per month — the numbers the D2-D6 fields ask for; names never leave the register.
+- `GET /cases/my-registers` drives mobile visibility; HR desk section gains "Case registers" → `/cases` (kind tabs, this-month counts card, status filter, open/resolve/close).
