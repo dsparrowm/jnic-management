@@ -26,6 +26,7 @@ export interface AuthUser {
   districtName?: string | null;
   branchName?: string | null;
   directorate?: DirectorateFacet | null;
+  hrPersonnel?: boolean;
   profilePicUrl: string | null;
 }
 
