@@ -45,7 +45,7 @@ export class UsersController {
   }
 
   @Get("pastors/:id")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(
     Role.ADMIN,
     Role.SENIOR_PASTOR,

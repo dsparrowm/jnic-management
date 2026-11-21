@@ -4,6 +4,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
+import { RolesOrHrPersonnelGuard } from "../common/guards/hr-personnel.guard";
 import { AuthUser } from "../common/auth.types";
 import {
   CreateBranchDto,
@@ -27,14 +28,14 @@ export class OrgController {
   constructor(private readonly orgService: OrgService) {}
 
   @Get("tree")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN, Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   getTree() {
     return this.orgService.getTree();
   }
 
   @Get("areas")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(
     Role.ADMIN,
     Role.SENIOR_PASTOR,
