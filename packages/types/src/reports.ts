@@ -16,6 +16,7 @@ export type WeeklyReportAttendance = {
   newConverts: number;
   followUpVisits: number;
   unitsActive: number;
+  activeUnitIds?: string[];
   outreachHeld: number;
 };
 
@@ -65,6 +66,7 @@ export type WeeklyReportInput = {
   newConverts: number;
   followUpVisits: number;
   unitsActive: number;
+  activeUnitIds?: string[];
   outreachHeld: number;
   tithe: number;
   offering: number;

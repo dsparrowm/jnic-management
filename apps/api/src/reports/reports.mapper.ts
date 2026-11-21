@@ -37,6 +37,17 @@ export function toWeeklyReportView(
           adultCount: report.attendance.adultCount,
           teenageCount: report.attendance.teenageCount,
           childrenCount: report.attendance.childrenCount,
+          menCount: report.attendance.menCount,
+          womenCount: report.attendance.womenCount,
+          youthCount: report.attendance.youthCount,
+          midweekAttendance: report.attendance.midweekAttendance,
+          firstTimeVisitors: report.attendance.firstTimeVisitors,
+          newConverts: report.attendance.newConverts,
+          followUpVisits: report.attendance.followUpVisits,
+          unitsActive: report.attendance.unitsActive,
+          activeUnitIds:
+            (report.attendance.activeUnitIds as string[] | null) ?? [],
+          outreachHeld: report.attendance.outreachHeld,
         }
       : null,
     finance: report.finance

@@ -456,7 +456,8 @@ export class ReportsService {
           firstTimeVisitors: dto.firstTimeVisitors ?? 0,
           newConverts: dto.newConverts ?? 0,
           followUpVisits: dto.followUpVisits ?? 0,
-          unitsActive: dto.unitsActive ?? 0,
+          unitsActive: dto.unitsActive ?? (dto.activeUnitIds?.length ?? 0),
+          activeUnitIds: dto.activeUnitIds ?? undefined,
           outreachHeld: dto.outreachHeld ?? 0,
         },
       });
@@ -586,7 +587,8 @@ export class ReportsService {
         firstTimeVisitors: dto.firstTimeVisitors,
         newConverts: dto.newConverts,
         followUpVisits: dto.followUpVisits,
-        unitsActive: dto.unitsActive,
+        unitsActive: dto.unitsActive ?? (dto.activeUnitIds ? dto.activeUnitIds.length : undefined),
+        activeUnitIds: dto.activeUnitIds ?? undefined,
         outreachHeld: dto.outreachHeld,
       };
       if (Object.values(attendancePatch).some((v) => v !== undefined)) {

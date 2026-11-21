@@ -11,7 +11,34 @@ type DirectorateSeed = {
   mandate: string;
   desks: { name: string; duties: string[] }[];
   branchUnits: string[];
+  reportFields?: Record<string, string[]>;
 };
+
+type SharedTemplateSeed = Record<
+  string,
+  { name: string; due?: string; fields?: string[] }
+>;
+
+const LEVEL_CADENCE: Record<string, { level: "UNIT" | "DESK" | "DIRECTORATE" | "COUNCIL"; cadence: "WEEKLY" | "MONTHLY" | "QUARTERLY" | "ANNUAL"; dueDay: number | null }> = {
+  D1: { level: "UNIT", cadence: "WEEKLY", dueDay: 1 },
+  D2: { level: "UNIT", cadence: "MONTHLY", dueDay: 3 },
+  D3: { level: "DESK", cadence: "MONTHLY", dueDay: 5 },
+  D4: { level: "DIRECTORATE", cadence: "MONTHLY", dueDay: 7 },
+  D5: { level: "COUNCIL", cadence: "QUARTERLY", dueDay: null },
+  D6: { level: "COUNCIL", cadence: "ANNUAL", dueDay: null },
+};
+
+function toField(label: string) {
+  const key = label
+    .toLowerCase()
+    .replace(/\(.*\)/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+  const numeric = /\(%|count|rate|total|amount|number|attendance|budget|₦|naira)/i.test(label);
+  const long = label.length > 42 || /summary|issues|challenges|plans|requests|recommendations|matters|prayer/i.test(label);
+  return { key, label, type: numeric ? "number" : long ? "textarea" : "text" };
+}
 
 /** Upserts the ten directorates, their desks and branch unit types from the
  *  handbook seed (context/directorates-seed.json). Safe to re-run. */
@@ -56,6 +83,49 @@ async function seedDirectorates() {
     }
   }
   console.log(`Seeded ${seed.directorates.length} directorates with desks and branch unit types`);
+}
+
+/** Upserts the D1-D6 report templates for every directorate. D1/D2 field lists
+ *  come from each directorate's handbook; D3-D6 are shared. */
+async function seedReportTemplates() {
+  const seedPath = join(__dirname, "..", "..", "..", "context", "directorates-seed.json");
+  const seed = JSON.parse(readFileSync(seedPath, "utf8")) as {
+    directorates: DirectorateSeed[];
+    sharedTemplates: SharedTemplateSeed;
+  };
+
+  for (const d of seed.directorates) {
+    const directorate = await prisma.directorate.findUnique({ where: { key: d.key } });
+    if (!directorate) continue;
+    for (const code of Object.keys(LEVEL_CADENCE)) {
+      const meta = LEVEL_CADENCE[code];
+      const shared = seed.sharedTemplates[code];
+      const labels =
+        code === "D1" || code === "D2"
+          ? (d.reportFields?.[code] ?? [])
+          : (shared?.fields ?? []);
+      await prisma.reportTemplate.upsert({
+        where: { directorateId_code: { directorateId: directorate.id, code } },
+        update: {
+          name: shared?.name ?? code,
+          level: meta.level as never,
+          cadence: meta.cadence as never,
+          dueDay: meta.dueDay,
+          fields: labels.map(toField),
+        },
+        create: {
+          directorateId: directorate.id,
+          code,
+          name: shared?.name ?? code,
+          level: meta.level as never,
+          cadence: meta.cadence as never,
+          dueDay: meta.dueDay,
+          fields: labels.map(toField),
+        },
+      });
+    }
+  }
+  console.log("Seeded report templates for all directorates");
 }
 
 const DEFAULT_SEED_PASSWORD = "ChangeMe123!";
@@ -132,6 +202,7 @@ async function main() {
   await ensureUser(adminEmail, adminPassword, adminName, Role.ADMIN);
 
   await seedDirectorates();
+  await seedReportTemplates();
 
   // Catch-all region until real regions are announced; existing states fold into it.
   const nationalRegion = await prisma.region.upsert({

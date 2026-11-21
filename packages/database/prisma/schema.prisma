@@ -18,6 +18,28 @@ enum Role {
   BRANCH_PASTOR
 }
 
+enum TemplateLevel {
+  UNIT
+  DESK
+  DIRECTORATE
+  COUNCIL
+}
+
+enum TemplateCadence {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum TemplateReportStatus {
+  SUBMITTED
+  DESK_REVIEWED
+  DIRECTOR_REVIEWED
+  RESIDENT_REVIEWED
+  SENIOR_REVIEWED
+}
+
 enum DirectorateOffice {
   DIRECTOR
   DEPUTY_DIRECTOR
@@ -152,6 +174,7 @@ model User {
   @@index([zoneId])
   @@index([districtId])
   @@index([branchId])
+  templateReports TemplateReport[] @relation("TemplateReports")
 }
 
 model Region {
@@ -320,6 +343,8 @@ model Attendance {
   newConverts       Int @default(0)
   followUpVisits    Int @default(0)
   unitsActive       Int @default(0)
+  /// IDs of the branch's ServiceUnits marked active this week (drives unitsActive).
+  activeUnitIds     Json?
   outreachHeld      Int @default(0)
 }
 
@@ -475,6 +500,8 @@ model Directorate {
   desks       Desk[]
   unitTypes   BranchUnitType[]
   assignments DirectorateAssignment[]
+  reportTemplates ReportTemplate[]
+  templateReports TemplateReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -493,6 +520,8 @@ model Desk {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  templateReports TemplateReport[]
 
   @@unique([directorateId, name])
 }
@@ -523,6 +552,8 @@ model ServiceUnit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  templateReports TemplateReport[]
+
   @@unique([branchId, unitTypeId])
 }
 
@@ -546,4 +577,52 @@ model DirectorateAssignment {
 
   @@index([directorateId])
   @@index([deskId])
+}
+
+
+/// A report type (D1-D6) a directorate runs; fields/due rules are data.
+model ReportTemplate {
+  id            String          @id @default(cuid())
+  directorateId String
+  directorate   Directorate     @relation(fields: [directorateId], references: [id], onDelete: Cascade)
+  code          String
+  name          String
+  level         TemplateLevel
+  cadence       TemplateCadence
+  /// Day-of-week (1=Mon) for WEEKLY; day-of-month otherwise.
+  dueDay        Int?
+  fields        Json            @default("[]")
+  active        Boolean         @default(true)
+
+  reports TemplateReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([directorateId, code])
+}
+
+/// One submission against a ReportTemplate for a period.
+model TemplateReport {
+  id            String               @id @default(cuid())
+  templateId    String
+  template      ReportTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  directorateId String
+  directorate   Directorate          @relation(fields: [directorateId], references: [id], onDelete: Cascade)
+  deskId        String?
+  desk          Desk?                @relation(fields: [deskId], references: [id], onDelete: SetNull)
+  serviceUnitId String?
+  serviceUnit   ServiceUnit?         @relation(fields: [serviceUnitId], references: [id], onDelete: SetNull)
+  branchId      String?
+  periodKey     String
+  data          Json                 @default("{}")
+  status        TemplateReportStatus @default(SUBMITTED)
+  submittedById String
+  submittedBy   User                 @relation("TemplateReports", fields: [submittedById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([directorateId, status])
+  @@index([templateId, periodKey])
 }

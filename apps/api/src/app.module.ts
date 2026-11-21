@@ -14,6 +14,7 @@ import { OnboardingModule } from "./onboarding/onboarding.module";
 import { OrgModule } from "./org/org.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ReportsModule } from "./reports/reports.module";
+import { ReportTemplatesModule } from "./report-templates/report-templates.module";
 import { SummariesModule } from "./summaries/summaries.module";
 import { UsersModule } from "./users/users.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
@@ -38,6 +39,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     OrgModule,
     FilesModule,
     ReportsModule,
+    ReportTemplatesModule,
     NotificationsModule,
     SummariesModule,
     UsersModule,
