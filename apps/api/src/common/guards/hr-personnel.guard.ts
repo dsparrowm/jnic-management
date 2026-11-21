@@ -31,3 +31,35 @@ export async function isHrPersonnel(
   });
   return seat !== null;
 }
+
+const HR_WELFARE_DESK = "Pastoral Welfare and Care";
+const HR_DISCIPLINE_DESK = "Ethics, Conduct and Discipline";
+
+const CASE_DESK: Record<string, string> = {
+  WELFARE: HR_WELFARE_DESK,
+  DISCIPLINE: HR_DISCIPLINE_DESK,
+};
+
+/** True for HR leadership or a head/deputy of the desk owning this case kind. */
+export async function isHrCaseOfficer(
+  prisma: PrismaService,
+  userId: string,
+  kind: string,
+): Promise<boolean> {
+  if (await isHrPersonnel(prisma, userId)) return true;
+  const deskName = CASE_DESK[kind];
+  if (!deskName) return false;
+  const seat = await prisma.directorateAssignment.findFirst({
+    where: {
+      userId,
+      isActive: true,
+      directorate: { key: HR_DIRECTORATE_KEY },
+      office: {
+        in: [DirectorateOffice.DESK_HEAD, DirectorateOffice.DEPUTY_DESK_HEAD],
+      },
+      desk: { name: deskName },
+    },
+    select: { id: true },
+  });
+  return seat !== null;
+}

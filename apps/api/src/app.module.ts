@@ -5,6 +5,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
+import { CasesModule } from "./cases/cases.module";
 import { ChatModule } from "./chat/chat.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DirectoratesModule } from "./directorates/directorates.module";
@@ -35,6 +36,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     PrismaModule,
     HealthModule,
     AuthModule,
+    CasesModule,
     ChatModule,
     DashboardModule,
     DirectoratesModule,

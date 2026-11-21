@@ -85,6 +85,17 @@ export enum PersonnelMoveKind {
   STATUS = "STATUS",
 }
 
+export enum PersonnelCaseKind {
+  WELFARE = "WELFARE",
+  DISCIPLINE = "DISCIPLINE",
+}
+
+export enum PersonnelCaseStatus {
+  OPEN = "OPEN",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
+}
+
 export { ConversationType, ChatReceiptStatus } from "./chat";
 export type {
   ChatInboxResponse,

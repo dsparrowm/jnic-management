@@ -170,6 +170,8 @@ model User {
   rollupsForwarded         HierarchyWeeklyRollup[]   @relation("RollupForwardedBy")
   personnelMoves           PersonnelMove[]           @relation("PersonnelMoveSubject")
   personnelMovesActed      PersonnelMove[]           @relation("PersonnelMoveActor")
+  personnelCases           PersonnelCase[]           @relation("PersonnelCaseSubject")
+  personnelCasesOpened     PersonnelCase[]           @relation("PersonnelCaseOpenedBy")
   refreshTokens            RefreshToken[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
@@ -661,4 +663,36 @@ model PersonnelMove {
 
   @@index([userId])
   @@index([actorId])
+}
+
+/// HR case registers: welfare + discipline, one row per case.
+/// D-report fields stay non-identifying — only counts leave this table.
+enum PersonnelCaseKind {
+  WELFARE
+  DISCIPLINE
+}
+
+enum PersonnelCaseStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+model PersonnelCase {
+  id           String              @id @default(cuid())
+  kind         PersonnelCaseKind
+  status       PersonnelCaseStatus @default(OPEN)
+  subject      User?               @relation("PersonnelCaseSubject", fields: [subjectId], references: [id], onDelete: SetNull)
+  subjectId    String?
+  openedBy     User                @relation("PersonnelCaseOpenedBy", fields: [openedById], references: [id], onDelete: Cascade)
+  openedById   String
+  title        String
+  detail       String?
+  resolution   String?
+  resolvedAt   DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([kind, status])
+  @@index([subjectId])
 }
