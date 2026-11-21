@@ -8,6 +8,7 @@ import { hashToken } from "../common/hash-token";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthResponse, AuthUser, TokenPair } from "../common/auth.types";
 import { toAuthUser } from "../common/user.mapper";
+import { isHrPersonnel } from "../common/guards/hr-personnel.guard";
 
 @Injectable()
 export class AuthService {
@@ -67,9 +68,24 @@ export class AuthService {
   async issueTokens(user: User): Promise<AuthResponse> {
     const withOrg = await this.prisma.user.findUnique({
       where: { id: user.id },
-      include: { state: true, zone: true, branch: true },
+      include: {
+        region: true,
+        state: true,
+        zone: true,
+        district: true,
+        branch: true,
+        directorateAssignment: {
+          include: {
+            directorate: { select: { name: true } },
+            desk: { select: { name: true } },
+          },
+        },
+      },
     });
-    const authUser = toAuthUser(withOrg ?? user);
+    const authUser: AuthUser = {
+      ...toAuthUser(withOrg ?? user),
+      hrPersonnel: await isHrPersonnel(this.prisma, user.id),
+    };
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, email: user.email, role: user.role },
       {
