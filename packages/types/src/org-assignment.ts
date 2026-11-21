@@ -63,13 +63,17 @@ export function requiresBranchId(role: Role): boolean {
   return role === Role.BRANCH_PASTOR;
 }
 
-/** Territorial pastors may additionally serve a branch as its pastor. */
+/**
+ * Territorial pastors may additionally serve a branch as its pastor;
+ * a MEMBER may carry a branch as the seat of their service unit.
+ */
 export function allowsOptionalBranch(role: Role): boolean {
   return (
     role === Role.REGIONAL_PASTOR ||
     role === Role.STATE_PASTOR ||
     role === Role.ZONAL_PASTOR ||
-    role === Role.DISTRICT_PASTOR
+    role === Role.DISTRICT_PASTOR ||
+    role === Role.MEMBER
   );
 }
 
@@ -83,6 +87,12 @@ export function validateOrgAssignmentStructure(
   const zoneId = input.zoneId?.trim() || null;
   const districtId = input.districtId?.trim() || null;
   const branchId = input.branchId?.trim() || null;
+
+  if (role === Role.MEMBER) {
+    // Directorate-only member: no territorial seat required; an optional
+    // branch pins the service unit they coordinate.
+    return null;
+  }
 
   if (!PASTOR_ROLES.has(role)) {
     return "Invalid role for org assignment";

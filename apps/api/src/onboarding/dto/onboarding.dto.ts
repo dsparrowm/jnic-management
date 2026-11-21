@@ -1,4 +1,4 @@
-import { Role } from "@repo/types";
+import { DirectorateOffice, Role } from "@repo/types";
 import { Transform } from "class-transformer";
 import {
   IsEmail,
@@ -56,6 +56,16 @@ export class CreateOnboardingUserDto {
   @IsOptional()
   @IsString()
   deskId?: string;
+
+  /// Office inside the directorate (director, desk head, member, ...).
+  @IsOptional()
+  @IsEnum(DirectorateOffice)
+  office?: DirectorateOffice;
+
+  /// Optional branch service unit this member coordinates (files its D1/D2).
+  @IsOptional()
+  @IsString()
+  serviceUnitId?: string;
 }
 
 export class CompleteOnboardingDto {

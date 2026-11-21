@@ -21,6 +21,7 @@ const DIRECTORY_ROLES: Role[] = [
   Role.ZONAL_PASTOR,
   Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
+  Role.MEMBER,
 ];
 
 const pastorInclude = {
