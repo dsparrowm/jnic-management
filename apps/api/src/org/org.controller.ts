@@ -7,11 +7,15 @@ import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
 import {
   CreateBranchDto,
+  CreateDistrictDto,
   CreateOrgChangeRequestDto,
+  CreateRegionDto,
   CreateStateDto,
   CreateZoneDto,
   ReviewOrgChangeDto,
   UpdateBranchDto,
+  UpdateDistrictDto,
+  UpdateRegionDto,
   UpdateStateDto,
   UpdateZoneDto,
 } from "./dto/org.dto";
@@ -24,7 +28,7 @@ export class OrgController {
 
   @Get("tree")
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.LEAD_PASTOR)
+  @Roles(Role.ADMIN, Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   getTree() {
     return this.orgService.getTree();
   }
@@ -33,13 +37,30 @@ export class OrgController {
   @UseGuards(RolesGuard)
   @Roles(
     Role.ADMIN,
-    Role.LEAD_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
+    Role.REGIONAL_PASTOR,
     Role.STATE_PASTOR,
     Role.ZONAL_PASTOR,
+    Role.DISTRICT_PASTOR,
     Role.BRANCH_PASTOR,
   )
   listAreas() {
     return this.orgService.listAreas();
+  }
+
+  @Post("regions")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  createRegion(@Body() dto: CreateRegionDto) {
+    return this.orgService.createRegion(dto);
+  }
+
+  @Patch("regions/:id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  updateRegion(@Param("id") id: string, @Body() dto: UpdateRegionDto) {
+    return this.orgService.updateRegion(id, dto);
   }
 
   @Post("states")
@@ -54,6 +75,13 @@ export class OrgController {
   @Roles(Role.ADMIN)
   createZone(@Body() dto: CreateZoneDto) {
     return this.orgService.createZone(dto);
+  }
+
+  @Post("districts")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  createDistrict(@Body() dto: CreateDistrictDto) {
+    return this.orgService.createDistrict(dto);
   }
 
   @Post("branches")
@@ -77,6 +105,13 @@ export class OrgController {
     return this.orgService.updateZone(id, dto);
   }
 
+  @Patch("districts/:id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  updateDistrict(@Param("id") id: string, @Body() dto: UpdateDistrictDto) {
+    return this.orgService.updateDistrict(id, dto);
+  }
+
   @Patch("branches/:id")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
@@ -93,14 +128,14 @@ export class OrgController {
 
   @Get("change-requests")
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.LEAD_PASTOR)
+  @Roles(Role.ADMIN, Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   listChangeRequests() {
     return this.orgService.listChangeRequests();
   }
 
   @Post("change-requests/:id/approve")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   approveChange(
     @CurrentUser() lp: AuthUser,
     @Param("id") id: string,
@@ -111,7 +146,7 @@ export class OrgController {
 
   @Post("change-requests/:id/reject")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   rejectChange(
     @CurrentUser() lp: AuthUser,
     @Param("id") id: string,

@@ -1,10 +1,13 @@
-export { Role } from "./role";
+export { Role, HQ_PASTOR_ROLES, isHqPastor } from "./role";
 import { Role } from "./role";
 
-/** Roles assignable via admin pastor onboarding (excludes ADMIN and LEAD_PASTOR) */
+/** Roles assignable via admin pastor onboarding (excludes SENIOR_PASTOR and ADMIN) */
 export const ONBOARDABLE_ROLES: Role[] = [
+  Role.RESIDENT_PASTOR,
+  Role.REGIONAL_PASTOR,
   Role.STATE_PASTOR,
   Role.ZONAL_PASTOR,
+  Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
 ];
 
@@ -12,6 +15,16 @@ export enum UserStatus {
   PENDING = "PENDING",
   ACTIVE = "ACTIVE",
   DEACTIVATED = "DEACTIVATED",
+}
+
+export enum DirectorateOffice {
+  DIRECTOR = "DIRECTOR",
+  DEPUTY_DIRECTOR = "DEPUTY_DIRECTOR",
+  SECRETARY = "SECRETARY",
+  DESK_HEAD = "DESK_HEAD",
+  DEPUTY_DESK_HEAD = "DEPUTY_DESK_HEAD",
+  REGIONAL_COORDINATOR = "REGIONAL_COORDINATOR",
+  MEMBER = "MEMBER",
 }
 
 export enum OrgChangeType {
@@ -34,8 +47,10 @@ export enum ReportStatus {
 
 export enum SummaryScopeType {
   BRANCH = "BRANCH",
+  DISTRICT = "DISTRICT",
   ZONE = "ZONE",
   STATE = "STATE",
+  REGION = "REGION",
   HQ = "HQ",
 }
 
@@ -98,6 +113,8 @@ export {
   allowsOptionalBranch,
   canSubmitWeeklyReports,
   requiresBranchId,
+  requiresDistrictId,
+  requiresRegionId,
   requiresStateId,
   requiresZoneId,
   validateOrgAssignmentStructure,

@@ -13,16 +13,31 @@ import { ListPastorsDto } from "./dto/list-pastors.dto";
 import { ReassignUserDto } from "./dto/users.dto";
 
 const DIRECTORY_ROLES: Role[] = [
-  Role.LEAD_PASTOR,
+  Role.SENIOR_PASTOR,
+  Role.RESIDENT_PASTOR,
+  Role.REGIONAL_PASTOR,
   Role.STATE_PASTOR,
   Role.ZONAL_PASTOR,
+  Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
 ];
 
+const pastorInclude = {
+  region: true,
+  state: true,
+  zone: true,
+  district: true,
+  branch: true,
+  directorateAssignment: {
+    include: {
+      directorate: { select: { name: true } },
+      desk: { select: { name: true } },
+    },
+  },
+} satisfies Prisma.UserInclude;
+
 function toPastorRecord(
-  user: Prisma.UserGetPayload<{
-    include: { state: true; zone: true; branch: true };
-  }>,
+  user: Prisma.UserGetPayload<{ include: typeof pastorInclude }>,
 ) {
   return {
     id: user.id,
@@ -31,15 +46,27 @@ function toPastorRecord(
     phone: user.phone,
     role: user.role,
     status: user.status,
+    title: user.title,
     profilePicUrl: user.profilePicUrl,
     createdAt: user.createdAt,
+    region: user.region ? { id: user.region.id, name: user.region.name } : null,
     state: user.state ? { id: user.state.id, name: user.state.name } : null,
     zone: user.zone ? { id: user.zone.id, name: user.zone.name } : null,
+    district: user.district ? { id: user.district.id, name: user.district.name } : null,
     branch: user.branch
       ? {
           id: user.branch.id,
           name: user.branch.name,
           address: user.branch.address,
+        }
+      : null,
+    directorate: user.directorateAssignment
+      ? {
+          directorateId: user.directorateAssignment.directorateId,
+          directorateName: user.directorateAssignment.directorate.name,
+          office: user.directorateAssignment.office,
+          deskId: user.directorateAssignment.deskId,
+          deskName: user.directorateAssignment.desk?.name ?? null,
         }
       : null,
   };
@@ -59,9 +86,14 @@ function buildPastorWhere(
       { phone: { contains: term, mode: "insensitive" } },
     ];
   }
+  if (dto.regionId) where.regionId = dto.regionId;
   if (dto.stateId) where.stateId = dto.stateId;
   if (dto.zoneId) where.zoneId = dto.zoneId;
+  if (dto.districtId) where.districtId = dto.districtId;
   if (dto.branchId) where.branchId = dto.branchId;
+  if (dto.directorateId) {
+    where.directorateAssignment = { directorateId: dto.directorateId };
+  }
   if (!options?.excludeStatus && dto.status) where.status = dto.status;
 
   return where;
@@ -77,7 +109,7 @@ export class UsersService {
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { state: true, zone: true, branch: true },
+      include: pastorInclude,
     });
     if (!user) {
       throw new NotFoundException("User not found");
@@ -88,6 +120,7 @@ export class UsersService {
   async listUsers() {
     const users = await this.prisma.user.findMany({
       orderBy: { createdAt: "desc" },
+      include: pastorInclude,
     });
     return users.map(sanitizeUser);
   }
@@ -107,7 +140,7 @@ export class UsersService {
     const [items, total, active, pending, deactivated] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        include: { state: true, zone: true, branch: true },
+        include: pastorInclude,
         orderBy: { name: "asc" },
         skip: (page - 1) * perPage,
         take: perPage,
@@ -141,7 +174,7 @@ export class UsersService {
   async getPastor(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { state: true, zone: true, branch: true },
+      include: pastorInclude,
     });
     if (!user || !DIRECTORY_ROLES.includes(user.role as Role)) {
       throw new NotFoundException("Pastor not found");
@@ -188,16 +221,20 @@ export class UsersService {
 
     const targetRole = (dto.role ?? user.role) as Role;
     if (!ONBOARDABLE_ROLES.includes(targetRole)) {
-      throw new BadRequestException("Cannot assign Admin or Lead Pastor via reassign");
+      throw new BadRequestException("Cannot assign Admin or Senior Pastor via reassign");
     }
 
+    const regionId = dto.regionId === undefined ? user.regionId : dto.regionId;
     const stateId = dto.stateId === undefined ? user.stateId : dto.stateId;
     const zoneId = dto.zoneId === undefined ? user.zoneId : dto.zoneId;
+    const districtId = dto.districtId === undefined ? user.districtId : dto.districtId;
     const branchId = dto.branchId === undefined ? user.branchId : dto.branchId;
 
     const org = await resolveAndValidateOrgAssignment(this.prisma, targetRole, {
+      regionId,
       stateId,
       zoneId,
+      districtId,
       branchId,
     });
 
@@ -205,8 +242,11 @@ export class UsersService {
       where: { id: userId },
       data: {
         role: targetRole,
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        regionId: org.regionId,
         stateId: org.stateId,
         zoneId: org.zoneId,
+        districtId: org.districtId,
         branchId: org.branchId,
       },
     });

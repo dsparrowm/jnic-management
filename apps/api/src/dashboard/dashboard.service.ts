@@ -3,6 +3,7 @@ import {
   NotificationType,
   Role,
   formatWeekEndingLabel,
+  isHqPastor,
   getBranchSubmissionState,
   getTodayInLagos,
   type HqDashboardResponse,
@@ -126,7 +127,7 @@ export class DashboardService {
     weeks = 6,
   ): Promise<HqDashboardResponse> {
     const isAdmin = user.role === Role.ADMIN;
-    const isLeadPastor = user.role === Role.LEAD_PASTOR;
+    const isLeadPastor = isHqPastor(user.role);
 
     const [tree, national, analytics, notifications, pastors, approvals] =
       await Promise.all([
@@ -140,15 +141,24 @@ export class DashboardService {
           : Promise.resolve({ items: [] }),
       ]);
 
-    const zones = tree.reduce((count, state) => count + state.zones.length, 0);
-    const branches = tree.reduce(
+    const allStates = [...tree.unassignedStates, ...tree.regions.flatMap((r) => r.states)];
+    const zones = allStates.reduce((count, state) => count + state.zones.length, 0);
+    const districts = allStates.reduce(
+      (count, state) =>
+        count + state.zones.reduce((zoneCount, zone) => zoneCount + zone.districts.length, 0),
+      0,
+    );
+    const branches = allStates.reduce(
       (count, state) =>
         count +
         state.zones.reduce(
-          (zoneCount, zone) => zoneCount + zone.branches.length,
+          (zoneCount, zone) =>
+            zoneCount +
+            zone.branches.length +
+            zone.districts.reduce((dCount, district) => dCount + district.branches.length, 0),
           0,
         ) +
-        (state.branches?.length ?? 0),
+        state.branches.length,
       0,
     );
     const coverage = national.coverage ?? national.summary;
@@ -190,12 +200,14 @@ export class DashboardService {
 
     return {
       generatedAt: new Date().toISOString(),
-      role: user.role as Role.ADMIN | Role.LEAD_PASTOR,
+      role: user.role as Role.ADMIN | Role.SENIOR_PASTOR | Role.RESIDENT_PASTOR,
       weekOf,
       weekLabel: formatWeekEndingLabel(weekOf),
       org: {
-        states: tree.length,
+        regions: tree.regions.length,
+        states: allStates.length,
         zones,
+        districts,
         branches,
       },
       ...(pastors

@@ -67,7 +67,7 @@ export function isAdmin(user: AuthUser | null): boolean {
 }
 
 export function isLeadPastor(user: AuthUser | null): boolean {
-  return user?.role === "LEAD_PASTOR";
+  return user?.role === "SENIOR_PASTOR" || user?.role === "RESIDENT_PASTOR";
 }
 
 export function canSubmitWeeklyReportsForUser(user: AuthUser | null): boolean {
@@ -78,9 +78,12 @@ export function canSubmitWeeklyReportsForUser(user: AuthUser | null): boolean {
 export function canLeaveFeedback(user: AuthUser | null): boolean {
   if (!user) return false;
   return (
+    user.role === "DISTRICT_PASTOR" ||
     user.role === "ZONAL_PASTOR" ||
     user.role === "STATE_PASTOR" ||
-    user.role === "LEAD_PASTOR" ||
+    user.role === "REGIONAL_PASTOR" ||
+    user.role === "SENIOR_PASTOR" ||
+    user.role === "RESIDENT_PASTOR" ||
     user.role === "ADMIN"
   );
 }
@@ -94,5 +97,9 @@ export function isStatePastor(user: AuthUser | null): boolean {
 }
 
 export function isHqViewer(user: AuthUser | null): boolean {
-  return user?.role === "LEAD_PASTOR" || user?.role === "ADMIN";
+  return (
+    user?.role === "SENIOR_PASTOR" ||
+    user?.role === "RESIDENT_PASTOR" ||
+    user?.role === "ADMIN"
+  );
 }

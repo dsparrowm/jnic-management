@@ -15,15 +15,25 @@ import {
 import { PastorsPageHeader } from "@/components/pastors/pastors-page-header";
 import { PastorsTable } from "@/components/pastors/pastors-table";
 import { Button } from "@/components/ui/button";
-import { api, ApiError, OrgState, PastorListResponse, PastorRecord } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  DirectorateRecord,
+  OrgTreeResponse,
+  PastorListResponse,
+  PastorRecord,
+} from "@/lib/api";
 import { getAccessToken, getStoredUser, isAdmin, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 function parseFilters(params: URLSearchParams): PastorFilterValues {
   return {
     search: params.get("search") ?? "",
+    regionId: params.get("regionId") ?? "",
     stateId: params.get("stateId") ?? "",
     zoneId: params.get("zoneId") ?? "",
+    districtId: params.get("districtId") ?? "",
     branchId: params.get("branchId") ?? "",
+    directorateId: params.get("directorateId") ?? "",
     role: params.get("role") ?? "",
     status: params.get("status") ?? "",
   };
@@ -33,7 +43,11 @@ function PastorsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [ready, setReady] = useState(false);
-  const [orgTree, setOrgTree] = useState<OrgState[]>([]);
+  const [orgTree, setOrgTree] = useState<OrgTreeResponse>({
+    regions: [],
+    unassignedStates: [],
+  });
+  const [directorates, setDirectorates] = useState<DirectorateRecord[]>([]);
   const [data, setData] = useState<PastorListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -68,9 +82,12 @@ function PastorsPageContent() {
     try {
       const response = await api.listPastors(token, {
         search: filters.search || undefined,
+        regionId: filters.regionId || undefined,
         stateId: filters.stateId || undefined,
         zoneId: filters.zoneId || undefined,
+        districtId: filters.districtId || undefined,
         branchId: filters.branchId || undefined,
+        directorateId: filters.directorateId || undefined,
         role: (filters.role as Role) || undefined,
         status: (filters.status as UserStatus) || undefined,
         page,
@@ -102,8 +119,12 @@ function PastorsPageContent() {
       setOrgTree(tree);
     } catch (err) {
       if (redirectToLoginIfUnauthorized(err, router)) return;
-      setOrgTree([]);
+      setOrgTree({ regions: [], unassignedStates: [] });
     }
+    api
+      .listDirectorates(token)
+      .then(setDirectorates)
+      .catch(() => setDirectorates([]));
   }, [router]);
 
   useEffect(() => {
@@ -155,9 +176,14 @@ function PastorsPageContent() {
     const updates: Record<string, string | undefined> = { [key]: value || undefined, page: "1" };
     if (key === "stateId") {
       updates.zoneId = undefined;
+      updates.districtId = undefined;
       updates.branchId = undefined;
     }
     if (key === "zoneId") {
+      updates.districtId = undefined;
+      updates.branchId = undefined;
+    }
+    if (key === "districtId") {
       updates.branchId = undefined;
     }
     updateParams(updates);
@@ -231,6 +257,7 @@ function PastorsPageContent() {
           <PastorsFilterBar
             filters={{ ...filters, search: searchInput }}
             orgTree={orgTree}
+            directorates={directorates}
             onSearchChange={setSearchInput}
             onFilterChange={handleFilterChange}
             onReset={handleReset}

@@ -42,10 +42,31 @@ export class OnboardingService {
     }
 
     const org = await resolveAndValidateOrgAssignment(this.prisma, dto.role, {
+      regionId: dto.regionId,
       stateId: dto.stateId,
       zoneId: dto.zoneId,
+      districtId: dto.districtId,
       branchId: dto.branchId,
     });
+
+    let deskId: string | null = null;
+    if (dto.directorateId) {
+      const directorate = await this.prisma.directorate.findUnique({
+        where: { id: dto.directorateId },
+      });
+      if (!directorate) {
+        throw new BadRequestException("Directorate not found");
+      }
+      if (dto.deskId) {
+        const desk = await this.prisma.desk.findUnique({ where: { id: dto.deskId } });
+        if (!desk || desk.directorateId !== directorate.id) {
+          throw new BadRequestException("Desk is not in the selected directorate");
+        }
+        deskId = desk.id;
+      }
+    } else if (dto.deskId) {
+      throw new BadRequestException("Directorate is required when a desk is assigned");
+    }
 
     const token = randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + ONBOARDING_HOURS * 60 * 60 * 1000);
@@ -56,13 +77,40 @@ export class OnboardingService {
         email: dto.email,
         phone: dto.phone,
         role: dto.role,
+        title: dto.title ?? null,
         status: UserStatus.PENDING,
+        regionId: org.regionId,
         stateId: org.stateId,
         zoneId: org.zoneId,
+        districtId: org.districtId,
         branchId: org.branchId,
         onboardingToken: hashToken(token),
         onboardingTokenExpiry: expiry,
         createdById: adminId,
+        ...(dto.directorateId
+          ? {
+              directorateAssignment: {
+                create: {
+                  directorateId: dto.directorateId,
+                  deskId,
+                  office: "MEMBER",
+                },
+              },
+            }
+          : {}),
+      },
+      include: {
+        region: true,
+        state: true,
+        zone: true,
+        district: true,
+        branch: true,
+        directorateAssignment: {
+          include: {
+            directorate: { select: { name: true } },
+            desk: { select: { name: true } },
+          },
+        },
       },
     });
 

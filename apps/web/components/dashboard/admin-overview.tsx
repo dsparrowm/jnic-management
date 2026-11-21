@@ -21,7 +21,7 @@ import {
   ApiError,
   NationalAnalyticsResponse,
   NationalSummaryResponse,
-  OrgState,
+  OrgTreeResponse,
 } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
 
@@ -52,7 +52,7 @@ export function AdminOverview({ userName }: AdminOverviewProps) {
   const [weekOf, setWeekOf] = useState(() => computeWeekOf(getTodayInLagos()));
   const weekLabel = formatWeekEndingLabel(weekOf);
 
-  const [orgTree, setOrgTree] = useState<OrgState[]>([]);
+  const [orgTree, setOrgTree] = useState<OrgTreeResponse>({ regions: [], unassignedStates: [] });
   const [nationalSummary, setNationalSummary] = useState<NationalSummaryResponse | null>(null);
   const [analytics, setAnalytics] = useState<NationalAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);

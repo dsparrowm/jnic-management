@@ -5,38 +5,62 @@ import {
   Role,
   allowsOptionalBranch,
   requiresBranchId,
+  requiresDistrictId,
+  requiresRegionId,
   requiresStateId,
   requiresZoneId,
 } from "@repo/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OrgBranchPicker } from "@/components/org/org-branch-picker";
 import { OrgStatePicker } from "@/components/org/org-state-picker";
 import { OrgZonePicker } from "@/components/org/org-zone-picker";
-import { OrgState } from "@/lib/api";
+import { allOrgStates, OrgTreeResponse } from "@/lib/api";
 import { Label } from "@/components/ui/label";
 
 export interface OnboardOrgValues {
   role: Role;
+  regionId: string;
   stateId: string;
   zoneId: string;
+  districtId: string;
   branchId: string;
 }
 
 interface OnboardOrgSelectorsProps {
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   values: OnboardOrgValues;
   onChange: (patch: Partial<OnboardOrgValues>) => void;
 }
 
-function findBranchInTree(orgTree: OrgState[], branchId: string) {
-  for (const state of orgTree) {
-    const unzoned = state.branches?.find((b) => b.id === branchId);
-    if (unzoned) {
-      return { stateId: state.id, zoneId: "", branchId: unzoned.id };
+const NONE = "__none__";
+
+function findBranchInTree(orgTree: OrgTreeResponse, branchId: string) {
+  for (const state of allOrgStates(orgTree)) {
+    const loose = state.branches.find((b) => b.id === branchId);
+    if (loose) {
+      return { stateId: state.id, zoneId: "", districtId: "", branchId: loose.id };
     }
     for (const zone of state.zones) {
-      const branch = zone.branches.find((b) => b.id === branchId);
-      if (branch) {
-        return { stateId: state.id, zoneId: zone.id, branchId: branch.id };
+      const unzoned = zone.branches.find((b) => b.id === branchId);
+      if (unzoned) {
+        return { stateId: state.id, zoneId: zone.id, districtId: "", branchId: unzoned.id };
+      }
+      for (const district of zone.districts) {
+        const inDistrict = district.branches.find((b) => b.id === branchId);
+        if (inDistrict) {
+          return {
+            stateId: state.id,
+            zoneId: zone.id,
+            districtId: district.id,
+            branchId: inDistrict.id,
+          };
+        }
       }
     }
   }
@@ -47,81 +71,108 @@ function findBranchInTree(orgTree: OrgState[], branchId: string) {
 export function adaptOrgFieldsForRole(
   current: OnboardOrgValues,
   newRole: Role,
-  orgTree: OrgState[],
-): Pick<OnboardOrgValues, "stateId" | "zoneId" | "branchId"> {
-  const stateStillValid =
-    Boolean(current.stateId) && orgTree.some((s) => s.id === current.stateId);
+  orgTree: OrgTreeResponse,
+): Pick<OnboardOrgValues, "regionId" | "stateId" | "zoneId" | "districtId" | "branchId"> {
+  const states = allOrgStates(orgTree);
+  const regionStillValid =
+    Boolean(current.regionId) && orgTree.regions.some((r) => r.id === current.regionId);
+  const regionId = requiresRegionId(newRole) && regionStillValid ? current.regionId : "";
 
+  const stateStillValid =
+    Boolean(current.stateId) && states.some((s) => s.id === current.stateId);
+  const needsState = requiresStateId(newRole) || requiresDistrictId(newRole);
   let stateId = "";
-  if (requiresStateId(newRole)) {
+  if (needsState) {
     if (stateStillValid) {
       stateId = current.stateId;
-    } else if (orgTree.length === 1) {
-      stateId = orgTree[0].id;
+    } else if (states.length === 1) {
+      stateId = states[0].id;
     }
   }
 
-  const zones = stateId
-    ? (orgTree.find((s) => s.id === stateId)?.zones ?? [])
-    : [];
+  const zones = stateId ? (states.find((s) => s.id === stateId)?.zones ?? []) : [];
   const zoneStillValid =
     Boolean(current.zoneId) && zones.some((z) => z.id === current.zoneId);
+  const needsZone = requiresZoneId(newRole) || requiresDistrictId(newRole);
+  const zoneId = stateId && zoneStillValid && needsZone ? current.zoneId : "";
 
-  let zoneId = "";
-  if (stateId && zoneStillValid && requiresZoneId(newRole)) {
-    zoneId = current.zoneId;
-  }
+  const districts = zoneId
+    ? (zones.find((z) => z.id === zoneId)?.districts ?? [])
+    : [];
+  const districtStillValid =
+    Boolean(current.districtId) && districts.some((d) => d.id === current.districtId);
+  const districtId =
+    zoneId && districtStillValid && requiresDistrictId(newRole) ? current.districtId : "";
 
   let branchId = "";
-  if (requiresBranchId(newRole) && zoneId) {
-    const branches = zones.find((z) => z.id === zoneId)?.branches ?? [];
-    if (current.branchId && branches.some((b) => b.id === current.branchId)) {
-      branchId = current.branchId;
-    }
+  if ((requiresBranchId(newRole) || allowsOptionalBranch(newRole)) && current.branchId) {
+    branchId = current.branchId;
   }
 
-  return { stateId, zoneId, branchId };
+  return { regionId, stateId, zoneId, districtId, branchId };
 }
 
 export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSelectorsProps) {
-  const showState = requiresStateId(values.role);
+  const states = allOrgStates(orgTree);
+  const showRegion = requiresRegionId(values.role);
+  const showState = requiresStateId(values.role) || requiresDistrictId(values.role);
+  const showZone = requiresZoneId(values.role) || requiresDistrictId(values.role);
+  const showDistrict = requiresDistrictId(values.role);
+  const showBranchRequired = requiresBranchId(values.role);
+  const showBranchOptional = allowsOptionalBranch(values.role);
 
   useEffect(() => {
-    if (!showState || values.stateId || orgTree.length !== 1) return;
-    onChange({ stateId: orgTree[0].id, zoneId: "", branchId: "" });
-  }, [showState, values.role, values.stateId, orgTree, onChange]);
+    if (showState && !values.stateId && states.length === 1) {
+      onChange({ stateId: states[0].id, zoneId: "", districtId: "", branchId: "" });
+    }
+  }, [showState, values.stateId, states, onChange]);
 
   function applyChange(patch: Partial<OnboardOrgValues>) {
     onChange(patch);
   }
 
-  useEffect(() => {
-    if (values.role === Role.STATE_PASTOR && values.zoneId) {
-      onChange({ zoneId: "" });
-    }
-  }, [values.role, values.zoneId, onChange]);
-
-  const showZone = requiresZoneId(values.role);
-  const showBranchRequired = requiresBranchId(values.role);
-  const showBranchOptional = allowsOptionalBranch(values.role);
-
-  const selectedState = orgTree.find((s) => s.id === values.stateId);
+  const selectedState = states.find((s) => s.id === values.stateId);
   const zonesForState = selectedState?.zones ?? [];
-  const branchesForZone =
-    zonesForState.find((z) => z.id === values.zoneId)?.branches ?? [];
-  const branchesForState = [
-    ...zonesForState.flatMap((z) =>
-      z.branches.map((b) => ({ ...b, zoneName: z.name })),
-    ),
-    ...(selectedState?.branches ?? []).map((b) => ({ ...b, zoneName: undefined })),
+  const selectedZone = zonesForState.find((z) => z.id === values.zoneId);
+  const districtsForZone = selectedZone?.districts ?? [];
+
+  const branchesInZone = [
+    ...(selectedZone?.branches ?? []),
+    ...districtsForZone.flatMap((d) => d.branches),
   ];
-  const branchOptions =
+
+  type BranchOption = { id: string; name: string; zoneName?: string };
+
+  const branchesForState: BranchOption[] = [
+    ...zonesForState.flatMap((z) => [
+      ...z.branches.map((b) => ({ id: b.id, name: b.name, zoneName: z.name })),
+      ...z.districts.flatMap((d) =>
+        d.branches.map((b) => ({ id: b.id, name: b.name, zoneName: `${z.name} · ${d.name}` })),
+      ),
+    ]),
+    ...(selectedState?.branches ?? []).map((b) => ({ id: b.id, name: b.name })),
+  ];
+
+  const branchesForRegion: BranchOption[] = orgTree.regions
+    .filter((r) => r.id === values.regionId)
+    .flatMap((r) =>
+      r.states.flatMap((s) => [
+        ...s.branches.map((b) => ({ id: b.id, name: b.name, zoneName: s.name })),
+        ...s.zones.flatMap((z) => [
+          ...z.branches.map((b) => ({ id: b.id, name: b.name, zoneName: `${s.name} · ${z.name}` })),
+          ...z.districts.flatMap((d) =>
+            d.branches.map((b) => ({ id: b.id, name: b.name, zoneName: `${s.name} · ${d.name}` })),
+          ),
+        ]),
+      ]),
+    );
+
+  const branchOptions: BranchOption[] =
     values.role === Role.STATE_PASTOR
       ? branchesForState
-      : branchesForZone.map((b) => ({
-          ...b,
-          zoneName: zonesForState.find((z) => z.id === values.zoneId)?.name,
-        }));
+      : values.role === Role.REGIONAL_PASTOR
+        ? branchesForRegion
+        : branchesInZone.map((b) => ({ id: b.id, name: b.name }));
 
   function handleBranchChange(branchId: string) {
     if (!branchId) {
@@ -134,23 +185,50 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
         applyChange({ stateId: resolved.stateId, branchId: resolved.branchId });
         return;
       }
+      if (values.role === Role.REGIONAL_PASTOR) {
+        applyChange({ branchId: resolved.branchId });
+        return;
+      }
       applyChange(resolved);
       return;
     }
     applyChange({ branchId });
   }
 
-  if (orgTree.length === 0) {
+  if (states.length === 0 && orgTree.regions.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-        No organisation states found. Add states, zones, and branches on the Organisation page
-        first.
+        No organisation found. Add regions, states, zones, districts and branches on the
+        Organisation page first.
       </p>
     );
   }
 
   return (
     <div className="space-y-4">
+      {showRegion && (
+        <div className="space-y-2">
+          <Label>
+            Region<span className="text-destructive"> *</span>
+          </Label>
+          <Select
+            value={values.regionId || undefined}
+            onValueChange={(regionId) => applyChange({ regionId })}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select region" />
+            </SelectTrigger>
+            <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+              {orgTree.regions.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {showState && (
         <div className="space-y-2">
           <Label>
@@ -158,9 +236,11 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
           </Label>
           <OrgStatePicker
             key={`onboard-state-${values.role}`}
-            orgTree={orgTree}
+            states={states}
             value={values.stateId}
-            onChange={(stateId) => applyChange({ stateId, zoneId: "", branchId: "" })}
+            onChange={(stateId) =>
+              applyChange({ stateId, zoneId: "", districtId: "", branchId: "" })
+            }
             placeholder="Select state"
           />
         </div>
@@ -169,7 +249,7 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
       {showZone && (
         <div className="space-y-2">
           <Label>
-            Zone<span className="text-destructive"> *</span>
+            Zone{requiresZoneId(values.role) && <span className="text-destructive"> *</span>}
           </Label>
           {values.stateId && zonesForState.length === 0 ? (
             <p className="text-sm text-muted-foreground">No zones in this state yet.</p>
@@ -178,10 +258,39 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
               key={`onboard-zone-${values.role}-${values.stateId}`}
               zones={zonesForState.map((z) => ({ id: z.id, name: z.name }))}
               value={values.zoneId}
-              onChange={(zoneId) => applyChange({ zoneId, branchId: "" })}
+              onChange={(zoneId) => applyChange({ zoneId, districtId: "", branchId: "" })}
               disabled={!values.stateId}
               placeholder="Select zone"
             />
+          )}
+        </div>
+      )}
+
+      {showDistrict && (
+        <div className="space-y-2">
+          <Label>
+            District<span className="text-destructive"> *</span>
+          </Label>
+          {values.zoneId && districtsForZone.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No districts in this zone yet.</p>
+          ) : (
+            <Select
+              key={`onboard-district-${values.role}-${values.zoneId}`}
+              value={values.districtId || undefined}
+              onValueChange={(districtId) => applyChange({ districtId })}
+              disabled={!values.zoneId}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select district" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+                {districtsForZone.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
       )}
@@ -191,12 +300,12 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
           <Label>
             Branch<span className="text-destructive"> *</span>
           </Label>
-          {values.zoneId && branchesForZone.length === 0 ? (
+          {values.zoneId && branchesInZone.length === 0 ? (
             <p className="text-sm text-muted-foreground">No branches in this zone yet.</p>
           ) : (
             <OrgBranchPicker
-              key={`onboard-branch-req-${values.role}-${values.zoneId}`}
-              branches={branchesForZone.map((b) => ({ id: b.id, name: b.name }))}
+              key={`onboard-branch-req-${values.role}-${values.zoneId}-${values.districtId}`}
+              branches={branchOptions.map((b) => ({ id: b.id, name: b.name }))}
               value={values.branchId}
               onChange={handleBranchChange}
               disabled={!values.zoneId}
@@ -210,7 +319,7 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
         <div className="space-y-2">
           <Label>Home branch (optional)</Label>
           <OrgBranchPicker
-            key={`onboard-branch-opt-${values.role}-${values.stateId}-${values.zoneId}`}
+            key={`onboard-branch-opt-${values.role}-${values.stateId}-${values.zoneId}-${values.regionId}`}
             branches={branchOptions.map((b) => ({
               id: b.id,
               name: b.name,
@@ -218,10 +327,13 @@ export function OnboardOrgSelectors({ orgTree, values, onChange }: OnboardOrgSel
             }))}
             value={values.branchId}
             onChange={handleBranchChange}
-            disabled={!values.stateId}
+            disabled={
+              (values.role === Role.REGIONAL_PASTOR && !values.regionId) ||
+              (values.role !== Role.REGIONAL_PASTOR && !values.stateId)
+            }
             allowEmpty
             emptyLabel="No home branch"
-            showZonePrefix={values.role === Role.STATE_PASTOR}
+            showZonePrefix={values.role === Role.STATE_PASTOR || values.role === Role.REGIONAL_PASTOR}
             placeholder="No home branch"
           />
           <p className="text-xs text-muted-foreground">

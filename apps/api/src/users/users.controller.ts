@@ -32,7 +32,9 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(
     Role.ADMIN,
-    Role.LEAD_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
+    Role.REGIONAL_PASTOR,
     Role.STATE_PASTOR,
     Role.ZONAL_PASTOR,
     Role.BRANCH_PASTOR,
@@ -45,7 +47,9 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(
     Role.ADMIN,
-    Role.LEAD_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
+    Role.REGIONAL_PASTOR,
     Role.STATE_PASTOR,
     Role.ZONAL_PASTOR,
     Role.BRANCH_PASTOR,

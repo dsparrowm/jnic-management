@@ -23,6 +23,15 @@ export class CreateOnboardingUserDto {
   @IsEnum(Role)
   role!: Role;
 
+  /// Free-form ministerial title, e.g. "Youth Pastor".
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  regionId?: string;
+
   @IsOptional()
   @IsString()
   stateId?: string;
@@ -33,7 +42,20 @@ export class CreateOnboardingUserDto {
 
   @IsOptional()
   @IsString()
+  districtId?: string;
+
+  @IsOptional()
+  @IsString()
   branchId?: string;
+
+  /// Optional directorate seat granted at onboarding.
+  @IsOptional()
+  @IsString()
+  directorateId?: string;
+
+  @IsOptional()
+  @IsString()
+  deskId?: string;
 }
 
 export class CompleteOnboardingDto {

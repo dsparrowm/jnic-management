@@ -13,10 +13,13 @@ import { ChatGateway } from "./chat.gateway";
 import { ListChatMessagesDto, SendChatMessageDto } from "./dto/chat.dto";
 
 const MESSAGING_ROLES: Role[] = [
-  Role.LEAD_PASTOR,
+  Role.SENIOR_PASTOR,
+  Role.RESIDENT_PASTOR,
   Role.ADMIN,
+  Role.REGIONAL_PASTOR,
   Role.STATE_PASTOR,
   Role.ZONAL_PASTOR,
+  Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
 ];
 

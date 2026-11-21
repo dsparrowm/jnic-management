@@ -1,17 +1,21 @@
-import { Building2, GitBranch, MapPin, Plus } from "lucide-react";
-import { OrgState } from "@/lib/api";
+import { Building2, GitBranch, Globe, Layers, MapPin, Plus } from "lucide-react";
+import { allOrgStates, OrgTreeResponse } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export interface OrgSummary {
+  regions: number;
   states: number;
   zones: number;
+  districts: number;
   branches: number;
 }
 
 interface OrgPageHeaderProps {
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
+  onAddRegion: () => void;
   onAddState: () => void;
   onAddZone: () => void;
+  onAddDistrict: () => void;
   onAddBranch: () => void;
 }
 
@@ -33,23 +37,36 @@ function SummaryChip({
   );
 }
 
-export function computeOrgSummary(orgTree: OrgState[]): OrgSummary {
+export function computeOrgSummary(orgTree: OrgTreeResponse): OrgSummary {
   let zones = 0;
+  let districts = 0;
   let branches = 0;
-  for (const state of orgTree) {
+  for (const state of allOrgStates(orgTree)) {
     zones += state.zones.length;
+    branches += state.branches.length;
     for (const zone of state.zones) {
+      districts += zone.districts.length;
       branches += zone.branches.length;
+      for (const district of zone.districts) {
+        branches += district.branches.length;
+      }
     }
-    branches += state.branches?.length ?? 0;
   }
-  return { states: orgTree.length, zones, branches };
+  return {
+    regions: orgTree.regions.length,
+    states: allOrgStates(orgTree).length,
+    zones,
+    districts,
+    branches,
+  };
 }
 
 export function OrgPageHeader({
   orgTree,
+  onAddRegion,
   onAddState,
   onAddZone,
+  onAddDistrict,
   onAddBranch,
 }: OrgPageHeaderProps) {
   const summary = computeOrgSummary(orgTree);
@@ -63,17 +80,23 @@ export function OrgPageHeader({
           </p>
           <h2 className="text-2xl font-semibold text-foreground">Organisation</h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Manage the state, zone, and branch hierarchy. Pastor assignment is handled separately
-            in the pastor directory.
+            Manage the territorial hierarchy — regions, states, zones, districts and branches.
+            Pastor assignment is handled separately in the pastor directory.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
+            <SummaryChip icon={Globe} label="Regions" value={summary.regions} />
             <SummaryChip icon={MapPin} label="States" value={summary.states} />
             <SummaryChip icon={Building2} label="Zones" value={summary.zones} />
+            <SummaryChip icon={Layers} label="Districts" value={summary.districts} />
             <SummaryChip icon={GitBranch} label="Branches" value={summary.branches} />
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" onClick={onAddRegion}>
+            <Plus className="h-4 w-4" />
+            Add region
+          </Button>
           <Button type="button" variant="outline" onClick={onAddState}>
             <Plus className="h-4 w-4" />
             Add state
@@ -81,6 +104,10 @@ export function OrgPageHeader({
           <Button type="button" variant="outline" onClick={onAddZone}>
             <Plus className="h-4 w-4" />
             Add zone
+          </Button>
+          <Button type="button" variant="outline" onClick={onAddDistrict}>
+            <Plus className="h-4 w-4" />
+            Add district
           </Button>
           <Button type="button" onClick={onAddBranch}>
             <Plus className="h-4 w-4" />

@@ -16,7 +16,9 @@ interface PastorsTableProps {
 }
 
 function LocationBadges({ pastor }: { pastor: PastorRecord }) {
-  const items = [pastor.state, pastor.zone, pastor.branch].filter(Boolean);
+  const items = [pastor.region, pastor.state, pastor.zone, pastor.district, pastor.branch].filter(
+    Boolean,
+  );
   if (items.length === 0) {
     return <span className="text-sm text-muted-foreground">Unassigned</span>;
   }
@@ -87,6 +89,11 @@ export function PastorsTable({
             <div>
               <p className="mb-1 text-xs text-muted-foreground md:hidden">Role</p>
               <Badge variant="secondary">{formatRole(pastor.role)}</Badge>
+              {pastor.directorate && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {pastor.directorate.directorateName}
+                </p>
+              )}
             </div>
             <div>
               <p className="mb-1 text-xs text-muted-foreground md:hidden">Status</p>

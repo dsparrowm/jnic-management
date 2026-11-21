@@ -36,7 +36,13 @@ export function PastorsCardGrid({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {pastors.map((pastor) => {
-        const location = [pastor.branch?.name, pastor.zone?.name, pastor.state?.name]
+        const location = [
+          pastor.branch?.name,
+          pastor.district?.name,
+          pastor.zone?.name,
+          pastor.state?.name,
+          pastor.region?.name,
+        ]
           .filter(Boolean)
           .join(" · ");
 
@@ -71,6 +77,14 @@ export function PastorsCardGrid({
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{formatRole(pastor.role)}</Badge>
+              {pastor.directorate && (
+                <Badge variant="outline" className="font-normal">
+                  {pastor.directorate.directorateName}
+                  {pastor.directorate.office !== "MEMBER"
+                    ? ` · ${pastor.directorate.office.replace(/_/g, " ").toLowerCase()}`
+                    : ""}
+                </Badge>
+              )}
               <PastorStatusBadge status={pastor.status} />
             </div>
 

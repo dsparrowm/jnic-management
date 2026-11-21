@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { ChatModule } from "./chat/chat.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { DirectoratesModule } from "./directorates/directorates.module";
 import { FilesModule } from "./files/files.module";
 import { HealthModule } from "./health/health.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -32,6 +33,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     AuthModule,
     ChatModule,
     DashboardModule,
+    DirectoratesModule,
     OnboardingModule,
     OrgModule,
     FilesModule,

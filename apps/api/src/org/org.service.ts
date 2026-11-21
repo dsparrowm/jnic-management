@@ -4,104 +4,173 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { OrgChangeStatus, OrgChangeType, Prisma } from "@repo/database";
-import type { Branch, State, Zone } from "@repo/database";
+import { OrgChangeStatus, OrgChangeType, Prisma, UserStatus } from "@repo/database";
+import type { Branch, District, Region, State, Zone } from "@repo/database";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CreateBranchDto,
+  CreateDistrictDto,
   CreateOrgChangeRequestDto,
+  CreateRegionDto,
   CreateStateDto,
   CreateZoneDto,
   UpdateBranchDto,
+  UpdateDistrictDto,
+  UpdateRegionDto,
   UpdateStateDto,
   UpdateZoneDto,
 } from "./dto/org.dto";
-import { OrgChangeRequestView, OrgTreeState, toChangeRequestView } from "./org.types";
+import {
+  OrgChangeRequestView,
+  OrgPastorRef,
+  OrgTreeBranch,
+  OrgTreeResponse,
+  OrgTreeState,
+  toChangeRequestView,
+} from "./org.types";
 
 @Injectable()
 export class OrgService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Flat area lists for pickers (onboarding, reassignment, admin forms). */
   async listAreas() {
-    const states = await this.prisma.state.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        zones: {
-          orderBy: { name: "asc" },
-          select: {
-            id: true,
-            name: true,
-            stateId: true,
-            branches: {
-              orderBy: { name: "asc" },
-              select: {
-                id: true,
-                name: true,
-                address: true,
-                zoneId: true,
-                stateId: true,
+    const [regions, states, zones, districts, branches] = await Promise.all([
+      this.prisma.region.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      this.prisma.state.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, regionId: true },
+      }),
+      this.prisma.zone.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, stateId: true },
+      }),
+      this.prisma.district.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, zoneId: true },
+      }),
+      this.prisma.branch.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, address: true, stateId: true, zoneId: true, districtId: true },
+      }),
+    ]);
+    return { regions, states, zones, districts, branches };
+  }
+
+  async getTree(): Promise<OrgTreeResponse> {
+    const [regions, states] = await Promise.all([
+      this.prisma.region.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          regionalPastor: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.state.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          statePastor: { select: { id: true, name: true } },
+          zones: {
+            orderBy: { name: "asc" },
+            include: {
+              zonalPastor: { select: { id: true, name: true } },
+              districts: {
+                orderBy: { name: "asc" },
+                include: {
+                  districtPastor: { select: { id: true, name: true } },
+                  branches: {
+                    orderBy: { name: "asc" },
+                    include: { branchPastor: { select: { id: true, name: true } } },
+                  },
+                },
+              },
+              branches: {
+                where: { districtId: null },
+                orderBy: { name: "asc" },
+                include: { branchPastor: { select: { id: true, name: true } } },
               },
             },
           },
-        },
-        branches: {
-          where: { zoneId: null },
-          orderBy: { name: "asc" },
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            zoneId: true,
-            stateId: true,
+          branches: {
+            where: { zoneId: null, districtId: null },
+            orderBy: { name: "asc" },
+            include: { branchPastor: { select: { id: true, name: true } } },
           },
         },
-      },
-    });
-    return states;
-  }
+      }),
+    ]);
 
-  async getTree(): Promise<OrgTreeState[]> {
-    const states = await this.prisma.state.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        zones: {
-          orderBy: { name: "asc" },
-          include: {
-            branches: { orderBy: { name: "asc" } },
-          },
-        },
-        branches: {
-          where: { zoneId: null },
-          orderBy: { name: "asc" },
-        },
-      },
+    const mapBranch = (branch: {
+      id: string;
+      name: string;
+      address: string | null;
+      districtId: string | null;
+      zoneId: string | null;
+      stateId: string;
+      branchPastor: OrgPastorRef;
+    }): OrgTreeBranch => ({
+      id: branch.id,
+      name: branch.name,
+      address: branch.address,
+      districtId: branch.districtId,
+      zoneId: branch.zoneId,
+      stateId: branch.stateId,
+      pastor: branch.branchPastor,
     });
 
-    return states.map((state) => ({
+    const mapState = (state: (typeof states)[number]): OrgTreeState => ({
       id: state.id,
       name: state.name,
+      regionId: state.regionId,
+      pastor: state.statePastor,
       zones: state.zones.map((zone) => ({
         id: zone.id,
         name: zone.name,
         stateId: zone.stateId,
-        branches: zone.branches.map((branch) => ({
-          id: branch.id,
-          name: branch.name,
-          address: branch.address,
-          zoneId: branch.zoneId,
-          stateId: branch.stateId,
+        pastor: zone.zonalPastor,
+        districts: zone.districts.map((district) => ({
+          id: district.id,
+          name: district.name,
+          zoneId: district.zoneId,
+          pastor: district.districtPastor,
+          branches: district.branches.map(mapBranch),
         })),
+        branches: zone.branches.map(mapBranch),
       })),
-      branches: state.branches.map((branch) => ({
-        id: branch.id,
-        name: branch.name,
-        address: branch.address,
-        zoneId: branch.zoneId,
-        stateId: branch.stateId,
+      branches: state.branches.map(mapBranch),
+    });
+
+    return {
+      regions: regions.map((region) => ({
+        id: region.id,
+        name: region.name,
+        pastor: region.regionalPastor,
+        states: states.filter((s) => s.regionId === region.id).map(mapState),
       })),
-    }));
+      unassignedStates: states.filter((s) => !s.regionId).map(mapState),
+    };
+  }
+
+  async createRegion(dto: CreateRegionDto): Promise<Region> {
+    const existing = await this.prisma.region.findUnique({ where: { name: dto.name } });
+    if (existing) {
+      throw new ConflictException("Region name already exists");
+    }
+    return this.prisma.region.create({ data: { name: dto.name } });
+  }
+
+  async updateRegion(id: string, dto: UpdateRegionDto): Promise<Region> {
+    await this.ensureRegion(id);
+    const data: Prisma.RegionUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.regionalPastorId !== undefined) {
+      data.regionalPastor = dto.regionalPastorId
+        ? { connect: { id: await this.ensureActiveUser(dto.regionalPastorId) } }
+        : { disconnect: true };
+    }
+    return this.prisma.region.update({ where: { id }, data });
   }
 
   async createState(dto: CreateStateDto): Promise<State> {
@@ -109,8 +178,13 @@ export class OrgService {
     if (existing) {
       throw new ConflictException("State name already exists");
     }
+    if (dto.regionId) {
+      await this.ensureRegion(dto.regionId);
+    }
 
-    return this.prisma.state.create({ data: { name: dto.name } });
+    return this.prisma.state.create({
+      data: { name: dto.name, regionId: dto.regionId ?? null },
+    });
   }
 
   async createZone(dto: CreateZoneDto): Promise<Zone> {
@@ -128,11 +202,42 @@ export class OrgService {
     });
   }
 
+  async createDistrict(dto: CreateDistrictDto): Promise<District> {
+    await this.ensureZone(dto.zoneId);
+
+    const existing = await this.prisma.district.findUnique({
+      where: { zoneId_name: { zoneId: dto.zoneId, name: dto.name } },
+    });
+    if (existing) {
+      throw new ConflictException("District name already exists in this zone");
+    }
+
+    return this.prisma.district.create({
+      data: { name: dto.name, zoneId: dto.zoneId },
+    });
+  }
+
   async createBranch(dto: CreateBranchDto): Promise<Branch> {
     await this.ensureState(dto.stateId);
-    const zoneId = dto.zoneId?.trim() || null;
+    const districtId = dto.districtId?.trim() || null;
+    let zoneId = dto.zoneId?.trim() || null;
 
-    if (zoneId) {
+    if (districtId) {
+      const district = await this.prisma.district.findUnique({
+        where: { id: districtId },
+        include: { zone: true },
+      });
+      if (!district) {
+        throw new NotFoundException("District not found");
+      }
+      if (district.zone.stateId !== dto.stateId) {
+        throw new BadRequestException("District is not in the selected state");
+      }
+      if (zoneId && zoneId !== district.zoneId) {
+        throw new BadRequestException("Zone does not match selected district");
+      }
+      zoneId = district.zoneId;
+    } else if (zoneId) {
       const zone = await this.prisma.zone.findUnique({ where: { id: zoneId } });
       if (!zone) {
         throw new NotFoundException("Zone not found");
@@ -154,6 +259,7 @@ export class OrgService {
         name: dto.name,
         stateId: dto.stateId,
         zoneId,
+        districtId,
         address: dto.address,
       },
     });
@@ -161,20 +267,75 @@ export class OrgService {
 
   async updateState(id: string, dto: UpdateStateDto): Promise<State> {
     await this.ensureState(id);
-    return this.prisma.state.update({ where: { id }, data: { name: dto.name } });
+    const data: Prisma.StateUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.regionId !== undefined) {
+      if (dto.regionId) {
+        await this.ensureRegion(dto.regionId);
+        data.region = { connect: { id: dto.regionId } };
+      } else {
+        data.region = { disconnect: true };
+      }
+    }
+    if (dto.statePastorId !== undefined) {
+      data.statePastor = dto.statePastorId
+        ? { connect: { id: await this.ensureActiveUser(dto.statePastorId) } }
+        : { disconnect: true };
+    }
+    return this.prisma.state.update({ where: { id }, data });
   }
 
   async updateZone(id: string, dto: UpdateZoneDto): Promise<Zone> {
     await this.ensureZone(id);
-    return this.prisma.zone.update({ where: { id }, data: { name: dto.name } });
+    const data: Prisma.ZoneUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.zonalPastorId !== undefined) {
+      data.zonalPastor = dto.zonalPastorId
+        ? { connect: { id: await this.ensureActiveUser(dto.zonalPastorId) } }
+        : { disconnect: true };
+    }
+    return this.prisma.zone.update({ where: { id }, data });
+  }
+
+  async updateDistrict(id: string, dto: UpdateDistrictDto): Promise<District> {
+    await this.ensureDistrict(id);
+    const data: Prisma.DistrictUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.districtPastorId !== undefined) {
+      data.districtPastor = dto.districtPastorId
+        ? { connect: { id: await this.ensureActiveUser(dto.districtPastorId) } }
+        : { disconnect: true };
+    }
+    return this.prisma.district.update({ where: { id }, data });
   }
 
   async updateBranch(id: string, dto: UpdateBranchDto): Promise<Branch> {
-    await this.ensureBranch(id);
-    return this.prisma.branch.update({
-      where: { id },
-      data: { name: dto.name, address: dto.address },
-    });
+    const branch = await this.ensureBranch(id);
+    const data: Prisma.BranchUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.address !== undefined) data.address = dto.address;
+    if (dto.branchPastorId !== undefined) {
+      data.branchPastor = dto.branchPastorId
+        ? { connect: { id: await this.ensureActiveUser(dto.branchPastorId) } }
+        : { disconnect: true };
+    }
+    if (dto.districtId !== undefined) {
+      if (dto.districtId) {
+        const district = await this.prisma.district.findUnique({
+          where: { id: dto.districtId },
+          include: { zone: true },
+        });
+        if (!district) throw new NotFoundException("District not found");
+        if (district.zone.stateId !== branch.stateId) {
+          throw new BadRequestException("District is not in the branch's state");
+        }
+        data.district = { connect: { id: district.id } };
+        data.zone = { connect: { id: district.zoneId } };
+      } else {
+        data.district = { disconnect: true };
+      }
+    }
+    return this.prisma.branch.update({ where: { id }, data });
   }
 
   async proposeChange(
@@ -322,6 +483,12 @@ export class OrgService {
     return toChangeRequestView(request);
   }
 
+  private async ensureRegion(id: string) {
+    const region = await this.prisma.region.findUnique({ where: { id } });
+    if (!region) throw new NotFoundException("Region not found");
+    return region;
+  }
+
   private async ensureState(id: string) {
     const state = await this.prisma.state.findUnique({ where: { id } });
     if (!state) throw new NotFoundException("State not found");
@@ -334,9 +501,27 @@ export class OrgService {
     return zone;
   }
 
+  private async ensureDistrict(id: string) {
+    const district = await this.prisma.district.findUnique({ where: { id } });
+    if (!district) throw new NotFoundException("District not found");
+    return district;
+  }
+
   private async ensureBranch(id: string) {
     const branch = await this.prisma.branch.findUnique({ where: { id } });
     if (!branch) throw new NotFoundException("Branch not found");
     return branch;
+  }
+
+  private async ensureActiveUser(id: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+    if (!user) throw new NotFoundException("User not found");
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException("User is not active");
+    }
+    return user.id;
   }
 }

@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ErrorText } from "@/components/auth/auth-card";
-import { OrgCascadeSelectors } from "@/components/org/org-cascade-selectors";
+import {
+  emptyCascadeValues,
+  OrgCascadeSelectors,
+} from "@/components/org/org-cascade-selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +19,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { api, ApiError, OrgState } from "@/lib/api";
+import { api, ApiError, OrgTreeResponse } from "@/lib/api";
 import { getAccessToken, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 interface CreateZoneSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   onSuccess?: (name: string) => void;
 }
 
@@ -33,14 +36,14 @@ export function CreateZoneSheet({
   onSuccess,
 }: CreateZoneSheetProps) {
   const router = useRouter();
-  const [stateId, setStateId] = useState("");
+  const [cascade, setCascade] = useState(emptyCascadeValues);
   const [name, setName] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setStateId("");
+      setCascade(emptyCascadeValues);
       setName("");
       setError(undefined);
       setLoading(false);
@@ -55,7 +58,7 @@ export function CreateZoneSheet({
     setLoading(true);
     setError(undefined);
     try {
-      await api.createZone(token, { name: name.trim(), stateId });
+      await api.createZone(token, { name: name.trim(), stateId: cascade.stateId });
       onSuccess?.(name.trim());
       onOpenChange(false);
     } catch (err) {
@@ -82,11 +85,10 @@ export function CreateZoneSheet({
           <ErrorText message={error} />
           <OrgCascadeSelectors
             orgTree={orgTree}
-            values={{ stateId, zoneId: "" }}
-            onChange={(v) => setStateId(v.stateId)}
+            values={cascade}
+            onChange={setCascade}
             stateRequired
             showZone={false}
-            stateLabel="Assign to state"
           />
           <div className="space-y-2">
             <Label htmlFor="zone-name">Zone name</Label>
@@ -105,7 +107,7 @@ export function CreateZoneSheet({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="create-zone-form" disabled={loading || !stateId}>
+          <Button type="submit" form="create-zone-form" disabled={loading || !cascade.stateId}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Create zone
           </Button>

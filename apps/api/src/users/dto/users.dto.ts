@@ -8,11 +8,23 @@ export class ReassignUserDto {
 
   @IsOptional()
   @IsString()
+  title?: string | null;
+
+  @IsOptional()
+  @IsString()
+  regionId?: string | null;
+
+  @IsOptional()
+  @IsString()
   stateId?: string | null;
 
   @IsOptional()
   @IsString()
   zoneId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  districtId?: string | null;
 
   @IsOptional()
   @IsString()

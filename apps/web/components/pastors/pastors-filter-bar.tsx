@@ -1,6 +1,6 @@
 import { Role, UserStatus } from "@repo/types";
 import { Search, X } from "lucide-react";
-import { OrgState } from "@/lib/api";
+import { allOrgStates, DirectorateRecord, OrgTreeResponse } from "@/lib/api";
 import { formatRole } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,16 +9,20 @@ import { cn } from "@/lib/utils";
 
 export interface PastorFilterValues {
   search: string;
+  regionId: string;
   stateId: string;
   zoneId: string;
+  districtId: string;
   branchId: string;
+  directorateId: string;
   role: string;
   status: string;
 }
 
 interface PastorsFilterBarProps {
   filters: PastorFilterValues;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
+  directorates: DirectorateRecord[];
   onSearchChange: (value: string) => void;
   onFilterChange: (key: keyof PastorFilterValues, value: string) => void;
   onReset: () => void;
@@ -30,18 +34,29 @@ const STATUSES = Object.values(UserStatus);
 export function PastorsFilterBar({
   filters,
   orgTree,
+  directorates,
   onSearchChange,
   onFilterChange,
   onReset,
 }: PastorsFilterBarProps) {
-  const zones = orgTree.find((s) => s.id === filters.stateId)?.zones ?? [];
-  const branches = zones.find((z) => z.id === filters.zoneId)?.branches ?? [];
+  const states = allOrgStates(orgTree);
+  const state = states.find((s) => s.id === filters.stateId);
+  const zones = state?.zones ?? [];
+  const zone = zones.find((z) => z.id === filters.zoneId);
+  const districts = zone?.districts ?? [];
+  const district = districts.find((d) => d.id === filters.districtId);
+  const branches = filters.districtId
+    ? (district?.branches ?? [])
+    : [...(zone?.branches ?? []), ...districts.flatMap((d) => d.branches)];
 
   const hasActiveFilters =
     filters.search ||
+    filters.regionId ||
     filters.stateId ||
     filters.zoneId ||
+    filters.districtId ||
     filters.branchId ||
+    filters.directorateId ||
     filters.role ||
     filters.status;
 
@@ -69,17 +84,30 @@ export function PastorsFilterBar({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <NativeSelect
+          value={filters.regionId}
+          onChange={(e) => onFilterChange("regionId", e.target.value)}
+        >
+          <option value="">All regions</option>
+          {orgTree.regions.map((region) => (
+            <option key={region.id} value={region.id}>
+              {region.name}
+            </option>
+          ))}
+        </NativeSelect>
+
+        <NativeSelect
           value={filters.stateId}
           onChange={(e) => {
             onFilterChange("stateId", e.target.value);
             onFilterChange("zoneId", "");
+            onFilterChange("districtId", "");
             onFilterChange("branchId", "");
           }}
         >
           <option value="">All states</option>
-          {orgTree.map((state) => (
-            <option key={state.id} value={state.id}>
-              {state.name}
+          {states.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
             </option>
           ))}
         </NativeSelect>
@@ -88,14 +116,31 @@ export function PastorsFilterBar({
           value={filters.zoneId}
           onChange={(e) => {
             onFilterChange("zoneId", e.target.value);
+            onFilterChange("districtId", "");
             onFilterChange("branchId", "");
           }}
           disabled={!filters.stateId}
         >
           <option value="">All zones</option>
-          {zones.map((zone) => (
-            <option key={zone.id} value={zone.id}>
-              {zone.name}
+          {zones.map((z) => (
+            <option key={z.id} value={z.id}>
+              {z.name}
+            </option>
+          ))}
+        </NativeSelect>
+
+        <NativeSelect
+          value={filters.districtId}
+          onChange={(e) => {
+            onFilterChange("districtId", e.target.value);
+            onFilterChange("branchId", "");
+          }}
+          disabled={!filters.zoneId}
+        >
+          <option value="">All districts</option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
             </option>
           ))}
         </NativeSelect>
@@ -106,9 +151,21 @@ export function PastorsFilterBar({
           disabled={!filters.zoneId}
         >
           <option value="">All branches</option>
-          {branches.map((branch) => (
-            <option key={branch.id} value={branch.id}>
-              {branch.name}
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </NativeSelect>
+
+        <NativeSelect
+          value={filters.directorateId}
+          onChange={(e) => onFilterChange("directorateId", e.target.value)}
+        >
+          <option value="">All directorates</option>
+          {directorates.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
             </option>
           ))}
         </NativeSelect>

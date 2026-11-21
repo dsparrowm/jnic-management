@@ -10,7 +10,7 @@ test("restricts the HQ dashboard endpoint to HQ roles", () => {
     DashboardController.prototype.getHqDashboard,
   ) as Role[];
 
-  assert.deepEqual(roles, [Role.ADMIN, Role.LEAD_PASTOR]);
+  assert.deepEqual(roles, [Role.ADMIN, Role.SENIOR_PASTOR]);
   assert.equal(roles.includes(Role.BRANCH_PASTOR), false);
 });
 

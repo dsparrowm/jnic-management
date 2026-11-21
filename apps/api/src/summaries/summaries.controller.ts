@@ -17,7 +17,7 @@ export class SummariesController {
 
   @Get("monthly/pending-approval")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   listPendingApproval(@CurrentUser() user: AuthUser) {
     return this.summariesService.listPendingApprovals(user);
   }
@@ -26,9 +26,12 @@ export class SummariesController {
   @UseGuards(RolesGuard)
   @Roles(
     Role.BRANCH_PASTOR,
+    Role.DISTRICT_PASTOR,
     Role.ZONAL_PASTOR,
     Role.STATE_PASTOR,
-    Role.LEAD_PASTOR,
+    Role.REGIONAL_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
     Role.ADMIN,
   )
   listMonthly(@CurrentUser() user: AuthUser, @Query() query: ListMonthlySummariesDto) {
@@ -40,14 +43,14 @@ export class SummariesController {
 
   @Post("monthly/:id/approve")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   approveMonthly(@CurrentUser() user: AuthUser, @Param("id") id: string): Promise<MonthlySummary> {
     return this.summariesService.approveMonthlySummary(user, id);
   }
 
   @Post("monthly/:id/return")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   returnMonthly(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
