@@ -24,6 +24,39 @@ export class UpsertAssignmentDto {
   @Min(1)
   @Max(10)
   termYears?: number | null;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
+export class TransferAssignmentDto {
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+
+  @IsEnum(DirectorateOffice)
+  office!: DirectorateOffice;
+
+  @IsOptional()
+  @IsString()
+  deskId?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(80)
+  agreedWeeklyHours?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  termYears?: number | null;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 export class UpdateAssignmentDto {
@@ -49,6 +82,10 @@ export class UpdateAssignmentDto {
 
   @IsOptional()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 export class CreateServiceUnitDto {
@@ -63,10 +100,18 @@ export class CreateServiceUnitDto {
   @IsOptional()
   @IsString()
   coordinatorId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 export class UpdateServiceUnitDto {
   @IsOptional()
   @IsString()
   coordinatorId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

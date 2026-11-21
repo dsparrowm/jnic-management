@@ -530,3 +530,20 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 ## HR desk access fix — global RolesGuard (2026-11-21)
 
 - `RolesGuard` is registered globally (`APP_GUARD`), so it enforced `@Roles` on every route before the method-level `RolesOrHrPersonnelGuard` could allow HR seats — MEMBER-role HR personnel got 403 on every HR endpoint. `RolesOrHrPersonnelGuard` is removed; the global `RolesGuard` now honors an `@AllowHrPersonnel()` marker (`allow-hr-personnel.decorator.ts`) by falling back to `isHrPersonnel` when the role check fails. Applied to the 11 HR routes: org tree/areas, users pastors/get/deactivate/reassign, directorate assignment create/update/delete, onboarding users/resend.
+
+## Personnel moves audit trail + seat transfers (2026-11-22)
+
+- `PersonnelMove` model (kind TERRITORY | SEAT | UNIT | STATUS) records who moved
+  whom, from→to summary + detail JSON, optional note, actor. Migration
+  `20261122010000_personnel_moves` is hand-written SQL (repo convention).
+- `recordMove`/`territoryLabel`/`seatFacetLabel`/`unitFacetLabel` helpers in
+  `apps/api/src/common/personnel-moves.ts`.
+- Territory reassign, deactivation, directorate seat upsert/update/remove, and
+  unit-coordinator changes all write audit entries; actors thread through
+  `@CurrentUser`.
+- `POST /directorates/:id/assignments/transfer` moves a seat between directorates
+  in one audited step (plain upsert still refuses cross-directorate).
+- `GET /users/:id/moves` returns a person's trail (admin + HR personnel).
+- Mobile: optional "Move note" on reassign / assign-seat / coordinator sheets;
+  seat assign auto-promotes to transfer on the 409 "already belongs" conflict;
+  "Move history" action on the People roster opens `/moves`.
