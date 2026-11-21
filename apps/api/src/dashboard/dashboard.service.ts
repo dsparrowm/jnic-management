@@ -10,11 +10,16 @@ import {
   type HqHomeTask,
   type PastorDashboardResponse,
   type PastorHomeWeekSnapshot,
+  type RegionSummaryResponse,
   type StateSummaryResponse,
   type ZoneSummaryResponse,
 } from "@repo/types";
 import type { AuthUser } from "../common/auth.types";
-import { stateSeatId, zonalSeatId } from "../common/scope-seats";
+import {
+  regionalSeatId,
+  stateSeatId,
+  zonalSeatId,
+} from "../common/scope-seats";
 import { NotificationsService } from "../notifications/notifications.service";
 import { OrgService } from "../org/org.service";
 import { ReportsService } from "../reports/reports.service";
@@ -66,6 +71,9 @@ export class DashboardService {
       zoneMonth,
       stateInsights,
       stateMonth,
+      region,
+      regionInsights,
+      regionMonth,
     ] = await Promise.all([
         this.reportsService.getBranchPastorInsights(user, weekOf, weeks),
         this.notificationsService.listForUser(user.id, 4),
@@ -88,6 +96,15 @@ export class DashboardService {
         stateSeatId(user)
           ? this.summariesService.getStateMonthSnapshot(user, month, year)
           : Promise.resolve(null),
+        regionalSeatId(user)
+          ? this.reportsService.getRegionSummary(user, weekOf)
+          : Promise.resolve(null),
+        regionalSeatId(user)
+          ? this.reportsService.getRegionalPastorInsights(user, weekOf, weeks)
+          : Promise.resolve(null),
+        regionalSeatId(user)
+          ? this.summariesService.getRegionMonthSnapshot(user, month, year)
+          : Promise.resolve(null),
       ]);
 
     const thisWeek: PastorHomeWeekSnapshot =
@@ -102,8 +119,10 @@ export class DashboardService {
       generatedAt: new Date().toISOString(),
       role: user.role as
         | Role.BRANCH_PASTOR
+        | Role.DISTRICT_PASTOR
         | Role.ZONAL_PASTOR
-        | Role.STATE_PASTOR,
+        | Role.STATE_PASTOR
+        | Role.REGIONAL_PASTOR,
       branch: branchInsights?.branch ?? null,
       thisWeek,
       attendanceTrend: branchInsights?.attendanceTrend ?? [],
@@ -114,6 +133,9 @@ export class DashboardService {
       state: state as StateSummaryResponse | null,
       stateAttendanceTrend: stateInsights?.attendanceTrend ?? [],
       stateMonth,
+      region: region as RegionSummaryResponse | null,
+      regionAttendanceTrend: regionInsights?.attendanceTrend ?? [],
+      regionMonth,
       recentActivity: {
         unreadCount: notifications.unreadCount,
         items: notifications.items.map((item) => ({

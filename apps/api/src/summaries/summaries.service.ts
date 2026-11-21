@@ -662,6 +662,46 @@ export class SummariesService {
     };
   }
 
+  async getRegionMonthSnapshot(user: AuthUser, month: number, year: number) {
+    const regionId = regionalSeatId(user);
+    if (!regionId) {
+      return null;
+    }
+
+    const { reports } = await this.computeMonthlySummaries(month, year);
+    const weeks = this.buildWeeklyBreakdown(reports, (report) =>
+      this.summaryMatchesReport(SummaryScopeType.REGION, regionId, report),
+    );
+
+    const totals = this.emptyTotals();
+    for (const week of weeks) {
+      this.mergeTotals(totals, week);
+    }
+
+    const coverage = await this.buildCoverage(
+      reports,
+      SummaryScopeType.REGION,
+      regionId,
+    );
+
+    return {
+      month,
+      year,
+      label: this.formatMonthLabel(month, year),
+      weeksReported: coverage.branchesReporting,
+      weeksExpected: coverage.branchesTotal,
+      totals: {
+        adult: totals.totalAdult,
+        teenage: totals.totalTeenage,
+        children: totals.totalChildren,
+        tithe: totals.totalTithe,
+        offering: totals.totalOffering,
+        other: totals.totalOther,
+        currency: totals.currency,
+      },
+    };
+  }
+
   async getBranchMonthSnapshot(user: AuthUser, month: number, year: number) {
     if (!canSubmitWeeklyReports(user.role, user.branchId)) {
       return null;

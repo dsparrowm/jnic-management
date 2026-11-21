@@ -879,6 +879,108 @@ export class ReportsService {
     return { attendanceTrend };
   }
 
+  async getRegionalPastorInsights(user: AuthUser, weekOf: string, weeks: number) {
+    const regionId = regionalSeatId(user);
+    if (!regionId) {
+      return null;
+    }
+
+    const region = await this.prisma.region.findUnique({
+      where: { id: regionId },
+      include: { states: { include: { zones: { include: { branches: true } } } } },
+    });
+    if (!region) {
+      throw new NotFoundException("Region not found");
+    }
+
+    const unzoned = await this.prisma.branch.findMany({
+      where: { state: { regionId: region.id }, zoneId: null },
+      select: { id: true },
+    });
+    const stateIds = region.states.map((state) => state.id);
+    const mannedStateIds = new Set(
+      (
+        await this.prisma.user.findMany({
+          where: {
+            role: { in: seatRoles(Role.STATE_PASTOR) },
+            status: "ACTIVE",
+            stateId: { in: stateIds },
+          },
+          select: { stateId: true },
+        })
+      ).map((u) => u.stateId),
+    );
+    const branchIds = [
+      ...region.states.flatMap((state) =>
+        state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id)),
+      ),
+      ...unzoned.map((branch) => branch.id),
+    ];
+    const weekRange = listWeekRange(weekOf, weeks);
+    const weekDates = weekRange.map((weekKey) => parseReportDate(weekKey));
+
+    const [reports, rollups] =
+      branchIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.prisma.weeklyReport.findMany({
+              where: {
+                branchId: { in: branchIds },
+                weekOf: { in: weekDates },
+              },
+              include: weeklyReportInclude,
+            }),
+            this.prisma.hierarchyWeeklyRollup.findMany({
+              where: {
+                scopeType: PrismaSummaryScopeType.STATE,
+                scopeId: { in: stateIds },
+                weekOf: { in: weekDates },
+              },
+            }),
+          ]);
+
+    const rollupByWeekAndState = new Map(
+      rollups.map((rollup) => [
+        `${formatReportDate(rollup.weekOf)}:${rollup.scopeId}`,
+        rollup,
+      ]),
+    );
+
+    const attendanceTrend = weekRange.map((weekKey) => {
+      const weekReports = reports.filter((report) => {
+        if (formatReportDate(report.weekOf) !== weekKey) return false;
+        const rollup =
+          rollupByWeekAndState.get(`${weekKey}:${report.branch.stateId}`) ?? null;
+        return (
+          isRollupVisibleToUpstream(rollup) ||
+          !mannedStateIds.has(report.branch.stateId)
+        );
+      });
+      const attendance = this.sumAttendance(weekReports);
+      const total =
+        attendance.adultCount +
+        attendance.teenageCount +
+        attendance.childrenCount +
+        attendance.menCount +
+        attendance.womenCount +
+        attendance.youthCount;
+
+      return {
+        weekOf: weekKey,
+        weekLabel: formatWeekChartLabel(weekKey),
+        adultCount: attendance.adultCount,
+        teenageCount: attendance.teenageCount,
+        childrenCount: attendance.childrenCount,
+        menCount: attendance.menCount,
+        womenCount: attendance.womenCount,
+        youthCount: attendance.youthCount,
+        total,
+      };
+    });
+
+    return { attendanceTrend };
+  }
+
   async getWeeklyReport(user: AuthUser, reportId: string) {
     let report = await this.prisma.weeklyReport.findUnique({
       where: { id: reportId },

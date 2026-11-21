@@ -1,6 +1,7 @@
 import type { BranchSubmissionState, NotificationType, ReportStatus } from "./index";
 import type { Role } from "./role";
 import type {
+  RegionSummaryResponse,
   StateSummaryResponse,
   WeeklyReportAttendance,
   WeeklyReportFinance,
@@ -85,7 +86,12 @@ export type PastorHomeMonthSnapshot = {
 
 export type PastorDashboardResponse = {
   generatedAt: string;
-  role: Role.BRANCH_PASTOR | Role.ZONAL_PASTOR | Role.STATE_PASTOR;
+  role:
+    | Role.BRANCH_PASTOR
+    | Role.DISTRICT_PASTOR
+    | Role.ZONAL_PASTOR
+    | Role.STATE_PASTOR
+    | Role.REGIONAL_PASTOR;
   branch: {
     id: string;
     name: string;
@@ -101,6 +107,9 @@ export type PastorDashboardResponse = {
   state: StateSummaryResponse | null;
   stateAttendanceTrend: PastorHomeAttendancePoint[];
   stateMonth: PastorHomeMonthSnapshot | null;
+  region: RegionSummaryResponse | null;
+  regionAttendanceTrend: PastorHomeAttendancePoint[];
+  regionMonth: PastorHomeMonthSnapshot | null;
   recentActivity: {
     unreadCount: number;
     items: HqHomeNotification[];
