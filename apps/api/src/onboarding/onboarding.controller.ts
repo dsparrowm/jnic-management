@@ -7,6 +7,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
+import { RolesOrHrPersonnelGuard } from "../common/guards/hr-personnel.guard";
 import { AuthUser } from "../common/auth.types";
 import { CompleteOnboardingDto, CreateOnboardingUserDto } from "./dto/onboarding.dto";
 import { OnboardingService } from "./onboarding.service";
@@ -16,14 +17,14 @@ export class OnboardingController {
   constructor(private readonly onboardingService: OnboardingService) {}
 
   @Post("users")
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   createUser(@CurrentUser() admin: AuthUser, @Body() dto: CreateOnboardingUserDto) {
     return this.onboardingService.createUser(admin.id, dto);
   }
 
   @Post("users/:id/resend")
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   resend(@Param("id") id: string) {
     return this.onboardingService.resend(id);

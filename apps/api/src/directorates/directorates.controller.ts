@@ -13,6 +13,7 @@ import { Role } from "@repo/types";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
+import { RolesOrHrPersonnelGuard } from "../common/guards/hr-personnel.guard";
 import { DirectoratesService } from "./directorates.service";
 import {
   CreateServiceUnitDto,
@@ -42,21 +43,21 @@ export class DirectoratesController {
   }
 
   @Post(":id/assignments")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   upsertAssignment(@Param("id") id: string, @Body() dto: UpsertAssignmentDto) {
     return this.directoratesService.upsertAssignment(id, dto);
   }
 
   @Patch("assignments/:assignmentId")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   updateAssignment(@Param("assignmentId") id: string, @Body() dto: UpdateAssignmentDto) {
     return this.directoratesService.updateAssignment(id, dto);
   }
 
   @Delete("assignments/:assignmentId")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   removeAssignment(@Param("assignmentId") id: string) {
     return this.directoratesService.removeAssignment(id);
