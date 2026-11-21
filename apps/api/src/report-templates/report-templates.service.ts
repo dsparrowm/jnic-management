@@ -29,6 +29,12 @@ const DIRECTORATE_OFFICES = new Set<DirectorateOffice>([
   DirectorateOffice.SECRETARY,
 ]);
 
+/** "DIRECTOR" -> "as Director" — seat context shown on due-report cards. */
+function seatLabel(office: DirectorateOffice): string {
+  const words = office.toLowerCase().replace(/_/g, " ");
+  return `as ${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+}
+
 /** Status each reviewer writes when they act on a report of a given level. */
 const REVIEW_WRITES: Record<TemplateLevel, Record<string, { status: TemplateReportStatus }>> = {
   UNIT: {
@@ -110,7 +116,7 @@ export class ReportTemplatesService {
             assignment.directorateId === t.directorateId &&
             DIRECTORATE_OFFICES.has(assignment.office)
           ) {
-            scopes.push({ label: t.directorate.name });
+            scopes.push({ label: seatLabel(assignment.office) });
           }
         } else if (t.level === TemplateLevel.COUNCIL) {
           if (
@@ -118,7 +124,11 @@ export class ReportTemplatesService {
             assignment.directorateId === t.directorateId &&
             (DIRECTORATE_OFFICES.has(assignment.office) || isHq)
           ) {
-            scopes.push({ label: t.directorate.name });
+            scopes.push({
+              label: isHq && !DIRECTORATE_OFFICES.has(assignment.office)
+                ? "as HQ reviewer"
+                : seatLabel(assignment.office),
+            });
           }
         }
         return { ...t, scopes };
