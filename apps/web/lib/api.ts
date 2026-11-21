@@ -23,20 +23,35 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface DirectorateFacet {
+  id: string;
+  directorateId: string;
+  directorateName: string;
+  office: string;
+  deskId: string | null;
+  deskName: string | null;
+}
+
 export interface UserRecord {
   id: string;
   email: string;
   name: string;
   phone: string | null;
+  title: string | null;
   role: Role;
   status: string;
   profilePicUrl: string | null;
+  regionId: string | null;
   stateId: string | null;
   zoneId: string | null;
+  districtId: string | null;
   branchId: string | null;
+  regionName?: string | null;
   stateName?: string | null;
   zoneName?: string | null;
+  districtName?: string | null;
   branchName?: string | null;
+  directorate?: DirectorateFacet | null;
   onboardingTokenExpiry: string | null;
   createdAt: string;
 }
@@ -52,13 +67,17 @@ export interface PastorRecord {
   email: string;
   name: string;
   phone: string | null;
+  title: string | null;
   role: Role;
   status: string;
   profilePicUrl: string | null;
   createdAt: string;
+  region: PastorOrgRef | null;
   state: PastorOrgRef | null;
   zone: PastorOrgRef | null;
+  district: PastorOrgRef | null;
   branch: PastorOrgRef | null;
+  directorate: DirectorateFacet | null;
 }
 
 export interface PastorListSummary {
@@ -353,13 +372,21 @@ export interface NotificationListResponse {
 
 export interface PastorFilters {
   search?: string;
+  regionId?: string;
   stateId?: string;
   zoneId?: string;
+  districtId?: string;
   branchId?: string;
+  directorateId?: string;
   role?: Role;
   status?: UserStatus;
   page?: number;
   perPage?: number;
+}
+
+export interface OrgPastorRef {
+  id: string;
+  name: string;
 }
 
 export interface OrgBranch {
@@ -367,21 +394,118 @@ export interface OrgBranch {
   name: string;
   address: string | null;
   zoneId: string | null;
+  districtId: string | null;
   stateId?: string;
+  pastor: OrgPastorRef | null;
+}
+
+export interface OrgDistrict {
+  id: string;
+  name: string;
+  zoneId: string;
+  pastor: OrgPastorRef | null;
+  branches: OrgBranch[];
 }
 
 export interface OrgZone {
   id: string;
   name: string;
   stateId: string;
+  pastor: OrgPastorRef | null;
+  districts: OrgDistrict[];
   branches: OrgBranch[];
 }
 
 export interface OrgState {
   id: string;
   name: string;
+  regionId: string | null;
+  pastor: OrgPastorRef | null;
   zones: OrgZone[];
-  branches?: OrgBranch[];
+  branches: OrgBranch[];
+}
+
+export interface OrgRegion {
+  id: string;
+  name: string;
+  pastor: OrgPastorRef | null;
+  states: OrgState[];
+}
+
+export interface OrgTreeResponse {
+  regions: OrgRegion[];
+  unassignedStates: OrgState[];
+}
+
+export interface OrgAreasResponse {
+  regions: { id: string; name: string }[];
+  states: { id: string; name: string; regionId: string | null }[];
+  zones: { id: string; name: string; stateId: string }[];
+  districts: { id: string; name: string; zoneId: string }[];
+  branches: { id: string; name: string; stateId: string; zoneId: string | null; districtId: string | null }[];
+}
+
+export interface DirectorateRecord {
+  id: string;
+  key: string;
+  name: string;
+  mandate: string | null;
+  deskCount: number;
+  unitTypeCount: number;
+  memberCount: number;
+  leadership: {
+    director: { id: string; name: string } | null;
+    deputyDirector: { id: string; name: string } | null;
+    secretary: { id: string; name: string } | null;
+  };
+}
+
+export interface DeskRecord {
+  id: string;
+  name: string;
+  duties: string[];
+}
+
+export interface DirectorateMemberRecord {
+  id: string;
+  office: string;
+  deskId: string | null;
+  agreedWeeklyHours: number | null;
+  termYears: number | null;
+  isActive: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    status: string;
+    title: string | null;
+    profilePicUrl: string | null;
+    branch: { id: string; name: string } | null;
+  };
+}
+
+export interface DirectorateDetail {
+  id: string;
+  key: string;
+  name: string;
+  mandate: string | null;
+  desks: DeskRecord[];
+  branchUnits: { id: string; name: string }[];
+  members: DirectorateMemberRecord[];
+}
+
+export interface ServiceUnitRecord {
+  id: string;
+  branch: { id: string; name: string };
+  unitType: { id: string; name: string };
+  directorate: { id: string; name: string };
+  coordinator: { id: string; name: string } | null;
+}
+
+/** Flattens the tree to every state, for pickers that list all states. */
+export function allOrgStates(tree: OrgTreeResponse): OrgState[] {
+  return [...tree.unassignedStates, ...tree.regions.flatMap((r) => r.states)];
 }
 
 export interface OrgChangeRequest {
@@ -571,9 +695,12 @@ export const api = {
   listPastors: (token: string, filters: PastorFilters = {}) => {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
+    if (filters.regionId) params.set("regionId", filters.regionId);
     if (filters.stateId) params.set("stateId", filters.stateId);
     if (filters.zoneId) params.set("zoneId", filters.zoneId);
+    if (filters.districtId) params.set("districtId", filters.districtId);
     if (filters.branchId) params.set("branchId", filters.branchId);
+    if (filters.directorateId) params.set("directorateId", filters.directorateId);
     if (filters.role) params.set("role", filters.role);
     if (filters.status) params.set("status", filters.status);
     if (filters.page) params.set("page", String(filters.page));
@@ -591,10 +718,15 @@ export const api = {
       name: string;
       email: string;
       phone?: string;
+      title?: string;
       role: Role;
+      regionId?: string;
       stateId?: string;
       zoneId?: string;
+      districtId?: string;
       branchId?: string;
+      directorateId?: string;
+      deskId?: string;
     },
   ) =>
     request<UserRecord>("/onboarding/users", {
@@ -624,8 +756,10 @@ export const api = {
     userId: string,
     data: {
       role?: Role;
+      regionId?: string | null;
       stateId?: string | null;
       zoneId?: string | null;
+      districtId?: string | null;
       branchId?: string | null;
     },
   ) =>
@@ -634,28 +768,106 @@ export const api = {
       body: JSON.stringify(data),
     }, token),
 
-  getOrgTree: (token: string) => request<OrgState[]>("/org/tree", {}, token),
+  getOrgTree: (token: string) => request<OrgTreeResponse>("/org/tree", {}, token),
 
-  createState: (token: string, data: { name: string }) =>
+  getOrgAreas: (token: string) => request<OrgAreasResponse>("/org/areas", {}, token),
+
+  createRegion: (token: string, data: { name: string; regionalPastorId?: string }) =>
+    request<OrgRegion>("/org/regions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  createState: (token: string, data: { name: string; regionId?: string; statePastorId?: string }) =>
     request<OrgState>("/org/states", {
       method: "POST",
       body: JSON.stringify(data),
     }, token),
 
-  createZone: (token: string, data: { name: string; stateId: string }) =>
+  createZone: (token: string, data: { name: string; stateId: string; zonalPastorId?: string }) =>
     request<OrgZone>("/org/zones", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  createDistrict: (
+    token: string,
+    data: { name: string; zoneId: string; districtPastorId?: string },
+  ) =>
+    request<OrgDistrict>("/org/districts", {
       method: "POST",
       body: JSON.stringify(data),
     }, token),
 
   createBranch: (
     token: string,
-    data: { name: string; stateId: string; zoneId?: string; address?: string },
+    data: {
+      name: string;
+      stateId: string;
+      zoneId?: string;
+      districtId?: string;
+      address?: string;
+      branchPastorId?: string;
+    },
   ) =>
     request<OrgBranch>("/org/branches", {
       method: "POST",
       body: JSON.stringify(data),
     }, token),
+
+  listDirectorates: (token: string) =>
+    request<DirectorateRecord[]>("/directorates", {}, token),
+
+  getDirectorate: (token: string, id: string) =>
+    request<DirectorateDetail>(`/directorates/${id}`, {}, token),
+
+  listServiceUnits: (token: string, branchId: string) =>
+    request<ServiceUnitRecord[]>(`/directorates/units?branchId=${encodeURIComponent(branchId)}`, {}, token),
+
+  createDirectorateAssignment: (
+    token: string,
+    directorateId: string,
+    data: { userId: string; office: string; deskId?: string; agreedWeeklyHours?: number; termYears?: number },
+  ) =>
+    request<DirectorateMemberRecord>(`/directorates/${directorateId}/assignments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  updateDirectorateAssignment: (
+    token: string,
+    assignmentId: string,
+    data: { office?: string; deskId?: string | null; agreedWeeklyHours?: number; termYears?: number; isActive?: boolean },
+  ) =>
+    request<DirectorateMemberRecord>(`/directorates/assignments/${assignmentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  removeDirectorateAssignment: (token: string, assignmentId: string) =>
+    request<void>(`/directorates/assignments/${assignmentId}`, { method: "DELETE" }, token),
+
+  createServiceUnit: (
+    token: string,
+    data: { branchId: string; unitTypeId: string; coordinatorId?: string },
+  ) =>
+    request<ServiceUnitRecord>("/directorates/units", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+
+  updateServiceUnit: (
+    token: string,
+    unitId: string,
+    data: { coordinatorId?: string | null },
+  ) =>
+    request<ServiceUnitRecord>(`/directorates/units/${unitId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, token),
+
+  deleteServiceUnit: (token: string, unitId: string) =>
+    request<void>(`/directorates/units/${unitId}`, { method: "DELETE" }, token),
 
   proposeOrgChange: (
     token: string,

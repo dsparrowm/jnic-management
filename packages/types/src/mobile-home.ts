@@ -105,12 +105,14 @@ export type PastorDashboardResponse = {
 
 export type HqDashboardResponse = {
   generatedAt: string;
-  role: Role.ADMIN | Role.LEAD_PASTOR;
+  role: Role.ADMIN | Role.SENIOR_PASTOR | Role.RESIDENT_PASTOR;
   weekOf: string;
   weekLabel: string;
   org: {
+    regions: number;
     states: number;
     zones: number;
+    districts: number;
     branches: number;
   };
   pastors?: {

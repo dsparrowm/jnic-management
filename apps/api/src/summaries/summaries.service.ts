@@ -15,6 +15,7 @@ import {
   canSubmitWeeklyReports,
   formatWeekChartLabel,
   formatReportDate,
+  isHqPastor,
 } from "@repo/types";
 import { AuthUser } from "../common/auth.types";
 import { PrismaService } from "../prisma/prisma.service";
@@ -284,7 +285,8 @@ export class SummariesService {
         if (!user.stateId) return [];
         return [{ scopeType: SummaryScopeType.STATE, scopeId: user.stateId, scopeName: "My state" }];
       case Role.ADMIN:
-      case Role.LEAD_PASTOR:
+      case Role.SENIOR_PASTOR:
+      case Role.RESIDENT_PASTOR:
         return [{ scopeType: SummaryScopeType.HQ, scopeId: HQ_SCOPE_ID, scopeName: "National" }];
       default:
         return [];
@@ -396,7 +398,7 @@ export class SummariesService {
   }
 
   private async buildScopeOptions(user: AuthUser) {
-    if (user.role !== Role.ADMIN && user.role !== Role.LEAD_PASTOR) {
+    if (user.role !== Role.ADMIN && !isHqPastor(user.role)) {
       return undefined;
     }
 
@@ -433,7 +435,7 @@ export class SummariesService {
       return this.getVisibleScopeFilters(user);
     }
 
-    if (user.role !== Role.ADMIN && user.role !== Role.LEAD_PASTOR) {
+    if (user.role !== Role.ADMIN && !isHqPastor(user.role)) {
       throw new ForbiddenException("Scope override not permitted");
     }
 
@@ -638,7 +640,7 @@ export class SummariesService {
     const { reports } = await this.computeMonthlySummaries(month, year);
     const scopes = await this.resolveRequestScopes(user, options);
     const scopeOptions = await this.buildScopeOptions(user);
-    const isNationalViewer = user.role === Role.ADMIN || user.role === Role.LEAD_PASTOR;
+    const isNationalViewer = user.role === Role.ADMIN || isHqPastor(user.role);
 
     const summaries = await Promise.all(
       scopes.map(async (scope) => {
@@ -706,7 +708,7 @@ export class SummariesService {
   }
 
   async listPendingApprovals(user: AuthUser) {
-    if (user.role !== Role.LEAD_PASTOR) {
+    if (!isHqPastor(user.role)) {
       throw new ForbiddenException("Insufficient permissions");
     }
 
@@ -743,7 +745,7 @@ export class SummariesService {
   }
 
   async approveMonthlySummary(user: AuthUser, id: string): Promise<MonthlySummary> {
-    if (user.role !== Role.LEAD_PASTOR) {
+    if (!isHqPastor(user.role)) {
       throw new ForbiddenException("Insufficient permissions");
     }
 
@@ -773,7 +775,7 @@ export class SummariesService {
     id: string,
     note?: string,
   ): Promise<MonthlySummary> {
-    if (user.role !== Role.LEAD_PASTOR) {
+    if (!isHqPastor(user.role)) {
       throw new ForbiddenException("Insufficient permissions");
     }
 

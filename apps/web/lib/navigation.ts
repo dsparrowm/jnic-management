@@ -8,6 +8,7 @@ import {
   UsersRound,
   BarChart3,
   CheckSquare,
+  Network,
 } from "lucide-react";
 
 export type NavItem = {
@@ -59,9 +60,12 @@ export const navSections: NavSection[] = [
         icon: BarChart3,
         roles: [
           Role.BRANCH_PASTOR,
+          Role.DISTRICT_PASTOR,
           Role.ZONAL_PASTOR,
           Role.STATE_PASTOR,
-          Role.LEAD_PASTOR,
+          Role.REGIONAL_PASTOR,
+          Role.SENIOR_PASTOR,
+          Role.RESIDENT_PASTOR,
           Role.ADMIN,
         ],
       },
@@ -84,6 +88,13 @@ export const navSections: NavSection[] = [
         href: "/admin/org",
         icon: Building2,
         roles: [Role.ADMIN],
+      },
+      {
+        id: "directorates",
+        label: "Directorates",
+        href: "/admin/directorates",
+        icon: Network,
+        roles: [Role.ADMIN, Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR],
       },
     ],
   },
@@ -110,14 +121,14 @@ export const navSections: NavSection[] = [
         label: "National Reports",
         href: "/reports/national",
         icon: ClipboardList,
-        roles: [Role.LEAD_PASTOR, Role.ADMIN],
+        roles: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN],
       },
       {
         id: "summary-approvals",
         label: "Summary Approvals",
         href: "/approvals/summaries",
         icon: CheckSquare,
-        roles: [Role.LEAD_PASTOR],
+        roles: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR],
       },
     ],
   },
@@ -160,6 +171,7 @@ export function getPageTitle(pathname: string): string {
     "/approvals/summaries": "Summary Approvals",
     "/admin/pastors": "Pastors",
     "/admin/org": "Organisation",
+    "/admin/directorates": "Directorates",
     "/approvals/org": "Org Approvals",
   };
   return titles[pathname] ?? "JNLOP";

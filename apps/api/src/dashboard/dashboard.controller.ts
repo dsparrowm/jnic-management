@@ -12,7 +12,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get("hq")
-  @Roles(Role.ADMIN, Role.LEAD_PASTOR)
+  @Roles(Role.ADMIN, Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
   getHqDashboard(
     @CurrentUser() user: AuthUser,
     @Query() query: HqDashboardQueryDto,

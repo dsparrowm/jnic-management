@@ -22,13 +22,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { api, ApiError, OrgState } from "@/lib/api";
+import { allOrgStates, api, ApiError, OrgTreeResponse } from "@/lib/api";
 import { getAccessToken, redirectToLoginIfUnauthorized } from "@/lib/auth";
+
+const NO_REGION = "__none__";
 
 interface CreateStateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   onSuccess?: (name: string) => void;
 }
 
@@ -40,11 +42,12 @@ export function CreateStateSheet({
 }: CreateStateSheetProps) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [regionId, setRegionId] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   const existingNames = useMemo(
-    () => new Set(orgTree.map((state) => state.name)),
+    () => new Set(allOrgStates(orgTree).map((state) => state.name)),
     [orgTree],
   );
 
@@ -56,6 +59,7 @@ export function CreateStateSheet({
   useEffect(() => {
     if (!open) {
       setName("");
+      setRegionId("");
       setError(undefined);
       setLoading(false);
     }
@@ -69,7 +73,10 @@ export function CreateStateSheet({
     setLoading(true);
     setError(undefined);
     try {
-      await api.createState(token, { name });
+      await api.createState(token, {
+        name,
+        regionId: regionId && regionId !== NO_REGION ? regionId : undefined,
+      });
       onSuccess?.(name);
       onOpenChange(false);
     } catch (err) {
@@ -87,8 +94,8 @@ export function CreateStateSheet({
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">New state</p>
           <SheetTitle>Add state</SheetTitle>
           <SheetDescription>
-            Select a Nigerian state to add to the organisation hierarchy. Zones and branches can be
-            added underneath it.
+            Select a Nigerian state to add to the organisation hierarchy. Zones, districts and
+            branches can be added underneath it.
           </SheetDescription>
         </SheetHeader>
 
@@ -114,6 +121,23 @@ export function CreateStateSheet({
                 </SelectContent>
               </Select>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Region (optional)</Label>
+            <Select value={regionId || NO_REGION} onValueChange={setRegionId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="No region" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+                <SelectItem value={NO_REGION}>No region</SelectItem>
+                {orgTree.regions.map((region) => (
+                  <SelectItem key={region.id} value={region.id}>
+                    {region.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </form>
 

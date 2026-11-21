@@ -4,20 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { CreateBranchSheet } from "@/components/org/create-branch-sheet";
+import { CreateDistrictSheet } from "@/components/org/create-district-sheet";
+import { CreateRegionSheet } from "@/components/org/create-region-sheet";
 import { CreateStateSheet } from "@/components/org/create-state-sheet";
 import { CreateZoneSheet } from "@/components/org/create-zone-sheet";
 import { OrgHierarchyPanel } from "@/components/org/org-hierarchy-panel";
 import { OrgPageHeader } from "@/components/org/org-page-header";
 import { ErrorText } from "@/components/auth/auth-card";
-import { api, ApiError, OrgState } from "@/lib/api";
+import { api, ApiError, OrgTreeResponse } from "@/lib/api";
 import { getAccessToken, getStoredUser, isAdmin, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
-type SheetType = "state" | "zone" | "branch" | null;
+type SheetType = "region" | "state" | "zone" | "district" | "branch" | null;
+
+const EMPTY_TREE: OrgTreeResponse = { regions: [], unassignedStates: [] };
 
 export default function AdminOrgPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [orgTree, setOrgTree] = useState<OrgState[]>([]);
+  const [orgTree, setOrgTree] = useState<OrgTreeResponse>(EMPTY_TREE);
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState<string>();
   const [activeSheet, setActiveSheet] = useState<SheetType>(null);
@@ -60,8 +64,10 @@ export default function AdminOrgPage() {
     <DashboardShell user={user}>
       <OrgPageHeader
         orgTree={orgTree}
+        onAddRegion={() => setActiveSheet("region")}
         onAddState={() => setActiveSheet("state")}
         onAddZone={() => setActiveSheet("zone")}
+        onAddDistrict={() => setActiveSheet("district")}
         onAddBranch={() => setActiveSheet("branch")}
       />
 
@@ -72,8 +78,14 @@ export default function AdminOrgPage() {
             {success}
           </p>
         )}
-        <OrgHierarchyPanel orgTree={orgTree} onAddState={() => setActiveSheet("state")} />
+        <OrgHierarchyPanel orgTree={orgTree} onAddRegion={() => setActiveSheet("region")} />
       </div>
+
+      <CreateRegionSheet
+        open={activeSheet === "region"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+        onSuccess={(name) => handleSuccess("Region", name)}
+      />
 
       <CreateStateSheet
         open={activeSheet === "state"}
@@ -87,6 +99,13 @@ export default function AdminOrgPage() {
         onOpenChange={(open) => !open && setActiveSheet(null)}
         orgTree={orgTree}
         onSuccess={(name) => handleSuccess("Zone", name)}
+      />
+
+      <CreateDistrictSheet
+        open={activeSheet === "district"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+        orgTree={orgTree}
+        onSuccess={(name) => handleSuccess("District", name)}
       />
 
       <CreateBranchSheet

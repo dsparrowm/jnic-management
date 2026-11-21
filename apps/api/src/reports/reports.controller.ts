@@ -15,16 +15,22 @@ import { ReportsService } from "./reports.service";
 
 const FEEDBACK_VIEW_ROLES = [
   ...WEEKLY_REPORT_SUBMITTER_ROLES,
+  Role.DISTRICT_PASTOR,
   Role.ZONAL_PASTOR,
   Role.STATE_PASTOR,
-  Role.LEAD_PASTOR,
+  Role.REGIONAL_PASTOR,
+  Role.SENIOR_PASTOR,
+  Role.RESIDENT_PASTOR,
   Role.ADMIN,
 ] as const;
 
 const FEEDBACK_LEAVE_ROLES = [
+  Role.DISTRICT_PASTOR,
   Role.ZONAL_PASTOR,
   Role.STATE_PASTOR,
-  Role.LEAD_PASTOR,
+  Role.REGIONAL_PASTOR,
+  Role.SENIOR_PASTOR,
+  Role.RESIDENT_PASTOR,
   Role.ADMIN,
 ] as const;
 
@@ -88,21 +94,21 @@ export class ReportsController {
 
   @Get("national/summary")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN)
   getNationalSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
     return this.reportsService.getNationalSummary(user, query.weekOf);
   }
 
   @Get("national/growth")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN)
   getNationalGrowth(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
     return this.reportsService.getNationalGrowth(user, query.weekOf);
   }
 
   @Get("national/growth/states/:stateId")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN)
   getStateGrowth(
     @CurrentUser() user: AuthUser,
     @Param("stateId") stateId: string,
@@ -113,7 +119,7 @@ export class ReportsController {
 
   @Get("national/analytics")
   @UseGuards(RolesGuard)
-  @Roles(Role.LEAD_PASTOR, Role.ADMIN)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN)
   getNationalAnalytics(
     @CurrentUser() user: AuthUser,
     @Query() query: WeekSummaryAnalyticsQueryDto,
@@ -125,9 +131,12 @@ export class ReportsController {
   @UseGuards(RolesGuard)
   @Roles(
     ...WEEKLY_REPORT_SUBMITTER_ROLES,
+    Role.DISTRICT_PASTOR,
     Role.ZONAL_PASTOR,
     Role.STATE_PASTOR,
-    Role.LEAD_PASTOR,
+    Role.REGIONAL_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
     Role.ADMIN,
   )
   getWeeklyReport(@CurrentUser() user: AuthUser, @Param("id") id: string) {

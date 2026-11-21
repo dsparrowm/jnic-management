@@ -9,6 +9,10 @@ export class ListPastorsDto {
 
   @IsOptional()
   @IsString()
+  regionId?: string;
+
+  @IsOptional()
+  @IsString()
   stateId?: string;
 
   @IsOptional()
@@ -17,7 +21,15 @@ export class ListPastorsDto {
 
   @IsOptional()
   @IsString()
+  districtId?: string;
+
+  @IsOptional()
+  @IsString()
   branchId?: string;
+
+  @IsOptional()
+  @IsString()
+  directorateId?: string;
 
   @IsOptional()
   @IsEnum(Role)

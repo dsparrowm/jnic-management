@@ -24,7 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { api, ApiError, OrgState } from "@/lib/api";
+import { api, ApiError, DirectorateRecord, OrgTreeResponse } from "@/lib/api";
 import { formatRole } from "@/lib/navigation";
 import { getAccessToken } from "@/lib/auth";
 
@@ -32,16 +32,20 @@ const INITIAL_FORM = {
   name: "",
   email: "",
   phone: "",
+  title: "",
   role: Role.BRANCH_PASTOR,
+  regionId: "",
   stateId: "",
   zoneId: "",
+  districtId: "",
   branchId: "",
+  directorateId: "",
 };
 
 interface OnboardPastorSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   onSuccess?: () => void;
 }
 
@@ -69,6 +73,7 @@ export function OnboardPastorSheet({
   onSuccess,
 }: OnboardPastorSheetProps) {
   const [form, setForm] = useState(INITIAL_FORM);
+  const [directorates, setDirectorates] = useState<DirectorateRecord[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [successEmail, setSuccessEmail] = useState<string | null>(null);
@@ -79,6 +84,14 @@ export function OnboardPastorSheet({
       setError(undefined);
       setSuccessEmail(null);
       setLoading(false);
+      return;
+    }
+    const token = getAccessToken();
+    if (token) {
+      api
+        .listDirectorates(token)
+        .then(setDirectorates)
+        .catch(() => setDirectorates([]));
     }
   }, [open]);
 
@@ -88,8 +101,10 @@ export function OnboardPastorSheet({
     if (!token) return;
 
     const structuralError = validateOrgAssignmentStructure(form.role, {
+      regionId: form.regionId || null,
       stateId: form.stateId || null,
       zoneId: form.zoneId || null,
+      districtId: form.districtId || null,
       branchId: form.branchId || null,
     });
     if (structuralError) {
@@ -104,10 +119,14 @@ export function OnboardPastorSheet({
         name: form.name,
         email: form.email,
         phone: form.phone || undefined,
+        title: form.title || undefined,
         role: form.role,
+        regionId: form.regionId || undefined,
         stateId: form.stateId || undefined,
         zoneId: form.zoneId || undefined,
+        districtId: form.districtId || undefined,
         branchId: form.branchId || undefined,
+        directorateId: form.directorateId || undefined,
       });
       setSuccessEmail(created.email);
       onSuccess?.();
@@ -229,6 +248,38 @@ export function OnboardPastorSheet({
                   values={form}
                   onChange={(next) => setForm((current) => ({ ...current, ...next }))}
                 />
+
+                <div className="space-y-2">
+                  <Label htmlFor="onboard-title">Title (optional)</Label>
+                  <Input
+                    id="onboard-title"
+                    value={form.title}
+                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="e.g. Rev., Dr., Evang."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="onboard-directorate">Directorate assignment (optional)</Label>
+                  <NativeSelect
+                    id="onboard-directorate"
+                    value={form.directorateId}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, directorateId: e.target.value }))
+                    }
+                  >
+                    <option value="">None</option>
+                    {directorates.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  <p className="text-xs text-muted-foreground">
+                    Seats the new pastor in a directorate as a member; offices are set on the
+                    Directorates page.
+                  </p>
+                </div>
               </FormSection>
 
               <ErrorText message={error} />

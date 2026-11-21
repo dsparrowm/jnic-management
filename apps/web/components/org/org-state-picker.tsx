@@ -12,7 +12,7 @@ import { OrgState } from "@/lib/api";
 const EMPTY_VALUE = "__none__";
 
 interface OrgStatePickerProps {
-  orgTree: OrgState[];
+  states: OrgState[];
   value: string;
   onChange: (stateId: string) => void;
   placeholder?: string;
@@ -22,7 +22,7 @@ interface OrgStatePickerProps {
 }
 
 export function OrgStatePicker({
-  orgTree,
+  states,
   value,
   onChange,
   placeholder = "Select state",
@@ -41,7 +41,7 @@ export function OrgStatePicker({
       </SelectTrigger>
       <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
         {allowEmpty && <SelectItem value={EMPTY_VALUE}>{emptyLabel}</SelectItem>}
-        {orgTree.map((state) => (
+        {states.map((state) => (
           <SelectItem key={state.id} value={state.id}>
             {state.name}
           </SelectItem>

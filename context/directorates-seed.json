@@ -1,0 +1,318 @@
+{
+  "$comment": "Seed data extracted from JNIC directorate handbooks. One entry per directorate; all flow through the same generic report/engine model. Source docs: JNIC_Directorate_XX_*.docx",
+  "directorates": [
+    {
+      "key": "administration",
+      "name": "Administration Directorate",
+      "mandate": "Provide the secretariat, records, legal and systems support that keeps the church organised and compliant.",
+      "leadership": {
+        "director": { "name": "Pst Paulson E", "location": "Great Hearts" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Secretariat and Correspondence", "duties": ["Run HQ secretariat, minutes and official letters.", "Issue notices for meetings."] },
+        { "name": "Records and Registry", "duties": ["Maintain the central registry of branches, pastors and units.", "Control official records and document filing."] },
+        { "name": "Legal and Compliance", "duties": ["Ensure legal registration and regulatory compliance.", "Review contracts with the legal adviser."] },
+        { "name": "Events and Calendar", "duties": ["Keep the annual calendar.", "Coordinate meetings and church events."] },
+        { "name": "ICT and Data Systems", "duties": ["Manage the reporting platform and databases.", "Protect data and ensure data protection compliance."] }
+      ],
+      "branchUnits": ["Branch Secretary and Records Officer", "Branch ICT and Data Officer", "Events and Calendar Coordinator"],
+      "kpis": ["Meetings held on schedule and minutes issued within 7 days", "Registry completeness", "Report submission rate through the platform", "Compliance filings on time"],
+      "worksCloselyWith": ["Finance", "HR Development", "Media and Communications", "Operations"],
+      "members": [
+        { "name": "Pst David Umoh", "role": "Zonal/Branch Pastor", "location": "Ikot Ekpene" },
+        { "name": "Pst Otu Ekpo", "role": "Branch Pastor", "location": "Fresh Dew Cal." },
+        { "name": "Pst Collins Nwachukwu", "role": "Branch Pastor", "location": "Onitsha" },
+        { "name": "Bro Godwin Ushingo", "role": "Worker", "location": "Fresh Dew" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Correspondence received and sent", "Records updated (members, units, workers)", "Events held and upcoming", "ICT or data issues", "Compliance documents pending", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Meetings held and minutes issued within 7 days", "Registry completeness (%)", "Report submission rate on the platform", "Compliance filings made", "System issues resolved", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "missions",
+      "name": "Missions Directorate",
+      "mandate": "Coordinate evangelism, church planting and outreach so the gospel reaches new people and places.",
+      "leadership": {
+        "director": { "name": "Pst Victor Eyo / Rev Imikan Etebom", "location": "Akpabuyo" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Evangelism and Outreach", "duties": ["Plan and coordinate outreaches, crusades and campaigns.", "Provide materials and training for outreach units."] },
+        { "name": "Church Planting and Expansion", "duties": ["Assess sites and launch new churches.", "Support new churches with leaders and resources."] },
+        { "name": "Follow-up and Discipleship", "duties": ["Run the follow-up system from first contact to membership.", "Train follow-up workers and track converts."] },
+        { "name": "Missions Partnerships", "duties": ["Build and manage partnerships with missions bodies.", "Coordinate joint outreaches and support."] },
+        { "name": "Mission Fields Welfare", "duties": ["Support the welfare of missionaries and mission fields.", "Report conditions and needs to the Director."] }
+      ],
+      "branchUnits": ["Outreach Unit", "Follow-up Unit", "Evangelism and Prayer Teams", "Church Planting Team"],
+      "kpis": ["New converts recorded", "Follow-up completion rate", "New churches planted", "Outreaches held against plan"],
+      "worksCloselyWith": ["Finance", "Worship", "Media", "HR Development"],
+      "members": [
+        { "name": "Pst Victor Eyo", "role": "Regional/State Pastor", "office": "Director", "location": "Akpabuyo" },
+        { "name": "Rev Imikan Etebom", "role": null, "location": null },
+        { "name": "Pst Blessing Akanimo", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Victor Emeka", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Pius Agim", "role": "Branch Pastor", "location": "Warri" },
+        { "name": "Pst James Ogar", "role": "Branch Pastor", "location": "Aba" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Outreaches held (place, date, team size)", "People reached", "New converts recorded (names and contacts on separate sheet)", "Follow-up calls and visits made", "Converts integrated into groups or classes", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Outreaches held vs plan", "Converts recorded and followed up (%)", "New church plants and status", "Partnership activities", "Missionary welfare issues", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "operations",
+      "name": "Operations Directorate",
+      "mandate": "Define and standardise how things are done in the commission, and ensure everyday compliance with approved procedures in every department, service unit and branch.",
+      "leadership": {
+        "director": { "name": "Pst Solomon Ubi", "role": "Regional/State Pastor", "location": "Hebron Uyo" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "SOPs and Standardisation", "duties": ["Develop, issue and review SOPs for every process.", "Standardise forms, workflows and routines."] },
+        { "name": "Compliance and Quality Assurance", "duties": ["Run routine compliance checks and inspections.", "Record deviations and follow up corrective action."] },
+        { "name": "Departments and Service Units Coordination", "duties": ["Monitor daily activities of departments and units against plans.", "Resolve operational overlaps and gaps."] },
+        { "name": "Security and Protocol", "duties": ["Set security and protocol standards.", "Set and test emergency response procedures."] }
+      ],
+      "branchUnits": ["Security and Protocol Unit", "SOP Champions and Compliance Officers (one per unit)", "All service units and departments (SOP compliance)"],
+      "kpis": ["SOPs issued and reviewed on schedule", "Branches and units compliant with SOPs (%)", "Deviations closed within 30 days", "Service unit and department activity reports received", "Incident response"],
+      "worksCloselyWith": ["All directorates", "HR Development", "Administration", "Music and Worship", "Finance"],
+      "governanceNote": "Operations oversees compliance across ALL service units — read-side visibility may cross directorate boundaries (unique: every other directorate sees only its own units).",
+      "members": [
+        { "name": "Pst Moses Agabi", "role": "Asst Regional/Branch Pastor", "location": "Port Harcourt" },
+        { "name": "Pst Richard Asuquo", "role": "Youth Pastor", "location": "Great Hearts" },
+        { "name": "Pst Umoren Samuel", "role": "Zonal/Branch Pastor", "location": "Eket" },
+        { "name": "Pst Kingsley Osuya", "role": "Branch Pastor", "location": "Port Harcourt" },
+        { "name": "Pst Joseph Akpan", "role": "Branch Pastor", "location": "Itu" },
+        { "name": "Pst Oscar Anara", "role": "Branch Pastor", "location": null }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "SOPs applied this week and any deviations", "Unit activities held vs plan", "Compliance checklist completed (Yes/No)", "Security incidents and response", "Corrective actions taken", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "SOPs issued or reviewed", "Compliance rate by branch and unit", "Deviations raised and closed", "Unit activity reports received", "Incidents and responses", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "finance-accounts",
+      "name": "Finance and Accounts Directorate",
+      "mandate": "Safeguard, account for and grow the church's financial resources with transparency and integrity.",
+      "leadership": {
+        "director": { "name": "Pst Kingsley Ugbedinma", "role": "Regional/State Pastor", "location": "JNIC Edo State" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Treasury and Banking", "duties": ["Manage bank accounts, signatories and cash handling rules.", "Process remittances and approve payments."] },
+        { "name": "Budget and Planning", "duties": ["Prepare national and branch budget guidelines.", "Track budget performance and variances monthly."] },
+        { "name": "Accounting and Reporting", "duties": ["Maintain the books and consolidate branch returns.", "Produce monthly and annual financial statements."] },
+        { "name": "Internal Audit and Compliance", "duties": ["Plan and run scheduled and surprise audits.", "Follow up and close audit exceptions."] },
+        { "name": "Welfare and Benevolence Funds", "duties": ["Administer welfare, benevolence and special funds.", "Verify and report all disbursements."] }
+      ],
+      "branchUnits": ["Branch Treasurer and Financial Secretary", "Branch Finance Committee", "Welfare and Benevolence Fund Team", "Project Fund Collectors"],
+      "kpis": ["Branches submitting returns on time (%)", "Audit exceptions cleared within 30 days", "Budget variance", "Remittance compliance rate"],
+      "worksCloselyWith": ["Kingdom Business and Investment", "Works and Infrastructure", "Operations", "HR Development", "Missions"],
+      "governanceNote": "D1 requires evidence fields (deposit slip numbers, receipts attached) — report templates need attachment support. Internal audit (scheduled + surprise) is a real workflow worth its own module later.",
+      "members": [
+        { "name": "Pastor Okoi Abam", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Nnana Iquo", "role": null, "location": "Great Hearts" },
+        { "name": "Bro Obinna", "role": null, "location": "Hebron Uyo" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Offerings and tithes banked (amount, date, deposit slip no.)", "Cash on hand at week end", "Expenses incurred (with receipts attached)", "Welfare or benevolence payments made", "Pending payments or requests", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Returns received vs expected (%)", "Remittances received vs due", "Budget variance by branch", "Audit queries raised and cleared", "Welfare funds disbursed", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "music-worship",
+      "name": "Music and Worship Directorate",
+      "mandate": "Lead the commission's music ministry and the technical delivery of worship, with excellence, unity and doctrinal soundness across all branches.",
+      "leadership": {
+        "director": { "name": "Pst Dominic Odah", "role": "Branch Pastor", "location": "Corner Stone" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Choirs and Music", "duties": ["Set standards for choirs, singers and music directors, including approved songs.", "Train, audition and certify choir leaders and music directors.", "Coordinate choir programmes, rehearsal guides and festivals."] },
+        { "name": "Instrumentation and Sound", "duties": ["Set standards for instruments, sound systems and service audio.", "Train and certify instrumentalists and sound engineers.", "Advise branches on equipment selection and sound setup."] },
+        { "name": "Media and Projection", "duties": ["Set standards for projecting lyrics, scriptures and visuals during services.", "Train projection and presentation operators.", "Work with the Media and Communications Directorate so projection matches broadcast and branding."] }
+      ],
+      "branchUnits": ["Choir", "Sound Unit", "Projection and Media Unit"],
+      "kpis": ["Music, sound and projection workers trained and certified", "Branches meeting sound and projection standards", "Service quality audit scores", "Units active per branch"],
+      "worksCloselyWith": ["Media and Communications", "Operations", "Missions", "Works and Infrastructure", "Finance"],
+      "members": [
+        { "name": "Chijioke Kalu", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Joshua Ibitome", "role": "Branch Pastor", "location": "Ibadan" },
+        { "name": "Patrick Peters", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Daniel Kalu", "role": null, "location": "Benin" },
+        { "name": "Ephraim Nsa", "role": null, "location": "Great Hearts" },
+        { "name": "Victor Dan", "role": null, "location": "Hebron Uyo" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Services held and units on duty (choir, band, sound, projection)", "Rehearsals held and attendance", "Songs ministered (list)", "Instrument, sound or projection equipment issues", "New members recruited into the units", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Units active per branch (choir, instrumentation, sound, projection)", "Trainings held and workers certified", "Service quality audit scores (music, sound, projection)", "Equipment faults reported and fixed", "Special service preparations", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "kingdom-business",
+      "name": "Kingdom Business and Investment Directorate",
+      "mandate": "Steward and grow the commission's school and other investments, and establish new businesses and investments that strengthen the commission's finances and advance its mission.",
+      "leadership": {
+        "director": { "name": "Pst Ngozi O.", "location": null },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "School Management and Expansion", "duties": ["Manage the primary and secondary school.", "Lead expansion to all JNIC locations and beyond."] },
+        { "name": "Business Development and New Ventures", "duties": ["Identify, evaluate and launch new businesses.", "Prepare business plans for approval."] },
+        { "name": "Investment Portfolio and Performance", "duties": ["Manage the existing investments.", "Track returns and report to the Executive Council."] },
+        { "name": "Governance, Risk and Due Diligence", "duties": ["Run due diligence and risk assessment.", "Enforce business governance and legal compliance."] },
+        { "name": "Partnerships and Funding", "duties": ["Source partners, investors and funding.", "Manage partnership agreements."] }
+      ],
+      "branchUnits": ["School Campus Head (branch school)", "Business Unit Manager (commission businesses)", "Investment Liaison Officer"],
+      "kpis": ["Schools opened and student enrolment", "School academic results", "New ventures launched against plan", "Portfolio return on investment", "Business plans approved with due diligence", "Compliance filings on time"],
+      "worksCloselyWith": ["Finance and Accounts", "Administration", "Missions", "Operations", "HR Development"],
+      "governanceNote": "Significant investments above a Council-set limit require Executive Council approval. School expansion is a stated goal: school may eventually warrant its own entity in the model.",
+      "members": [
+        { "name": "Pst Hogan Okon", "role": null, "location": "Benin" },
+        { "name": "Pst Mercy Charles", "role": "Branch Pastor", "location": "Ibeno" },
+        { "name": "Pst Courage Inam", "role": null, "location": "Hebron Uyo" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "School enrolment and attendance (where applicable)", "Revenue and expenses (business units)", "Staff and operational issues", "Licensing or compliance matters", "Expansion or investment leads identified", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "School enrolment and results", "Expansion progress by location", "New ventures status", "Portfolio returns", "Due diligence completed", "Funding secured", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "hr-development",
+      "name": "Human Resource Directorate",
+      "mandate": "Recruit, train, deploy, care for and hold accountable the church's pastors, workers and leaders.",
+      "leadership": {
+        "director": { "name": "Pst Johnson I.", "location": null },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Recruitment and Deployment", "duties": ["Recruit and deploy pastors and workers.", "Manage directorate assignments and transfers."] },
+        { "name": "Training and Academy", "duties": ["Run the ministerial academy and continuing education.", "Certify completion of training."] },
+        { "name": "Ethics, Conduct and Discipline", "duties": ["Administer the code of conduct.", "Handle disciplinary cases with the Senior Pastor."] },
+        { "name": "Pastoral Welfare and Care", "duties": ["Coordinate welfare for pastors and families.", "Provide pastoral care for workers."] },
+        { "name": "Records and Appraisal", "duties": ["Keep personnel records.", "Run mid-year and year-end appraisals."] }
+      ],
+      "branchUnits": ["Branch Training and Discipleship Coordinator", "Workers Welfare and Care Team", "Ethics and Conduct Liaison"],
+      "kpis": ["Pastors trained and certified", "Appraisals completed", "Vacancies filled", "Disciplinary cases resolved on time"],
+      "worksCloselyWith": ["Finance", "Administration", "All directorates (assignments)"],
+      "governanceNote": "HR Development owns directorate assignments and transfers. Discipline/welfare report fields are deliberately non-identifying (confidential sheet, no personal details) — privacy rules needed in the data model.",
+      "members": [
+        { "name": "Pst Uwe Edeke", "role": null, "location": "W/Place Cal" },
+        { "name": "Sis Eno Hogan", "role": null, "location": "Benin" },
+        { "name": "Pst Bitrus Gadon", "role": "Branch Pastor", "location": "Kaduna" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Training sessions held (title, attendance)", "Workers recruited, transferred or leaving", "Welfare cases handled (without personal details)", "Conduct matters reported (confidential sheet)", "Appraisals or records pending", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Pastors and workers trained", "Appraisals completed", "Vacancies and deployments", "Disciplinary cases opened and closed", "Welfare cases attended", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "media-communications",
+      "name": "Media and Communications Directorate",
+      "mandate": "Tell the church's story and keep members, the public and leadership informed through accurate, timely and consistent communication.",
+      "leadership": {
+        "director": { "name": "Watchman Okoro", "location": null },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Broadcast and Production", "duties": ["Run live streaming, TV and radio production.", "Set technical standards for branch media units."] },
+        { "name": "Digital and Social Media", "duties": ["Manage the website and social media platforms.", "Publish the approved content calendar."] },
+        { "name": "Publications and Public Relations", "duties": ["Produce publications and press statements.", "Handle media relations with Senior Pastor approval."] },
+        { "name": "Internal Communications", "duties": ["Circulate announcements between HQ, regions and branches.", "Maintain official communication channels."] },
+        { "name": "Archives and Branding", "duties": ["Archive sermons, events and official media.", "Enforce branding standards."] }
+      ],
+      "branchUnits": ["Branch Media Team (sound, camera, streaming)", "Social Media Team", "Publications Team (bulletin, tracts)"],
+      "kpis": ["Content published against plan", "Branches meeting media standards", "Audience growth and engagement", "Response time to communication requests", "Media units trained"],
+      "worksCloselyWith": ["Music and Worship", "Administration", "Missions", "Finance"],
+      "governanceNote": "Sensitive publications/press statements require Senior Pastor approval.",
+      "members": [
+        { "name": "Pst Essien David", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Jakes Kewo", "role": "Branch Pastor", "location": "Abeokuta" },
+        { "name": "Obot Sylvanus", "role": null, "location": "Great Hearts" },
+        { "name": "Pst Davies Aniefiok", "role": "Branch Pastor", "location": "Ugep" },
+        { "name": "Emmanuel Akanimo", "role": null, "location": "Hebron Uyo" },
+        { "name": "Pst Maximillian Chisom", "role": "Branch Pastor", "location": "Awka" },
+        { "name": "Pst Daniel Shedrach", "role": null, "location": null }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Services recorded or streamed", "Content published (posts, clips, graphics)", "Equipment status and faults", "Archive uploads completed", "Announcements received and circulated", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Content published vs plan", "Audience growth and engagement", "Branches meeting media standards", "Media units trained", "Communication requests handled", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "family-ministries",
+      "name": "Family and Ministries Directorate",
+      "mandate": "Nurture every age group and fellowship: children, teens, youth, men and women.",
+      "leadership": {
+        "director": { "name": "Pst Gideon O.", "location": null },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Children's Church", "duties": ["Provide curriculum and safe programmes for children.", "Train and screen children's workers."] },
+        { "name": "Teens Ministry", "duties": ["Run teens programmes and mentoring.", "Train teens leaders."] },
+        { "name": "Youth Ministry", "duties": ["Run youth programmes, events and discipleship.", "Develop youth leaders."] },
+        { "name": "Men's Fellowship", "duties": ["Plan men's programmes and events.", "Coordinate regional and national meetings."] },
+        { "name": "Women's Fellowship", "duties": ["Plan women's programmes and events.", "Coordinate regional and national meetings."] }
+      ],
+      "branchUnits": ["Children's Church", "Teens Ministry", "Youth Ministry", "Men's Fellowship", "Women's Fellowship"],
+      "kpis": ["Groups active per branch", "Attendance trends", "Leaders trained", "Events held"],
+      "worksCloselyWith": ["Missions", "HR Development", "Music and Worship"],
+      "members": [
+        { "name": "Pst Richard Asuquo", "role": "Youth Pastor", "location": "Great Hearts" },
+        { "name": "Pst Itam Itam", "role": "Branch Pastor", "location": "Owerri" },
+        { "name": "Sis Augusta Henshaw", "role": "Children's Church", "location": "Great Hearts" },
+        { "name": "Sis Thelma Ubi", "role": "Children's Church", "location": "Makurdi" },
+        { "name": "Sis Betty Ibiang", "role": "Children's Church", "location": "W/Place, Cal" }
+      ],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Meetings held and attendance by group", "New members or visitors", "Activities and programmes held", "Leaders meetings held", "Welfare or counselling referrals (no personal details)", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Groups active", "Attendance trends", "Leaders trained", "Events held", "Challenges and support needed", "Recommendations"]
+      }
+    },
+    {
+      "key": "works-infrastructure",
+      "name": "Works and Infrastructure Directorate",
+      "mandate": "Plan, deliver and maintain the physical infrastructure of the commission so that every location has safe, sound and fit-for-purpose facilities.",
+      "leadership": {
+        "director": { "name": "Macduff Kachua", "location": "Great Hearts" },
+        "deputyDirector": null,
+        "secretary": null
+      },
+      "desks": [
+        { "name": "Planning and Design", "duties": ["Prepare the infrastructure master plan.", "Commission designs and cost estimates."] },
+        { "name": "Construction and Project Delivery", "duties": ["Manage construction from approvals to handover.", "Report project progress."] },
+        { "name": "Property, Land and Facilities Management", "duties": ["Handle land titles, surveys and approvals with Administration.", "Run planned maintenance of facilities."] },
+        { "name": "Assets and Procurement of Works", "duties": ["Maintain the asset register.", "Run transparent tendering with Finance and Accounts."] },
+        { "name": "Safety and Building Standards", "duties": ["Set building, health and safety standards.", "Check contractor and site compliance."] }
+      ],
+      "branchUnits": ["Branch Works and Facilities Team", "Project Committee (new buildings)", "Maintenance and Safety Officer"],
+      "kpis": ["Projects delivered on time and within budget", "Properties with verified titles (%)", "Maintenance backlog", "Safety incidents", "Asset register completeness"],
+      "worksCloselyWith": ["Finance and Accounts", "Administration", "Kingdom Business and Investment", "Missions", "Operations"],
+      "councilApprovalNote": "Capital projects above a limit set by the Council require Executive Council approval.",
+      "members": [],
+      "reportFields": {
+        "D1": ["Branch and location", "Unit and week ending", "Prepared by (name, phone)", "Maintenance tasks done and pending", "Safety observations", "Project progress (% complete) where applicable", "Materials and contractor issues", "Property documents or title issues", "Issues needing escalation", "Prayer or support requests", "Plans for next week"],
+        "D2": ["Branch and unit", "Month", "Prepared by (name, phone)", "Projects on time and within budget", "Properties with verified titles", "Maintenance backlog", "Safety incidents", "Asset register updates", "Challenges and support needed", "Recommendations"]
+      }
+    }
+  ],
+  "sharedTemplates": {
+    "D1": { "name": "Weekly Unit Report", "from": "Branch Service Unit Coordinator", "to": "Desk Head (copy Branch Pastor)", "due": "Monday, 12:00" },
+    "D2": { "name": "Monthly Unit Report", "from": "Branch Service Unit Coordinator", "to": "Desk Head (copy Branch Pastor)", "due": "3rd of the month" },
+    "D3": { "name": "Monthly Desk Report", "from": "Desk Head", "to": "Director", "due": "5th of the month", "fields": ["Desk and month", "Summary (3 to 5 lines)", "Branch units reporting (count)", "Activities completed against plan", "Key figures (consolidated from D1 and D2 reports)", "Challenges and risks", "Support needed from the Director", "Priorities for next month", "Prepared by (name, date)"] },
+    "D4": { "name": "Monthly Directorate Report", "from": "Director", "to": "Resident Pastor (copy Senior Pastor)", "due": "7th of the month", "fields": ["Directorate and month", "Summary (3 to 5 lines)", "Desk highlights", "Challenges and risks", "Decisions required from the Senior Pastor or Council", "Budget used vs approved", "Priorities for next month", "Members' task reports received (count)", "KPI table (target/actual/remarks per directorate KPI)"] },
+    "D5": { "name": "Quarterly Directorate Review", "from": "Director", "to": "Executive Council", "due": "Before each council meeting", "fields": ["Directorate and quarter", "Achievements against quarterly targets", "Desk performance summary", "Budget used vs approved", "Risks and lessons learned", "Decisions required from the Council", "Priorities for next quarter", "KPI table for the quarter"] },
+    "D6": { "name": "Annual Directorate Report", "from": "Director", "to": "Senior Pastor / annual conference", "due": "Within 30 days of year end", "fields": ["Directorate and year", "Mandate and objectives for the year", "Major achievements", "Financial summary (budget vs actual)", "Staff and members: changes, training, welfare", "Challenges and lessons", "Recommendations to the Senior Pastor", "Plan and budget for next year", "KPI table for the year"] }
+  }
+}

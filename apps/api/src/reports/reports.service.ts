@@ -38,11 +38,14 @@ import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { toFeedbackView } from "./feedback.mapper";
 import { toWeeklyReportView, weeklyReportInclude } from "./reports.mapper";
 
-const HQ_VIEW_ROLES = new Set<Role>([Role.LEAD_PASTOR, Role.ADMIN]);
+const HQ_VIEW_ROLES = new Set<Role>([Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN]);
 const FEEDBACK_ROLES = new Set<Role>([
+  Role.DISTRICT_PASTOR,
   Role.ZONAL_PASTOR,
   Role.STATE_PASTOR,
-  Role.LEAD_PASTOR,
+  Role.REGIONAL_PASTOR,
+  Role.SENIOR_PASTOR,
+  Role.RESIDENT_PASTOR,
   Role.ADMIN,
 ]);
 
@@ -863,7 +866,7 @@ export class ReportsService {
 
     const hqViewers = await this.prisma.user.findMany({
       where: {
-        role: { in: [Role.LEAD_PASTOR, Role.ADMIN] },
+        role: { in: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN] },
         status: "ACTIVE",
       },
       select: { id: true },

@@ -1,26 +1,59 @@
 import { OrgChangeStatus, OrgChangeType } from "@repo/database";
 
+export type OrgPastorRef = {
+  id: string;
+  name: string;
+} | null;
+
 export type OrgTreeBranch = {
   id: string;
   name: string;
   address: string | null;
+  districtId: string | null;
   zoneId: string | null;
   stateId: string;
+  pastor: OrgPastorRef;
+};
+
+export type OrgTreeDistrict = {
+  id: string;
+  name: string;
+  zoneId: string;
+  pastor: OrgPastorRef;
+  branches: OrgTreeBranch[];
 };
 
 export type OrgTreeZone = {
   id: string;
   name: string;
   stateId: string;
+  pastor: OrgPastorRef;
+  districts: OrgTreeDistrict[];
+  /** Branches in this zone not yet assigned to a district. */
   branches: OrgTreeBranch[];
 };
 
 export type OrgTreeState = {
   id: string;
   name: string;
+  regionId: string | null;
+  pastor: OrgPastorRef;
   zones: OrgTreeZone[];
-  /** Branches in this state that are not assigned to a zone. */
+  /** Branches in this state that are not assigned to a zone or district. */
   branches: OrgTreeBranch[];
+};
+
+export type OrgTreeRegion = {
+  id: string;
+  name: string;
+  pastor: OrgPastorRef;
+  states: OrgTreeState[];
+};
+
+export type OrgTreeResponse = {
+  regions: OrgTreeRegion[];
+  /** States not assigned to a region. */
+  unassignedStates: OrgTreeState[];
 };
 
 export type OrgChangeRequestView = {

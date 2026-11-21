@@ -1,4 +1,12 @@
-import { Role } from "@repo/types";
+import { DirectorateOffice, Role } from "@repo/types";
+
+export interface DirectorateFacet {
+  directorateId: string;
+  directorateName: string;
+  office: DirectorateOffice;
+  deskId: string | null;
+  deskName: string | null;
+}
 
 export interface AuthUser {
   id: string;
@@ -6,12 +14,18 @@ export interface AuthUser {
   name: string;
   role: Role;
   status: string;
+  title: string | null;
+  regionId: string | null;
   stateId: string | null;
   zoneId: string | null;
+  districtId: string | null;
   branchId: string | null;
+  regionName?: string | null;
   stateName?: string | null;
   zoneName?: string | null;
+  districtName?: string | null;
   branchName?: string | null;
+  directorate?: DirectorateFacet | null;
   profilePicUrl: string | null;
 }
 

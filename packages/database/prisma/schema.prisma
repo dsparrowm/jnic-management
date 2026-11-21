@@ -8,11 +8,24 @@ datasource db {
 }
 
 enum Role {
-  LEAD_PASTOR
+  SENIOR_PASTOR
+  RESIDENT_PASTOR
   ADMIN
+  REGIONAL_PASTOR
   STATE_PASTOR
   ZONAL_PASTOR
+  DISTRICT_PASTOR
   BRANCH_PASTOR
+}
+
+enum DirectorateOffice {
+  DIRECTOR
+  DEPUTY_DIRECTOR
+  SECRETARY
+  DESK_HEAD
+  DEPUTY_DESK_HEAD
+  REGIONAL_COORDINATOR
+  MEMBER
 }
 
 enum UserStatus {
@@ -41,8 +54,10 @@ enum ReportStatus {
 
 enum SummaryScopeType {
   BRANCH
+  DISTRICT
   ZONE
   STATE
+  REGION
   HQ
 }
 
@@ -74,41 +89,53 @@ enum ConversationType {
 }
 
 model User {
-  id                     String     @id @default(cuid())
-  email                  String     @unique
-  phone                  String?
-  name                   String
-  passwordHash           String?
-  profilePicUrl          String?
-  role                   Role
-  status                 UserStatus @default(PENDING)
-  onboardingToken        String?    @unique
-  onboardingTokenExpiry  DateTime?
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  phone                 String?
+  name                  String
+  passwordHash          String?
+  profilePicUrl         String?
+  role                  Role
+  status                UserStatus @default(PENDING)
+  onboardingToken       String?    @unique
+  onboardingTokenExpiry DateTime?
 
-  stateId   String?
-  zoneId    String?
-  branchId  String?
-  state     State?  @relation("UserState", fields: [stateId], references: [id])
-  zone      Zone?   @relation("UserZone", fields: [zoneId], references: [id])
-  branch    Branch? @relation("UserBranch", fields: [branchId], references: [id])
+  /// Ministerial title shown in directories (e.g. "Youth Pastor", "Asst Branch Pastor").
+  title String?
 
-  createdById String?
-  createdBy   User?   @relation("UserCreatedBy", fields: [createdById], references: [id])
-  createdUsers User[] @relation("UserCreatedBy")
+  regionId   String?
+  stateId    String?
+  zoneId     String?
+  districtId String?
+  branchId   String?
+  region     Region?   @relation("UserRegion", fields: [regionId], references: [id])
+  state      State?    @relation("UserState", fields: [stateId], references: [id])
+  zone       Zone?     @relation("UserZone", fields: [zoneId], references: [id])
+  district   District? @relation("UserDistrict", fields: [districtId], references: [id])
+  branch     Branch?   @relation("UserBranch", fields: [branchId], references: [id])
 
-  statePastorOf  State?  @relation("StatePastor")
-  zonalPastorOf  Zone?   @relation("ZonalPastor")
-  branchPastorOf Branch? @relation("BranchPastor")
+  createdById  String?
+  createdBy    User?   @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[]  @relation("UserCreatedBy")
 
-  submittedReports WeeklyReport[] @relation("ReportSubmittedBy")
-  feedbackSent     Feedback[]     @relation("FeedbackFrom")
-  feedbackReceived   Feedback[]     @relation("FeedbackTo")
-  notifications      Notification[]
-  orgChangeRequests  OrgChangeRequest[] @relation("OrgChangeRequestedBy")
-  orgChangeReviews   OrgChangeRequest[] @relation("OrgChangeReviewedBy")
-  summaryApprovals   MonthlySummary[]   @relation("SummaryApprovedBy")
-  rollupsForwarded   HierarchyWeeklyRollup[] @relation("RollupForwardedBy")
-  refreshTokens      RefreshToken[]
+  regionalPastorOf Region?   @relation("RegionalPastor")
+  statePastorOf    State?    @relation("StatePastor")
+  zonalPastorOf    Zone?     @relation("ZonalPastor")
+  districtPastorOf District? @relation("DistrictPastor")
+  branchPastorOf   Branch?   @relation("BranchPastor")
+
+  directorateAssignment DirectorateAssignment?
+  coordinatedUnits      ServiceUnit[]          @relation("UnitCoordinator")
+
+  submittedReports         WeeklyReport[]            @relation("ReportSubmittedBy")
+  feedbackSent             Feedback[]                @relation("FeedbackFrom")
+  feedbackReceived         Feedback[]                @relation("FeedbackTo")
+  notifications            Notification[]
+  orgChangeRequests        OrgChangeRequest[]        @relation("OrgChangeRequestedBy")
+  orgChangeReviews         OrgChangeRequest[]        @relation("OrgChangeReviewedBy")
+  summaryApprovals         MonthlySummary[]          @relation("SummaryApprovedBy")
+  rollupsForwarded         HierarchyWeeklyRollup[]   @relation("RollupForwardedBy")
+  refreshTokens            RefreshToken[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
   chatMessageReceipts      ChatMessageReceipt[]
@@ -118,20 +145,37 @@ model User {
 
   @@index([role])
   @@index([status])
+  @@index([regionId])
   @@index([stateId])
   @@index([zoneId])
+  @@index([districtId])
   @@index([branchId])
 }
 
-model State {
-  id             String @id @default(cuid())
-  name           String @unique
-  statePastorId  String? @unique
-  statePastor    User?   @relation("StatePastor", fields: [statePastorId], references: [id])
+model Region {
+  id               String  @id @default(cuid())
+  name             String  @unique
+  regionalPastorId String? @unique
+  regionalPastor   User?   @relation("RegionalPastor", fields: [regionalPastorId], references: [id])
 
-  zones Zone[]
-  branches Branch[]
-  users User[] @relation("UserState")
+  states State[]
+  users  User[]  @relation("UserRegion")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model State {
+  id            String  @id @default(cuid())
+  name          String  @unique
+  regionId      String?
+  region        Region? @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  statePastorId String? @unique
+  statePastor   User?   @relation("StatePastor", fields: [statePastorId], references: [id])
+
+  zones         Zone[]
+  branches      Branch[]
+  users         User[]         @relation("UserState")
   conversations Conversation[]
 
   createdAt DateTime @default(now())
@@ -139,15 +183,16 @@ model State {
 }
 
 model Zone {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
   stateId       String
-  state         State  @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  state         State   @relation(fields: [stateId], references: [id], onDelete: Cascade)
   zonalPastorId String? @unique
-  zonalPastor   User?  @relation("ZonalPastor", fields: [zonalPastorId], references: [id])
+  zonalPastor   User?   @relation("ZonalPastor", fields: [zonalPastorId], references: [id])
 
-  branches Branch[]
-  users    User[]   @relation("UserZone")
+  districts     District[]
+  branches      Branch[]
+  users         User[]         @relation("UserZone")
   conversations Conversation[]
 
   createdAt DateTime @default(now())
@@ -156,18 +201,38 @@ model Zone {
   @@unique([stateId, name])
 }
 
+model District {
+  id               String  @id @default(cuid())
+  name             String
+  zoneId           String
+  zone             Zone    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  districtPastorId String? @unique
+  districtPastor   User?   @relation("DistrictPastor", fields: [districtPastorId], references: [id])
+
+  branches Branch[]
+  users    User[]   @relation("UserDistrict")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([zoneId, name])
+}
+
 model Branch {
-  id             String @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
   address        String?
   stateId        String
-  state          State  @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  state          State     @relation(fields: [stateId], references: [id], onDelete: Cascade)
   zoneId         String?
-  zone           Zone?  @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  branchPastorId String? @unique
-  branchPastor   User?  @relation("BranchPastor", fields: [branchPastorId], references: [id])
+  zone           Zone?     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  districtId     String?
+  district       District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  branchPastorId String?   @unique
+  branchPastor   User?     @relation("BranchPastor", fields: [branchPastorId], references: [id])
 
   users         User[]         @relation("UserBranch")
+  serviceUnits  ServiceUnit[]
   weeklyReports WeeklyReport[]
 
   createdAt DateTime @default(now())
@@ -234,12 +299,12 @@ model WeeklyReport {
 }
 
 model Attendance {
-  id             String       @id @default(cuid())
-  reportId       String       @unique
-  report         WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  adultCount     Int          @default(0)
-  teenageCount   Int          @default(0)
-  childrenCount  Int          @default(0)
+  id            String       @id @default(cuid())
+  reportId      String       @unique
+  report        WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  adultCount    Int          @default(0)
+  teenageCount  Int          @default(0)
+  childrenCount Int          @default(0)
 }
 
 model Finance {
@@ -267,27 +332,27 @@ model Feedback {
 }
 
 model MonthlySummary {
-  id             String               @id @default(cuid())
-  scopeType      SummaryScopeType
-  scopeId        String
-  month          Int
-  year           Int
-  totalAdult     Int                  @default(0)
-  totalTeenage   Int                  @default(0)
-  totalChildren  Int                  @default(0)
-  totalTithe     Decimal              @default(0) @db.Decimal(14, 2)
-  totalOffering  Decimal              @default(0) @db.Decimal(14, 2)
-  totalOther     Decimal              @default(0) @db.Decimal(14, 2)
-  currency       String               @default("NGN")
-  status         MonthlySummaryStatus @default(PENDING)
-  approvedById   String?
-  approvedBy     User?                @relation("SummaryApprovedBy", fields: [approvedById], references: [id])
-  approvedAt     DateTime?
-  returnedById   String?
-  returnedAt     DateTime?
-  returnNote     String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id            String               @id @default(cuid())
+  scopeType     SummaryScopeType
+  scopeId       String
+  month         Int
+  year          Int
+  totalAdult    Int                  @default(0)
+  totalTeenage  Int                  @default(0)
+  totalChildren Int                  @default(0)
+  totalTithe    Decimal              @default(0) @db.Decimal(14, 2)
+  totalOffering Decimal              @default(0) @db.Decimal(14, 2)
+  totalOther    Decimal              @default(0) @db.Decimal(14, 2)
+  currency      String               @default("NGN")
+  status        MonthlySummaryStatus @default(PENDING)
+  approvedById  String?
+  approvedBy    User?                @relation("SummaryApprovedBy", fields: [approvedById], references: [id])
+  approvedAt    DateTime?
+  returnedById  String?
+  returnedAt    DateTime?
+  returnNote    String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   @@unique([scopeType, scopeId, month, year])
   @@index([scopeType, scopeId])
@@ -376,4 +441,88 @@ model ChatMessageReceipt {
   @@unique([messageId, userId])
   @@index([userId, readAt])
   @@index([messageId])
+}
+
+model Directorate {
+  id        String @id @default(cuid())
+  /// Stable slug from the directorate handbook (e.g. "missions").
+  key       String @unique
+  name      String @unique
+  mandate   String
+  sortOrder Int    @default(0)
+
+  desks       Desk[]
+  unitTypes   BranchUnitType[]
+  assignments DirectorateAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Desk {
+  id            String      @id @default(cuid())
+  directorateId String
+  directorate   Directorate @relation(fields: [directorateId], references: [id], onDelete: Cascade)
+  name          String
+  /// Free-form duty bullet points from the handbook.
+  duties        Json        @default("[]")
+  sortOrder     Int         @default(0)
+
+  assignments DirectorateAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([directorateId, name])
+}
+
+/// A kind of branch-level service unit a directorate charters (e.g. "Ushering Team").
+model BranchUnitType {
+  id            String      @id @default(cuid())
+  directorateId String
+  directorate   Directorate @relation(fields: [directorateId], references: [id], onDelete: Cascade)
+  name          String
+  sortOrder     Int         @default(0)
+
+  serviceUnits ServiceUnit[]
+
+  @@unique([directorateId, name])
+}
+
+/// A branch-level service unit instance chartered by a directorate.
+model ServiceUnit {
+  id            String         @id @default(cuid())
+  branchId      String
+  branch        Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  unitTypeId    String
+  unitType      BranchUnitType @relation(fields: [unitTypeId], references: [id], onDelete: Cascade)
+  coordinatorId String?
+  coordinator   User?          @relation("UnitCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, unitTypeId])
+}
+
+/// Second reporting line: a person's office inside a directorate.
+/// One membership per person — a desk head is still a member of the directorate.
+model DirectorateAssignment {
+  id                String            @id @default(cuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directorateId     String
+  directorate       Directorate       @relation(fields: [directorateId], references: [id], onDelete: Cascade)
+  deskId            String?
+  desk              Desk?             @relation(fields: [deskId], references: [id], onDelete: SetNull)
+  office            DirectorateOffice @default(MEMBER)
+  agreedWeeklyHours Int?
+  termYears         Int?
+  isActive          Boolean           @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([directorateId])
+  @@index([deskId])
 }

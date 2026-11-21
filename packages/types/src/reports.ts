@@ -263,9 +263,12 @@ export type NotificationListResponse = {
 
 export function canLeaveFeedback(role: Role): boolean {
   return (
+    role === Role.DISTRICT_PASTOR ||
     role === Role.ZONAL_PASTOR ||
     role === Role.STATE_PASTOR ||
-    role === Role.LEAD_PASTOR ||
+    role === Role.REGIONAL_PASTOR ||
+    role === Role.SENIOR_PASTOR ||
+    role === Role.RESIDENT_PASTOR ||
     role === Role.ADMIN
   );
 }

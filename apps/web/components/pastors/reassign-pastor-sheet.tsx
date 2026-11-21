@@ -19,7 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { api, ApiError, OrgState, PastorRecord } from "@/lib/api";
+import { api, ApiError, OrgTreeResponse, PastorRecord } from "@/lib/api";
 import { formatRole } from "@/lib/navigation";
 import { getAccessToken } from "@/lib/auth";
 
@@ -27,7 +27,7 @@ interface ReassignPastorSheetProps {
   pastor: PastorRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   onSuccess?: () => void;
 }
 
@@ -39,8 +39,10 @@ export function ReassignPastorSheet({
   onSuccess,
 }: ReassignPastorSheetProps) {
   const [role, setRole] = useState<Role>(Role.BRANCH_PASTOR);
+  const [regionId, setRegionId] = useState("");
   const [stateId, setStateId] = useState("");
   const [zoneId, setZoneId] = useState("");
+  const [districtId, setDistrictId] = useState("");
   const [branchId, setBranchId] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -48,8 +50,10 @@ export function ReassignPastorSheet({
   useEffect(() => {
     if (!open || !pastor) return;
     setRole(pastor.role as Role);
+    setRegionId(pastor.region?.id ?? "");
     setStateId(pastor.state?.id ?? "");
     setZoneId(pastor.zone?.id ?? "");
+    setDistrictId(pastor.district?.id ?? "");
     setBranchId(pastor.branch?.id ?? "");
     setError(undefined);
     setLoading(false);
@@ -61,8 +65,10 @@ export function ReassignPastorSheet({
     if (!token || !pastor) return;
 
     const structuralError = validateOrgAssignmentStructure(role, {
+      regionId: regionId || null,
       stateId: stateId || null,
       zoneId: zoneId || null,
+      districtId: districtId || null,
       branchId: branchId || null,
     });
     if (structuralError) {
@@ -75,8 +81,10 @@ export function ReassignPastorSheet({
     try {
       await api.reassignUser(token, pastor.id, {
         role,
+        regionId: regionId || null,
         stateId: stateId || null,
         zoneId: zoneId || null,
+        districtId: districtId || null,
         branchId: branchId || null,
       });
       onSuccess?.();
@@ -90,7 +98,7 @@ export function ReassignPastorSheet({
 
   if (!pastor) return null;
 
-  const orgValues = { role, stateId, zoneId, branchId };
+  const orgValues = { role, regionId, stateId, zoneId, districtId, branchId };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -122,8 +130,10 @@ export function ReassignPastorSheet({
                 const nextRole = e.target.value as Role;
                 const orgFields = adaptOrgFieldsForRole(orgValues, nextRole, orgTree);
                 setRole(nextRole);
+                setRegionId(orgFields.regionId);
                 setStateId(orgFields.stateId);
                 setZoneId(orgFields.zoneId);
+                setDistrictId(orgFields.districtId);
                 setBranchId(orgFields.branchId);
               }}
             >
@@ -140,8 +150,10 @@ export function ReassignPastorSheet({
             values={orgValues}
             onChange={(patch) => {
               if (patch.role !== undefined) setRole(patch.role);
+              if (patch.regionId !== undefined) setRegionId(patch.regionId);
               if (patch.stateId !== undefined) setStateId(patch.stateId);
               if (patch.zoneId !== undefined) setZoneId(patch.zoneId);
+              if (patch.districtId !== undefined) setDistrictId(patch.districtId);
               if (patch.branchId !== undefined) setBranchId(patch.branchId);
             }}
           />

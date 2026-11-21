@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ErrorText } from "@/components/auth/auth-card";
-import { OrgCascadeSelectors } from "@/components/org/org-cascade-selectors";
+import {
+  emptyCascadeValues,
+  OrgCascadeSelectors,
+} from "@/components/org/org-cascade-selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +19,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { api, ApiError, OrgState } from "@/lib/api";
+import { api, ApiError, OrgTreeResponse } from "@/lib/api";
 import { getAccessToken, redirectToLoginIfUnauthorized } from "@/lib/auth";
 
 interface CreateBranchSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orgTree: OrgState[];
+  orgTree: OrgTreeResponse;
   onSuccess?: (name: string) => void;
 }
 
@@ -33,8 +36,7 @@ export function CreateBranchSheet({
   onSuccess,
 }: CreateBranchSheetProps) {
   const router = useRouter();
-  const [stateId, setStateId] = useState("");
-  const [zoneId, setZoneId] = useState("");
+  const [cascade, setCascade] = useState(emptyCascadeValues);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string>();
@@ -42,8 +44,7 @@ export function CreateBranchSheet({
 
   useEffect(() => {
     if (!open) {
-      setStateId("");
-      setZoneId("");
+      setCascade(emptyCascadeValues);
       setName("");
       setAddress("");
       setError(undefined);
@@ -61,8 +62,9 @@ export function CreateBranchSheet({
     try {
       await api.createBranch(token, {
         name: name.trim(),
-        stateId,
-        zoneId: zoneId || undefined,
+        stateId: cascade.stateId,
+        zoneId: cascade.zoneId || undefined,
+        districtId: cascade.districtId || undefined,
         address: address.trim() || undefined,
       });
       onSuccess?.(name.trim());
@@ -82,7 +84,7 @@ export function CreateBranchSheet({
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">New branch</p>
           <SheetTitle>Add branch</SheetTitle>
           <SheetDescription>
-            A branch belongs to a state. Linking it to a zone is optional.
+            A branch belongs to a state. Linking it to a zone and district is optional.
           </SheetDescription>
         </SheetHeader>
 
@@ -90,13 +92,11 @@ export function CreateBranchSheet({
           <ErrorText message={error} />
           <OrgCascadeSelectors
             orgTree={orgTree}
-            values={{ stateId, zoneId }}
-            onChange={(v) => {
-              setStateId(v.stateId);
-              setZoneId(v.zoneId);
-            }}
+            values={cascade}
+            onChange={setCascade}
             stateRequired
             zoneRequired={false}
+            showDistrict={!!cascade.zoneId}
           />
           <div className="space-y-2">
             <Label htmlFor="branch-name">Branch name</Label>
@@ -124,7 +124,7 @@ export function CreateBranchSheet({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="create-branch-form" disabled={loading || !stateId || name.trim().length < 2}>
+          <Button type="submit" form="create-branch-form" disabled={loading || !cascade.stateId || name.trim().length < 2}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Create branch
           </Button>

@@ -1,7 +1,62 @@
 import { PrismaClient, Role, UserStatus } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const prisma = new PrismaClient();
+
+type DirectorateSeed = {
+  key: string;
+  name: string;
+  mandate: string;
+  desks: { name: string; duties: string[] }[];
+  branchUnits: string[];
+};
+
+/** Upserts the ten directorates, their desks and branch unit types from the
+ *  handbook seed (context/directorates-seed.json). Safe to re-run. */
+async function seedDirectorates() {
+  const seedPath = join(__dirname, "..", "..", "..", "context", "directorates-seed.json");
+  const seed = JSON.parse(readFileSync(seedPath, "utf8")) as {
+    directorates: DirectorateSeed[];
+  };
+
+  let sortOrder = 0;
+  for (const d of seed.directorates) {
+    sortOrder += 1;
+    const directorate = await prisma.directorate.upsert({
+      where: { key: d.key },
+      update: { name: d.name, mandate: d.mandate, sortOrder },
+      create: { key: d.key, name: d.name, mandate: d.mandate, sortOrder },
+    });
+
+    let deskOrder = 0;
+    for (const desk of d.desks) {
+      deskOrder += 1;
+      await prisma.desk.upsert({
+        where: { directorateId_name: { directorateId: directorate.id, name: desk.name } },
+        update: { duties: desk.duties, sortOrder: deskOrder },
+        create: {
+          directorateId: directorate.id,
+          name: desk.name,
+          duties: desk.duties,
+          sortOrder: deskOrder,
+        },
+      });
+    }
+
+    let unitOrder = 0;
+    for (const unitName of d.branchUnits) {
+      unitOrder += 1;
+      await prisma.branchUnitType.upsert({
+        where: { directorateId_name: { directorateId: directorate.id, name: unitName } },
+        update: { sortOrder: unitOrder },
+        create: { directorateId: directorate.id, name: unitName, sortOrder: unitOrder },
+      });
+    }
+  }
+  console.log(`Seeded ${seed.directorates.length} directorates with desks and branch unit types`);
+}
 
 const DEFAULT_SEED_PASSWORD = "ChangeMe123!";
 
@@ -76,6 +131,19 @@ async function main() {
 
   await ensureUser(adminEmail, adminPassword, adminName, Role.ADMIN);
 
+  await seedDirectorates();
+
+  // Catch-all region until real regions are announced; existing states fold into it.
+  const nationalRegion = await prisma.region.upsert({
+    where: { name: "National Region" },
+    update: {},
+    create: { name: "National Region" },
+  });
+  await prisma.state.updateMany({
+    where: { regionId: null },
+    data: { regionId: nationalRegion.id },
+  });
+
   const seedDemoUsers =
     process.env.NODE_ENV !== "production" || process.env.SEED_DEMO_USERS === "true";
   if (!seedDemoUsers) {
@@ -87,17 +155,17 @@ async function main() {
 
   const lpEmail = process.env.SEED_LP_EMAIL ?? "lead@jnic.org";
   const lpPassword = resolveSeedPassword("SEED_LP_PASSWORD");
-  const lpName = process.env.SEED_LP_NAME ?? "Lead Pastor";
+  const lpName = process.env.SEED_LP_NAME ?? "Senior Pastor";
 
   if (!lpPassword) {
     throw new Error("SEED_LP_PASSWORD is required when SEED_DEMO_USERS=true.");
   }
-  await ensureUser(lpEmail, lpPassword, lpName, Role.LEAD_PASTOR);
+  await ensureUser(lpEmail, lpPassword, lpName, Role.SENIOR_PASTOR);
 
   const state = await prisma.state.upsert({
     where: { name: "Lagos State" },
     update: {},
-    create: { name: "Lagos State" },
+    create: { name: "Lagos State", regionId: nationalRegion.id },
   });
 
   const zone = await prisma.zone.upsert({
@@ -106,13 +174,20 @@ async function main() {
     create: { name: "Victoria Island", stateId: state.id },
   });
 
+  const district = await prisma.district.upsert({
+    where: { zoneId_name: { zoneId: zone.id, name: "VI District" } },
+    update: {},
+    create: { name: "VI District", zoneId: zone.id },
+  });
+
   const branch = await prisma.branch.upsert({
     where: { stateId_name: { stateId: state.id, name: "VI Main Campus" } },
-    update: {},
+    update: { districtId: district.id },
     create: {
       name: "VI Main Campus",
       stateId: state.id,
       zoneId: zone.id,
+      districtId: district.id,
       address: "12 Adeola Odeku Street, Victoria Island",
     },
   });
@@ -169,7 +244,9 @@ async function main() {
     data: { statePastorId: statePastor.id },
   });
 
-  console.log("Seeded org hierarchy: Lagos State → Victoria Island → VI Main Campus");
+  console.log(
+    "Seeded org hierarchy: National Region → Lagos State → Victoria Island → VI District → VI Main Campus",
+  );
   console.log(
     `Zonal pastor (dual-scope): ${zonalEmail} | Branch pastor: ${branchEmail} | State pastor: ${stateEmail}`,
   );

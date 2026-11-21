@@ -18,8 +18,11 @@ const user = (
   name: role === Role.ADMIN ? "Platform Admin" : "Lead Pastor",
   role,
   status: "ACTIVE",
+  title: null,
+  regionId: null,
   stateId: null,
   zoneId: null,
+  districtId: null,
   branchId: null,
   profilePicUrl: null,
   ...overrides,
@@ -122,11 +125,24 @@ function createService(options?: {
 
   return new DashboardService(
     {
-      getTree: async () => [
-        {
-          zones: [{ branches: [{ id: "branch-1" }, { id: "branch-2" }] }],
-        },
-      ],
+      getTree: async () => ({
+        regions: [
+          {
+            states: [
+              {
+                zones: [
+                  {
+                    districts: [{ branches: [{ id: "branch-1" }] }],
+                    branches: [{ id: "branch-2" }],
+                  },
+                ],
+                branches: [],
+              },
+            ],
+          },
+        ],
+        unassignedStates: [],
+      }),
     } as unknown as OrgService,
     {
       listPastors: async () => ({
@@ -173,7 +189,7 @@ test("builds the Admin dashboard and Admin tasks", async () => {
 
 test("builds the Lead Pastor dashboard without Admin pastor data", async () => {
   const result = await createService({ pendingApprovals: 2 }).getHqDashboard(
-    user(Role.LEAD_PASTOR),
+    user(Role.SENIOR_PASTOR),
     "2026-09-20",
     6,
   );
