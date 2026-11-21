@@ -9,6 +9,7 @@ export const ONBOARDABLE_ROLES: Role[] = [
   Role.ZONAL_PASTOR,
   Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
+  Role.MEMBER,
 ];
 
 export enum UserStatus {

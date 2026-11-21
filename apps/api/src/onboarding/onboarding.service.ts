@@ -68,6 +68,35 @@ export class OnboardingService {
       throw new BadRequestException("Directorate is required when a desk is assigned");
     }
 
+    if (dto.serviceUnitId) {
+      const unit = await this.prisma.serviceUnit.findUnique({
+        where: { id: dto.serviceUnitId },
+        include: {
+          unitType: true,
+          branch: { include: { zone: true, district: true, state: true } },
+        },
+      });
+      if (!unit) {
+        throw new BadRequestException("Service unit not found");
+      }
+      if (dto.directorateId && unit.unitType.directorateId !== dto.directorateId) {
+        throw new BadRequestException(
+          "Service unit does not belong to the selected directorate",
+        );
+      }
+      if (dto.branchId && unit.branchId !== org.branchId) {
+        throw new BadRequestException("Service unit is not in the selected branch");
+      }
+      if (!org.branchId) {
+        // Pin the member's whole chain to the unit's branch.
+        org.branchId = unit.branchId;
+        org.districtId = unit.branch.districtId;
+        org.zoneId = unit.branch.district?.zoneId ?? unit.branch.zoneId;
+        org.stateId = unit.branch.stateId;
+        org.regionId = unit.branch.state?.regionId ?? null;
+      }
+    }
+
     const token = randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + ONBOARDING_HOURS * 60 * 60 * 1000);
 
@@ -93,7 +122,7 @@ export class OnboardingService {
                 create: {
                   directorateId: dto.directorateId,
                   deskId,
-                  office: "MEMBER",
+                  office: dto.office ?? "MEMBER",
                 },
               },
             }
@@ -113,6 +142,13 @@ export class OnboardingService {
         },
       },
     });
+
+    if (dto.serviceUnitId) {
+      await this.prisma.serviceUnit.update({
+        where: { id: dto.serviceUnitId },
+        data: { coordinatorId: user.id },
+      });
+    }
 
     await this.sendOnboardingEmail(user, token);
     return sanitizeUser(user);

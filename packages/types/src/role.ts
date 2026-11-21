@@ -8,6 +8,8 @@ export enum Role {
   ZONAL_PASTOR = "ZONAL_PASTOR",
   DISTRICT_PASTOR = "DISTRICT_PASTOR",
   BRANCH_PASTOR = "BRANCH_PASTOR",
+  /** Directorate-only member — no territorial seat (e.g. a media-team member or unit coordinator). */
+  MEMBER = "MEMBER",
 }
 
 /** HQ national-visibility roles: Senior Pastor and his assistant, the Resident Pastor. */

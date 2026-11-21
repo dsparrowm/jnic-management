@@ -21,6 +21,7 @@ const MESSAGING_ROLES: Role[] = [
   Role.ZONAL_PASTOR,
   Role.DISTRICT_PASTOR,
   Role.BRANCH_PASTOR,
+  Role.MEMBER,
 ];
 
 function directKeyFor(userA: string, userB: string): string {

@@ -517,3 +517,12 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - New `apps/api/src/common/scope-seats.ts` helpers (`zonalSeatId`, `stateSeatId`, `regionalSeatId`, `districtSeatId`, `seatRoles`) drive every scope gate: report visibility, zone/state summary + insights, B4 `fileMonthlySummary` ownership, monthly-summary filters (REGION added everywhere: scope matching, coverage, name resolution), and `scopeHasActivePastor` — an acting seat mans the scope for the skip-empty-level chain.
 - Pastor dashboard serves REGIONAL_PASTOR and fills zone/state sections per held seat, so a dual-seated pastor sees each scope they serve; branch tables stay suppressed whenever a scope section exists.
 - Convention: only populate a lower scope id when the person actually serves that scope.
+
+## MEMBER role — directorate-only users (2026-11-21)
+
+- `Role.MEMBER` added (types + Prisma enum migration `20261121220000_member_role`): a user with no territorial seat who belongs only to a directorate — e.g. a media-team member or a branch service-unit coordinator.
+- Onboarding accepts MEMBER (HR/Admin): optional home branch (unit pin, not a pastoral seat), optional directorate seat with `office` chosen at onboarding (director → member) and optional `serviceUnitId` which sets the unit's `coordinatorId` — that is what surfaces the unit's D1/D2 templates under "Due from me". The unit's branch pins the member's whole org chain automatically.
+- `validateOrgAssignmentStructure`: MEMBER requires nothing.
+- Members appear in the people directory (`DIRECTORY_ROLES`) and can use chat (`MESSAGING_ROLES`).
+- Template engine needed no change — it already keys off seats (unit coordinatorId + directorateAssignment office), not roles.
+- Mobile: `MemberHome` (hero, my-directorate seat card, due-from-me templates, review-queue nudge, activity); MEMBER routed there from the home tab. Weekly screen drops the week picker for MEMBER. Onboard sheet gains MEMBER section: directorate, office, desk (for desk offices), free service unit.

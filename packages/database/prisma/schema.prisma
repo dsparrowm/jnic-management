@@ -16,6 +16,7 @@ enum Role {
   ZONAL_PASTOR
   DISTRICT_PASTOR
   BRANCH_PASTOR
+  MEMBER
 }
 
 enum TemplateLevel {
