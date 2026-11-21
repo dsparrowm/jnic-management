@@ -109,6 +109,15 @@ export interface WeeklyReportAttendance {
   adultCount: number;
   teenageCount: number;
   childrenCount: number;
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
+  midweekAttendance: number;
+  firstTimeVisitors: number;
+  newConverts: number;
+  followUpVisits: number;
+  unitsActive: number;
+  outreachHeld: number;
 }
 
 export interface WeeklyReportFinance {
@@ -130,6 +139,9 @@ export interface WeeklyReportRecord {
   attendance: WeeklyReportAttendance | null;
   finance: WeeklyReportFinance | null;
   noServiceNote: string | null;
+  pastoralIssues: string | null;
+  prayerRequests: string | null;
+  nextWeekPlans: string | null;
   editable: boolean;
   createdAt: string;
   updatedAt: string;
@@ -144,9 +156,16 @@ export interface WeeklyReportListResponse {
 
 export interface WeeklyReportInput {
   serviceDate: string;
-  adultCount: number;
-  teenageCount: number;
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
   childrenCount: number;
+  midweekAttendance: number;
+  firstTimeVisitors: number;
+  newConverts: number;
+  followUpVisits: number;
+  unitsActive: number;
+  outreachHeld: number;
   tithe: number;
   offering: number;
   other: number;
@@ -268,6 +287,11 @@ export interface MonthlySummaryTotals {
   adult: number;
   teenage: number;
   children: number;
+  men: number;
+  women: number;
+  youth: number;
+  visitors: number;
+  converts: number;
   tithe: number;
   offering: number;
   other: number;

@@ -64,11 +64,35 @@ export class ReportsController {
     return this.reportsService.listWeeklyReports(user, query);
   }
 
+  @Get("district/summary")
+  getDistrictSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
+    return this.reportsService.getDistrictSummary(user, query.weekOf);
+  }
+
+  @Get("region/summary")
+  getRegionSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
+    return this.reportsService.getRegionSummary(user, query.weekOf);
+  }
+
   @Get("zone/summary")
   @UseGuards(RolesGuard)
   @Roles(Role.ZONAL_PASTOR)
   getZoneSummary(@CurrentUser() user: AuthUser, @Query() query: WeekSummaryQueryDto) {
     return this.reportsService.getZoneSummary(user, query.weekOf);
+  }
+
+  @Post("district/:weekOf/forward")
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRICT_PASTOR)
+  forwardDistrictReport(@CurrentUser() user: AuthUser, @Param("weekOf") weekOf: string) {
+    return this.reportsService.forwardDistrictReport(user, weekOf);
+  }
+
+  @Post("region/:weekOf/forward")
+  @UseGuards(RolesGuard)
+  @Roles(Role.REGIONAL_PASTOR)
+  forwardRegionReport(@CurrentUser() user: AuthUser, @Param("weekOf") weekOf: string) {
+    return this.reportsService.forwardRegionReport(user, weekOf);
   }
 
   @Post("zone/:weekOf/forward")

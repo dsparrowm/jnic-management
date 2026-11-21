@@ -11,8 +11,15 @@ interface ZoneReportsTableProps {
 
 function totalAttendance(row: ZoneReportBranchRow): number {
   if (!row.report?.attendance) return 0;
-  const { adultCount, teenageCount, childrenCount } = row.report.attendance;
-  return adultCount + teenageCount + childrenCount;
+  const {
+    adultCount,
+    teenageCount,
+    childrenCount,
+    menCount,
+    womenCount,
+    youthCount,
+  } = row.report.attendance;
+  return adultCount + teenageCount + childrenCount + menCount + womenCount + youthCount;
 }
 
 function totalFinance(row: ZoneReportBranchRow): number {

@@ -40,8 +40,10 @@ export enum OrgChangeStatus {
 
 export enum ReportStatus {
   SUBMITTED = "SUBMITTED",
+  DISTRICT_REVIEWED = "DISTRICT_REVIEWED",
   ZONE_REVIEWED = "ZONE_REVIEWED",
   STATE_REVIEWED = "STATE_REVIEWED",
+  REGIONAL_REVIEWED = "REGIONAL_REVIEWED",
   HQ_REVIEWED = "HQ_REVIEWED",
 }
 
@@ -163,6 +165,9 @@ export type {
   ReportCountSummary,
   StateGrowthResponse,
   StateGrowthRow,
+  DistrictSummaryResponse,
+  RegionStateSummary,
+  RegionSummaryResponse,
   StateSummaryResponse,
   StateZoneSummary,
   WeeklyReportAttendance,

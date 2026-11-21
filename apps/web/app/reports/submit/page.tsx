@@ -151,14 +151,24 @@ export default function SubmitWeeklyReportPage() {
     try {
       const payload = {
         serviceDate: values.serviceDate,
-        adultCount: values.adultCount,
-        teenageCount: values.teenageCount,
+        menCount: values.menCount,
+        womenCount: values.womenCount,
+        youthCount: values.youthCount,
         childrenCount: values.childrenCount,
+        midweekAttendance: values.midweekAttendance,
+        firstTimeVisitors: values.firstTimeVisitors,
+        newConverts: values.newConverts,
+        followUpVisits: values.followUpVisits,
+        unitsActive: values.unitsActive,
+        outreachHeld: values.outreachHeld,
         tithe: values.tithe,
         offering: values.offering,
         other: values.other,
         currency: values.currency,
         noServiceNote: values.noServiceNote ?? null,
+        pastoralIssues: values.pastoralIssues ?? null,
+        prayerRequests: values.prayerRequests ?? null,
+        nextWeekPlans: values.nextWeekPlans ?? null,
       };
 
       if (sameWeek && existingReport?.editable) {

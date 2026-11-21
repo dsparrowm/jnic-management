@@ -13,8 +13,10 @@ const REPORT_STATUS_VARIANT: Record<
   "warning" | "success" | "secondary" | "default"
 > = {
   [ReportStatus.SUBMITTED]: "success",
+  [ReportStatus.DISTRICT_REVIEWED]: "secondary",
   [ReportStatus.ZONE_REVIEWED]: "secondary",
   [ReportStatus.STATE_REVIEWED]: "secondary",
+  [ReportStatus.REGIONAL_REVIEWED]: "secondary",
   [ReportStatus.HQ_REVIEWED]: "default",
 };
 

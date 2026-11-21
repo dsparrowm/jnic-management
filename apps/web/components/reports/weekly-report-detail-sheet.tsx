@@ -80,6 +80,27 @@ export function WeeklyReportDetailSheet({
               </span>
             </div>
 
+            {report.pastoralIssues ? (
+              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Pastoral issues</h3>
+                <p className="text-sm text-foreground">{report.pastoralIssues}</p>
+              </section>
+            ) : null}
+
+            {report.prayerRequests ? (
+              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Prayer requests</h3>
+                <p className="text-sm text-foreground">{report.prayerRequests}</p>
+              </section>
+            ) : null}
+
+            {report.nextWeekPlans ? (
+              <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Next week's plans</h3>
+                <p className="text-sm text-foreground">{report.nextWeekPlans}</p>
+              </section>
+            ) : null}
+
             {report.noServiceNote ? (
               <section className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
                 <h3 className="text-sm font-semibold text-foreground">No service</h3>
@@ -90,9 +111,22 @@ export function WeeklyReportDetailSheet({
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">Attendance</h3>
               <dl className="grid grid-cols-3 gap-4">
-                <Metric label="Adults" value={report.attendance?.adultCount ?? 0} mono />
-                <Metric label="Teenagers" value={report.attendance?.teenageCount ?? 0} mono />
+                <Metric label="Men" value={report.attendance?.menCount ?? 0} mono />
+                <Metric label="Women" value={report.attendance?.womenCount ?? 0} mono />
+                <Metric label="Youth" value={report.attendance?.youthCount ?? 0} mono />
                 <Metric label="Children" value={report.attendance?.childrenCount ?? 0} mono />
+                <Metric label="Midweek" value={report.attendance?.midweekAttendance ?? 0} mono />
+              </dl>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">People &amp; growth</h3>
+              <dl className="grid grid-cols-3 gap-4">
+                <Metric label="Visitors" value={report.attendance?.firstTimeVisitors ?? 0} mono />
+                <Metric label="Converts" value={report.attendance?.newConverts ?? 0} mono />
+                <Metric label="Follow-ups" value={report.attendance?.followUpVisits ?? 0} mono />
+                <Metric label="Units active" value={report.attendance?.unitsActive ?? 0} mono />
+                <Metric label="Outreach" value={report.attendance?.outreachHeld ?? 0} mono />
               </dl>
             </section>
 

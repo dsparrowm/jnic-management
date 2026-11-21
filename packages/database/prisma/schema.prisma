@@ -47,8 +47,10 @@ enum OrgChangeStatus {
 
 enum ReportStatus {
   SUBMITTED
+  DISTRICT_REVIEWED
   ZONE_REVIEWED
   STATE_REVIEWED
+  REGIONAL_REVIEWED
   HQ_REVIEWED
 }
 
@@ -285,6 +287,9 @@ model WeeklyReport {
   submittedBy   User         @relation("ReportSubmittedBy", fields: [submittedById], references: [id])
   /// Required when attendance and finance are all zero (no service that week).
   noServiceNote String?
+  pastoralIssues String?
+  prayerRequests String?
+  nextWeekPlans  String?
 
   attendance Attendance?
   finance    Finance?
@@ -302,9 +307,20 @@ model Attendance {
   id            String       @id @default(cuid())
   reportId      String       @unique
   report        WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  // Legacy v1 splits — kept for historical reports.
   adultCount    Int          @default(0)
   teenageCount  Int          @default(0)
   childrenCount Int          @default(0)
+  // B1 v2 splits (men/women/youth/children) — childrenCount is shared.
+  menCount         Int @default(0)
+  womenCount       Int @default(0)
+  youthCount       Int @default(0)
+  midweekAttendance Int @default(0)
+  firstTimeVisitors Int @default(0)
+  newConverts       Int @default(0)
+  followUpVisits    Int @default(0)
+  unitsActive       Int @default(0)
+  outreachHeld      Int @default(0)
 }
 
 model Finance {
@@ -340,6 +356,11 @@ model MonthlySummary {
   totalAdult    Int                  @default(0)
   totalTeenage  Int                  @default(0)
   totalChildren Int                  @default(0)
+  totalMen      Int                  @default(0)
+  totalWomen    Int                  @default(0)
+  totalYouth    Int                  @default(0)
+  totalVisitors  Int                 @default(0)
+  totalConverts  Int                 @default(0)
   totalTithe    Decimal              @default(0) @db.Decimal(14, 2)
   totalOffering Decimal              @default(0) @db.Decimal(14, 2)
   totalOther    Decimal              @default(0) @db.Decimal(14, 2)

@@ -14,17 +14,58 @@ export class AttendanceFieldsDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  adultCount!: number;
+  menCount!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  teenageCount!: number;
+  womenCount!: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  youthCount!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
   childrenCount!: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  midweekAttendance?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  firstTimeVisitors?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  newConverts?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  followUpVisits?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  unitsActive?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  outreachHeld?: number;
 }
 
 export class FinanceFieldsDto {
@@ -77,4 +118,19 @@ export class CreateWeeklyReportDto extends AttendanceFieldsDto {
   @IsString()
   @MaxLength(500)
   noServiceNote?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  pastoralIssues?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  prayerRequests?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  nextWeekPlans?: string | null;
 }

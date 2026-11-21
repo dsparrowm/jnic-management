@@ -45,6 +45,9 @@ export type PastorHomeAttendancePoint = {
   adultCount: number;
   teenageCount: number;
   childrenCount: number;
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
 };
 
 export type PastorHomeWeekReport = {
@@ -129,6 +132,9 @@ export type HqDashboardResponse = {
       adultCount: number;
       teenageCount: number;
       childrenCount: number;
+      menCount: number;
+      womenCount: number;
+      youthCount: number;
       total: number;
     };
     finance: {

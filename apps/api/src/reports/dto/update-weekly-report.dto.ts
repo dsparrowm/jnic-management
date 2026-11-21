@@ -19,13 +19,19 @@ export class UpdateWeeklyReportDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  adultCount?: number;
+  menCount?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  teenageCount?: number;
+  womenCount?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  youthCount?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -57,7 +63,58 @@ export class UpdateWeeklyReportDto {
   currency?: string;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  midweekAttendance?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  firstTimeVisitors?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  newConverts?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  followUpVisits?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  unitsActive?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  outreachHeld?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(500)
   noServiceNote?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  pastoralIssues?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  prayerRequests?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  nextWeekPlans?: string | null;
 }
