@@ -172,6 +172,8 @@ model User {
   personnelMovesActed      PersonnelMove[]           @relation("PersonnelMoveActor")
   personnelCases           PersonnelCase[]           @relation("PersonnelCaseSubject")
   personnelCasesOpened     PersonnelCase[]           @relation("PersonnelCaseOpenedBy")
+  appraisals               PersonnelAppraisal[]     @relation("AppraisalSubject")
+  appraisalsReviewed       PersonnelAppraisal[]     @relation("AppraisalReviewer")
   refreshTokens            RefreshToken[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
@@ -695,4 +697,30 @@ model PersonnelCase {
 
   @@index([kind, status])
   @@index([subjectId])
+}
+
+/// HR appraisals — mid-year / year-end, one row per person per period.
+enum AppraisalPeriod {
+  MID_YEAR
+  YEAR_END
+}
+
+model PersonnelAppraisal {
+  id            String           @id @default(cuid())
+  period        AppraisalPeriod
+  year          Int
+  subject       User             @relation("AppraisalSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId     String
+  reviewer      User             @relation("AppraisalReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewerId    String
+  score         Int?             /// 1-5 overall
+  strengths     String?
+  development   String?
+  recommendation String?
+  submitted     Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([subjectId, period, year])
+  @@index([period, year])
 }
