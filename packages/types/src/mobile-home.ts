@@ -10,7 +10,8 @@ import type {
 export type HqHomeTaskKind =
   | "PENDING_ONBOARDING"
   | "MISSED_REPORTS"
-  | "PENDING_SUMMARY_APPROVALS";
+  | "PENDING_SUMMARY_APPROVALS"
+  | "DIRECTORATE_VACANCIES";
 
 export type HqHomeTaskSeverity = "INFO" | "WARNING" | "URGENT";
 
