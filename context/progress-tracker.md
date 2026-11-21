@@ -510,3 +510,10 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - **Submission-rate KPI**: `GET /summaries/monthly` items now carry `reportingRate` (branchesReporting/branchesTotal × 100) and `filing` metadata.
 - **Reminders module** (`@nestjs/schedule`, server-local time): Mon 11:00 nudges branch pastors whose branch has no B1 for the current week; 3rd 09:00 nudges every seated directorate member for monthly D-forms; 7th 09:00 nudges zonal/state/regional pastors whose scope B4 is unfiled. Deduped per day via `REPORT_MISSED` notification title.
 - **Mobile**: Summaries tab shows reporting rate + B4 filing state; eligible scope pastors get a "File B4" sheet (new churches, welfare note, plans). HQ users get a "Council" header link → `app/council.tsx` (quarter/year picker, quarter totals, month rows, territory filings, directorate report counts).
+
+## Acting scope seats (2026-11-21)
+
+- A user's `role` is their highest seat; any lower scope id they carry is an **acting seat**: a `REGIONAL_PASTOR` with `stateId` acts as that state's pastor (same for state→zone, zone→district).
+- New `apps/api/src/common/scope-seats.ts` helpers (`zonalSeatId`, `stateSeatId`, `regionalSeatId`, `districtSeatId`, `seatRoles`) drive every scope gate: report visibility, zone/state summary + insights, B4 `fileMonthlySummary` ownership, monthly-summary filters (REGION added everywhere: scope matching, coverage, name resolution), and `scopeHasActivePastor` — an acting seat mans the scope for the skip-empty-level chain.
+- Pastor dashboard serves REGIONAL_PASTOR and fills zone/state sections per held seat, so a dual-seated pastor sees each scope they serve; branch tables stay suppressed whenever a scope section exists.
+- Convention: only populate a lower scope id when the person actually serves that scope.
