@@ -18,6 +18,11 @@ import {
   isHqPastor,
 } from "@repo/types";
 import { AuthUser } from "../common/auth.types";
+import {
+  regionalSeatId,
+  stateSeatId,
+  zonalSeatId,
+} from "../common/scope-seats";
 import { PrismaService } from "../prisma/prisma.service";
 import { FileMonthlySummaryDto } from "./dto/file-monthly-summary.dto";
 
@@ -31,12 +36,12 @@ type ReportWithRelations = {
     name: string;
     zoneId: string | null;
     stateId: string;
-    state: { id: string; name: string };
+    state: { id: string; name: string; regionId: string | null };
     zone: {
       id: string;
       name: string;
       stateId: string;
-      state: { id: string; name: string };
+      state: { id: string; name: string; regionId: string | null };
     } | null;
   };
   attendance: {
@@ -305,23 +310,28 @@ export class SummariesService {
     scopeId: string;
     scopeName: string;
   }> {
-    switch (user.role) {
-      case Role.BRANCH_PASTOR:
-        if (!user.branchId) return [];
-        return [{ scopeType: SummaryScopeType.BRANCH, scopeId: user.branchId, scopeName: "My branch" }];
-      case Role.ZONAL_PASTOR:
-        if (!user.zoneId) return [];
-        return [{ scopeType: SummaryScopeType.ZONE, scopeId: user.zoneId, scopeName: "My zone" }];
-      case Role.STATE_PASTOR:
-        if (!user.stateId) return [];
-        return [{ scopeType: SummaryScopeType.STATE, scopeId: user.stateId, scopeName: "My state" }];
-      case Role.ADMIN:
-      case Role.SENIOR_PASTOR:
-      case Role.RESIDENT_PASTOR:
-        return [{ scopeType: SummaryScopeType.HQ, scopeId: HQ_SCOPE_ID, scopeName: "National" }];
-      default:
-        return [];
+    if (user.role === Role.ADMIN || isHqPastor(user.role)) {
+      return [{ scopeType: SummaryScopeType.HQ, scopeId: HQ_SCOPE_ID, scopeName: "National" }];
     }
+    // Every seat the user holds, widest first — a dual-seated pastor (e.g.
+    // regional + acting state) sees each scope they serve.
+    const scopes: Array<{ scopeType: SummaryScopeType; scopeId: string; scopeName: string }> = [];
+    const regionId = regionalSeatId(user);
+    if (regionId) {
+      scopes.push({ scopeType: SummaryScopeType.REGION, scopeId: regionId, scopeName: "My region" });
+    }
+    const stateId = stateSeatId(user);
+    if (stateId) {
+      scopes.push({ scopeType: SummaryScopeType.STATE, scopeId: stateId, scopeName: "My state" });
+    }
+    const zoneId = zonalSeatId(user);
+    if (zoneId) {
+      scopes.push({ scopeType: SummaryScopeType.ZONE, scopeId: zoneId, scopeName: "My zone" });
+    }
+    if (user.role === Role.BRANCH_PASTOR && user.branchId) {
+      scopes.push({ scopeType: SummaryScopeType.BRANCH, scopeId: user.branchId, scopeName: "My branch" });
+    }
+    return scopes;
   }
 
   private async resolveScopeName(
@@ -337,6 +347,10 @@ export class SummariesService {
       const zone = await this.prisma.zone.findUnique({ where: { id: scopeId } });
       return zone?.name ?? scopeId;
     }
+    if (scopeType === SummaryScopeType.REGION) {
+      const region = await this.prisma.region.findUnique({ where: { id: scopeId } });
+      return region?.name ?? scopeId;
+    }
     const state = await this.prisma.state.findUnique({ where: { id: scopeId } });
     return state?.name ?? scopeId;
   }
@@ -349,6 +363,9 @@ export class SummariesService {
     if (scopeType === SummaryScopeType.BRANCH) return report.branch.id === scopeId;
     if (scopeType === SummaryScopeType.ZONE) return report.branch.zone?.id === scopeId;
     if (scopeType === SummaryScopeType.STATE) return report.branch.stateId === scopeId;
+    if (scopeType === SummaryScopeType.REGION) {
+      return report.branch.state?.regionId === scopeId;
+    }
     return true;
   }
 
@@ -531,6 +548,10 @@ export class SummariesService {
       });
     } else if (scopeType === SummaryScopeType.ZONE) {
       branchesTotal = await this.prisma.branch.count({ where: { zoneId: scopeId } });
+    } else if (scopeType === SummaryScopeType.REGION) {
+      branchesTotal = await this.prisma.branch.count({
+        where: { zone: { state: { regionId: scopeId } } },
+      });
     } else if (scopeType === SummaryScopeType.BRANCH) {
       branchesTotal = 1;
     }
@@ -562,13 +583,14 @@ export class SummariesService {
   }
 
   async getZoneMonthSnapshot(user: AuthUser, month: number, year: number) {
-    if (user.role !== Role.ZONAL_PASTOR || !user.zoneId) {
+    const zoneId = zonalSeatId(user);
+    if (!zoneId) {
       return null;
     }
 
     const { reports } = await this.computeMonthlySummaries(month, year);
     const weeks = this.buildWeeklyBreakdown(reports, (report) =>
-      this.summaryMatchesReport(SummaryScopeType.ZONE, user.zoneId!, report),
+      this.summaryMatchesReport(SummaryScopeType.ZONE, zoneId, report),
     );
 
     const totals = this.emptyTotals();
@@ -579,7 +601,7 @@ export class SummariesService {
     const coverage = await this.buildCoverage(
       reports,
       SummaryScopeType.ZONE,
-      user.zoneId,
+      zoneId,
     );
 
     return {
@@ -601,13 +623,14 @@ export class SummariesService {
   }
 
   async getStateMonthSnapshot(user: AuthUser, month: number, year: number) {
-    if (user.role !== Role.STATE_PASTOR || !user.stateId) {
+    const stateId = stateSeatId(user);
+    if (!stateId) {
       return null;
     }
 
     const { reports } = await this.computeMonthlySummaries(month, year);
     const weeks = this.buildWeeklyBreakdown(reports, (report) =>
-      this.summaryMatchesReport(SummaryScopeType.STATE, user.stateId!, report),
+      this.summaryMatchesReport(SummaryScopeType.STATE, stateId, report),
     );
 
     const totals = this.emptyTotals();
@@ -618,7 +641,7 @@ export class SummariesService {
     const coverage = await this.buildCoverage(
       reports,
       SummaryScopeType.STATE,
-      user.stateId,
+      stateId,
     );
 
     return {
@@ -934,14 +957,11 @@ export class SummariesService {
 
     const ownsScope =
       (summary.scopeType === PrismaSummaryScopeType.ZONE &&
-        user.role === Role.ZONAL_PASTOR &&
-        user.zoneId === summary.scopeId) ||
+        zonalSeatId(user) === summary.scopeId) ||
       (summary.scopeType === PrismaSummaryScopeType.STATE &&
-        user.role === Role.STATE_PASTOR &&
-        user.stateId === summary.scopeId) ||
+        stateSeatId(user) === summary.scopeId) ||
       (summary.scopeType === PrismaSummaryScopeType.REGION &&
-        user.role === Role.REGIONAL_PASTOR &&
-        user.regionId === summary.scopeId) ||
+        regionalSeatId(user) === summary.scopeId) ||
       (summary.scopeType === PrismaSummaryScopeType.HQ && isHqPastor(user.role));
 
     if (!ownsScope) {
