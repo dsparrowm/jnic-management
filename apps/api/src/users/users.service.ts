@@ -11,7 +11,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { isHrPersonnel } from "../common/guards/hr-personnel.guard";
 import {
   recordMove,
-  territoryLabel,
+  territoryLabelFromUser,
 } from "../common/personnel-moves";
 import { sanitizeUser } from "../common/user.mapper";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
@@ -275,7 +275,7 @@ export class UsersService {
       kind: PersonnelMoveKind.TERRITORY,
       userId,
       actorId,
-      summary: `${territoryLabel(user)} → ${territoryLabel(updated)}`,
+      summary: `${territoryLabelFromUser(user)} → ${territoryLabelFromUser(updated)}`,
       detail: {
         from: { role: user.role, regionId: user.regionId, stateId: user.stateId, zoneId: user.zoneId, districtId: user.districtId, branchId: user.branchId },
         to: { role: updated.role, regionId: updated.regionId, stateId: updated.stateId, zoneId: updated.zoneId, districtId: updated.districtId, branchId: updated.branchId },
