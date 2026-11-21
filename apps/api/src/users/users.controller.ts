@@ -4,6 +4,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
+import { RolesOrHrPersonnelGuard } from "../common/guards/hr-personnel.guard";
 import { AuthUser } from "../common/auth.types";
 import { ListPastorsDto } from "./dto/list-pastors.dto";
 import { UpdateProfilePictureDto } from "./dto/update-profile-picture.dto";
@@ -29,7 +30,7 @@ export class UsersController {
   }
 
   @Get("pastors")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(
     Role.ADMIN,
     Role.SENIOR_PASTOR,
@@ -66,14 +67,14 @@ export class UsersController {
   }
 
   @Patch(":id/deactivate")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   deactivate(@Param("id") id: string) {
     return this.usersService.deactivate(id);
   }
 
   @Patch(":id/reassign")
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesOrHrPersonnelGuard)
   @Roles(Role.ADMIN)
   reassign(@Param("id") id: string, @Body() dto: ReassignUserDto) {
     return this.usersService.reassign(id, dto);

@@ -492,3 +492,13 @@ Zonal/state pastor credentials for mobile UI testing — see `context/test-accou
 - Org tab gains a **Territory | Directorates** segment: the Directorates side lists all ten directorates (director, desk/unit/member counts) and pushes a detail screen.
 - New `app/directorates/[id].tsx`: mandate, leadership roster, desks with heads, member list, and a "Branch units & coordinators" section (ADMIN sees all branches' units; BRANCH_PASTOR sees own branch's).
 - ADMIN can assign/remove directorate seats (person search over `GET /users`, office chips, desk pick for desk offices) and set unit coordinators (`PATCH /directorates/units/:id`); branch pastors set coordinators on their own units via `GET /users/pastors?branchId=`.
+
+## HR personnel authority (2026-11-21)
+
+Per the governing documents, the HR directorate (not the admin) owns recruitment, deployment, and directorate assignments:
+
+- New `RolesOrHrPersonnelGuard` (`apps/api/src/common/guards/hr-personnel.guard.ts`): allows a request when the caller's role matches `@Roles` metadata **or** they hold an HR personnel seat — HR directorate director, deputy director, secretary, or the desk head of "Recruitment and Deployment".
+- Applied to: `POST/PATCH/DELETE /directorates/.../assignments`, `POST /onboarding/users`, `POST /onboarding/users/:id/resend`, `PATCH /users/:id/deactivate`, `PATCH /users/:id/reassign`, and `GET /users/pastors` (so HR members can pick people for seats/onboarding).
+- `GET /users` (full account list) stays ADMIN-only; org-structure CRUD stays ADMIN-only — the admin is the Administration directorate's ICT desk, i.e. the platform operator.
+- `GET /users/me` now returns `hrPersonnel: boolean` so clients can render HR powers.
+- Mobile: `AuthUser.hrPersonnel`; directorate detail shows Assign seat / remove for HR personnel; Pastors screen gates Onboard / Resend / Reassign / Deactivate to admin-or-HR.
