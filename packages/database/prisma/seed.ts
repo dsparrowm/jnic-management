@@ -35,7 +35,7 @@ function toField(label: string) {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 48);
-  const numeric = /\(%|count|rate|total|amount|number|attendance|budget|₦|naira)/i.test(label);
+  const numeric = /%|count|rate|total|amount|number|attendance|budget|₦|naira/i.test(label);
   const long = label.length > 42 || /summary|issues|challenges|plans|requests|recommendations|matters|prayer/i.test(label);
   return { key, label, type: numeric ? "number" : long ? "textarea" : "text" };
 }
