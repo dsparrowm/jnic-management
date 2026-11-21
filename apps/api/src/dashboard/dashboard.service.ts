@@ -14,6 +14,7 @@ import {
   type ZoneSummaryResponse,
 } from "@repo/types";
 import type { AuthUser } from "../common/auth.types";
+import { stateSeatId, zonalSeatId } from "../common/scope-seats";
 import { NotificationsService } from "../notifications/notifications.service";
 import { OrgService } from "../org/org.service";
 import { ReportsService } from "../reports/reports.service";
@@ -33,8 +34,10 @@ export class DashboardService {
   private assertPastorRole(user: AuthUser) {
     if (
       user.role !== Role.BRANCH_PASTOR &&
+      user.role !== Role.DISTRICT_PASTOR &&
       user.role !== Role.ZONAL_PASTOR &&
-      user.role !== Role.STATE_PASTOR
+      user.role !== Role.STATE_PASTOR &&
+      user.role !== Role.REGIONAL_PASTOR
     ) {
       throw new ForbiddenException("Insufficient permissions");
     }
@@ -66,23 +69,23 @@ export class DashboardService {
     ] = await Promise.all([
         this.reportsService.getBranchPastorInsights(user, weekOf, weeks),
         this.notificationsService.listForUser(user.id, 4),
-        user.role === Role.ZONAL_PASTOR
+        zonalSeatId(user)
           ? this.reportsService.getZoneSummary(user, weekOf)
           : Promise.resolve(null),
-        user.role === Role.STATE_PASTOR
+        stateSeatId(user)
           ? this.reportsService.getStateSummary(user, weekOf)
           : Promise.resolve(null),
         this.summariesService.getBranchMonthSnapshot(user, month, year),
-        user.role === Role.ZONAL_PASTOR
+        zonalSeatId(user)
           ? this.reportsService.getZonePastorInsights(user, weekOf, weeks)
           : Promise.resolve(null),
-        user.role === Role.ZONAL_PASTOR
+        zonalSeatId(user)
           ? this.summariesService.getZoneMonthSnapshot(user, month, year)
           : Promise.resolve(null),
-        user.role === Role.STATE_PASTOR
+        stateSeatId(user)
           ? this.reportsService.getStatePastorInsights(user, weekOf, weeks)
           : Promise.resolve(null),
-        user.role === Role.STATE_PASTOR
+        stateSeatId(user)
           ? this.summariesService.getStateMonthSnapshot(user, month, year)
           : Promise.resolve(null),
       ]);

@@ -28,6 +28,13 @@ import {
 } from "@repo/types";
 import { isRollupVisibleToUpstream, toRollupView } from "./rollup.mapper";
 import { AuthUser } from "../common/auth.types";
+import {
+  districtSeatId,
+  regionalSeatId,
+  seatRoles,
+  stateSeatId,
+  zonalSeatId,
+} from "../common/scope-seats";
 import { EmailService } from "../email/email.service";
 import { getWebAppUrl } from "../common/web-origin";
 import { PrismaService } from "../prisma/prisma.service";
@@ -81,53 +88,46 @@ export class ReportsService {
   }
 
   private assertZonalPastor(user: AuthUser): string {
-    if (user.role !== Role.ZONAL_PASTOR) {
+    const seat = zonalSeatId(user);
+    if (!seat) {
       throw new ForbiddenException("Insufficient permissions");
     }
-    if (!user.zoneId) {
-      throw new BadRequestException("No zone assigned to your account");
-    }
-    return user.zoneId;
+    return seat;
   }
 
   private assertStatePastor(user: AuthUser): string {
-    if (user.role !== Role.STATE_PASTOR) {
+    const seat = stateSeatId(user);
+    if (!seat) {
       throw new ForbiddenException("Insufficient permissions");
     }
-    if (!user.stateId) {
-      throw new BadRequestException("No state assigned to your account");
-    }
-    return user.stateId;
+    return seat;
   }
 
   private async scopeHasActivePastor(
     where: { districtId?: string; zoneId?: string; stateId?: string; regionId?: string },
     role: Role,
   ): Promise<boolean> {
+    // Acting seats count too: a regional pastor carrying a stateId mans that state.
     const count = await this.prisma.user.count({
-      where: { role, status: "ACTIVE", ...where },
+      where: { role: { in: seatRoles(role) }, status: "ACTIVE", ...where },
     });
     return count > 0;
   }
 
   private assertDistrictPastor(user: AuthUser): string {
-    if (user.role !== Role.DISTRICT_PASTOR) {
+    const seat = districtSeatId(user);
+    if (!seat) {
       throw new ForbiddenException("Insufficient permissions");
     }
-    if (!user.districtId) {
-      throw new BadRequestException("No district assigned to your account");
-    }
-    return user.districtId;
+    return seat;
   }
 
   private assertRegionalPastor(user: AuthUser): string {
-    if (user.role !== Role.REGIONAL_PASTOR) {
+    const seat = regionalSeatId(user);
+    if (!seat) {
       throw new ForbiddenException("Insufficient permissions");
     }
-    if (!user.regionId) {
-      throw new BadRequestException("No region assigned to your account");
-    }
-    return user.regionId;
+    return seat;
   }
 
   private assertHqViewer(user: AuthUser): void {
@@ -179,17 +179,15 @@ export class ReportsService {
       throw new ForbiddenException("Insufficient permissions");
     }
 
-    if (user.role === Role.DISTRICT_PASTOR) {
-      if (!user.districtId || report.branch.districtId !== user.districtId) {
-        throw new ForbiddenException("Insufficient permissions");
-      }
+    // Seat-match ordering: a dual-seated user (e.g. regional pastor also
+    // carrying a stateId) takes the seat that matches this report's scope.
+    const districtSeat = districtSeatId(user);
+    if (districtSeat && report.branch.districtId === districtSeat) {
       return;
     }
 
-    if (user.role === Role.ZONAL_PASTOR) {
-      if (!user.zoneId || report.branch.zoneId !== user.zoneId) {
-        throw new ForbiddenException("Insufficient permissions");
-      }
+    const zonalSeat = zonalSeatId(user);
+    if (zonalSeat && report.branch.zoneId === zonalSeat) {
       if (report.branch.districtId) {
         const districtManned = await this.scopeHasActivePastor(
           { districtId: report.branch.districtId },
@@ -211,10 +209,8 @@ export class ReportsService {
       return;
     }
 
-    if (user.role === Role.STATE_PASTOR) {
-      if (!user.stateId || report.branch.stateId !== user.stateId) {
-        throw new ForbiddenException("Insufficient permissions");
-      }
+    const stateSeat = stateSeatId(user);
+    if (stateSeat && report.branch.stateId === stateSeat) {
       if (!report.branch.zoneId) {
         return;
       }
@@ -238,15 +234,13 @@ export class ReportsService {
       return;
     }
 
-    if (user.role === Role.REGIONAL_PASTOR) {
-      if (!user.regionId) {
-        throw new ForbiddenException("Insufficient permissions");
-      }
+    const regionalSeat = regionalSeatId(user);
+    if (regionalSeat) {
       const state = await this.prisma.state.findUnique({
         where: { id: report.branch.stateId },
         select: { regionId: true },
       });
-      if (state?.regionId !== user.regionId) {
+      if (state?.regionId !== regionalSeat) {
         throw new ForbiddenException("Insufficient permissions");
       }
       const stateManned = await this.scopeHasActivePastor(
@@ -741,12 +735,13 @@ export class ReportsService {
   }
 
   async getZonePastorInsights(user: AuthUser, weekOf: string, weeks: number) {
-    if (user.role !== Role.ZONAL_PASTOR || !user.zoneId) {
+    const zoneId = zonalSeatId(user);
+    if (!zoneId) {
       return null;
     }
 
     const zone = await this.prisma.zone.findUnique({
-      where: { id: user.zoneId },
+      where: { id: zoneId },
       include: { branches: true },
     });
     if (!zone) {
@@ -799,12 +794,13 @@ export class ReportsService {
   }
 
   async getStatePastorInsights(user: AuthUser, weekOf: string, weeks: number) {
-    if (user.role !== Role.STATE_PASTOR || !user.stateId) {
+    const stateId = stateSeatId(user);
+    if (!stateId) {
       return null;
     }
 
     const state = await this.prisma.state.findUnique({
-      where: { id: user.stateId },
+      where: { id: stateId },
       include: { zones: { include: { branches: true } } },
     });
     if (!state) {
