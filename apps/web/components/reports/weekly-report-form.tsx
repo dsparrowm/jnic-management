@@ -18,14 +18,24 @@ import { WeeklyReportRecord } from "@/lib/api";
 
 const weeklyReportSchema = z.object({
   serviceDate: z.string().min(1, "Service date is required"),
-  adultCount: z.coerce.number().int().min(0),
-  teenageCount: z.coerce.number().int().min(0),
+  menCount: z.coerce.number().int().min(0),
+  womenCount: z.coerce.number().int().min(0),
+  youthCount: z.coerce.number().int().min(0),
   childrenCount: z.coerce.number().int().min(0),
+  midweekAttendance: z.coerce.number().int().min(0),
+  firstTimeVisitors: z.coerce.number().int().min(0),
+  newConverts: z.coerce.number().int().min(0),
+  followUpVisits: z.coerce.number().int().min(0),
+  unitsActive: z.coerce.number().int().min(0),
+  outreachHeld: z.coerce.number().int().min(0),
   tithe: z.coerce.number().min(0),
   offering: z.coerce.number().min(0),
   other: z.coerce.number().min(0),
   currency: z.string().length(3),
   noServiceNote: z.string().max(NO_SERVICE_NOTE_MAX).optional(),
+  pastoralIssues: z.string().max(2000).optional(),
+  prayerRequests: z.string().max(2000).optional(),
+  nextWeekPlans: z.string().max(2000).optional(),
 });
 
 export type WeeklyReportFormValues = z.infer<typeof weeklyReportSchema>;
@@ -112,14 +122,24 @@ export function WeeklyReportForm({
   const defaultValues = useMemo<WeeklyReportFormValues>(
     () => ({
       serviceDate: existingReport?.serviceDate ?? defaultServiceDate,
-      adultCount: existingReport?.attendance?.adultCount ?? 0,
-      teenageCount: existingReport?.attendance?.teenageCount ?? 0,
+      menCount: existingReport?.attendance?.menCount ?? 0,
+      womenCount: existingReport?.attendance?.womenCount ?? 0,
+      youthCount: existingReport?.attendance?.youthCount ?? 0,
       childrenCount: existingReport?.attendance?.childrenCount ?? 0,
+      midweekAttendance: existingReport?.attendance?.midweekAttendance ?? 0,
+      firstTimeVisitors: existingReport?.attendance?.firstTimeVisitors ?? 0,
+      newConverts: existingReport?.attendance?.newConverts ?? 0,
+      followUpVisits: existingReport?.attendance?.followUpVisits ?? 0,
+      unitsActive: existingReport?.attendance?.unitsActive ?? 0,
+      outreachHeld: existingReport?.attendance?.outreachHeld ?? 0,
       tithe: existingReport?.finance?.tithe ?? 0,
       offering: existingReport?.finance?.offering ?? 0,
       other: existingReport?.finance?.other ?? 0,
       currency: existingReport?.finance?.currency ?? "NGN",
       noServiceNote: existingReport?.noServiceNote ?? "",
+      pastoralIssues: existingReport?.pastoralIssues ?? "",
+      prayerRequests: existingReport?.prayerRequests ?? "",
+      nextWeekPlans: existingReport?.nextWeekPlans ?? "",
     }),
     [defaultServiceDate, existingReport],
   );
@@ -144,14 +164,15 @@ export function WeeklyReportForm({
   }, [defaultValues, existingReport?.noServiceNote, reset]);
 
   const serviceDate = watch("serviceDate");
-  const adultCount = Number(watch("adultCount") || 0);
-  const teenageCount = Number(watch("teenageCount") || 0);
+  const menCount = Number(watch("menCount") || 0);
+  const womenCount = Number(watch("womenCount") || 0);
+  const youthCount = Number(watch("youthCount") || 0);
   const childrenCount = Number(watch("childrenCount") || 0);
   const tithe = Number(watch("tithe") || 0);
   const offering = Number(watch("offering") || 0);
   const other = Number(watch("other") || 0);
   const noServiceNote = watch("noServiceNote") ?? "";
-  const attendanceTotal = adultCount + teenageCount + childrenCount;
+  const attendanceTotal = menCount + womenCount + youthCount + childrenCount;
   const financeTotal = tithe + offering + other;
   const weekEnding = serviceDate ? formatWeekEndingLabel(computeWeekOf(serviceDate)) : "";
 
@@ -160,9 +181,16 @@ export function WeeklyReportForm({
     const payload: WeeklyReportFormValues = noService
       ? {
           ...values,
-          adultCount: 0,
-          teenageCount: 0,
+          menCount: 0,
+          womenCount: 0,
+          youthCount: 0,
           childrenCount: 0,
+          midweekAttendance: 0,
+          firstTimeVisitors: 0,
+          newConverts: 0,
+          followUpVisits: 0,
+          unitsActive: 0,
+          outreachHeld: 0,
           tithe: 0,
           offering: 0,
           other: 0,
@@ -170,9 +198,11 @@ export function WeeklyReportForm({
         }
       : { ...values, noServiceNote: "" };
     const allZero =
-      payload.adultCount +
-        payload.teenageCount +
+      payload.menCount +
+        payload.womenCount +
+        payload.youthCount +
         payload.childrenCount +
+        payload.midweekAttendance +
         payload.tithe +
         payload.offering +
         payload.other ===
@@ -185,9 +215,11 @@ export function WeeklyReportForm({
     if (noService) {
       const resolved = resolveNoServiceNote(
         {
-          adultCount: 0,
-          teenageCount: 0,
+          menCount: 0,
+          womenCount: 0,
+          youthCount: 0,
           childrenCount: 0,
+          midweekAttendance: 0,
           tithe: 0,
           offering: 0,
           other: 0,
@@ -249,9 +281,16 @@ export function WeeklyReportForm({
                 setNoService(checked);
                 setConfirming(false);
                 if (checked) {
-                  setValue("adultCount", 0);
-                  setValue("teenageCount", 0);
+                  setValue("menCount", 0);
+                  setValue("womenCount", 0);
+                  setValue("youthCount", 0);
                   setValue("childrenCount", 0);
+                  setValue("midweekAttendance", 0);
+                  setValue("firstTimeVisitors", 0);
+                  setValue("newConverts", 0);
+                  setValue("followUpVisits", 0);
+                  setValue("unitsActive", 0);
+                  setValue("outreachHeld", 0);
                   setValue("tithe", 0);
                   setValue("offering", 0);
                   setValue("other", 0);
@@ -288,10 +327,69 @@ export function WeeklyReportForm({
       </FormSection>
 
       <FormSection title="Attendance" description="Headcounts from the main service.">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <NumberField id="adultCount" label="Adults" register={register} disabled={locked || loading || noService} />
-          <NumberField id="teenageCount" label="Teenagers" register={register} disabled={locked || loading || noService} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <NumberField id="menCount" label="Men" register={register} disabled={locked || loading || noService} />
+          <NumberField id="womenCount" label="Women" register={register} disabled={locked || loading || noService} />
+          <NumberField id="youthCount" label="Youth" register={register} disabled={locked || loading || noService} />
           <NumberField id="childrenCount" label="Children" register={register} disabled={locked || loading || noService} />
+          <NumberField id="midweekAttendance" label="Midweek attendance" register={register} disabled={locked || loading || noService} />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="People & growth"
+        description="Visitors, converts, and follow-up for the week."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <NumberField id="firstTimeVisitors" label="First-time visitors" register={register} disabled={locked || loading || noService} />
+          <NumberField id="newConverts" label="New converts" register={register} disabled={locked || loading || noService} />
+          <NumberField id="followUpVisits" label="Follow-up visits" register={register} disabled={locked || loading || noService} />
+          <NumberField id="unitsActive" label="Service units active" register={register} disabled={locked || loading || noService} />
+          <NumberField id="outreachHeld" label="Outreach held" register={register} disabled={locked || loading || noService} />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Notes & plans"
+        description="Anything HQ should know — issues, prayer needs, and next week."
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="pastoralIssues">Pastoral issues</Label>
+            <textarea
+              id="pastoralIssues"
+              rows={3}
+              maxLength={2000}
+              disabled={locked || loading}
+              className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Anything needing attention"
+              {...register("pastoralIssues")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="prayerRequests">Prayer requests</Label>
+            <textarea
+              id="prayerRequests"
+              rows={3}
+              maxLength={2000}
+              disabled={locked || loading}
+              className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Requests to pray over"
+              {...register("prayerRequests")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="nextWeekPlans">Next week's plans</Label>
+            <textarea
+              id="nextWeekPlans"
+              rows={3}
+              maxLength={2000}
+              disabled={locked || loading}
+              className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Programmes, visits, targets"
+              {...register("nextWeekPlans")}
+            />
+          </div>
         </div>
       </FormSection>
 

@@ -42,6 +42,11 @@ type ReportWithRelations = {
     adultCount: number;
     teenageCount: number;
     childrenCount: number;
+    menCount: number;
+    womenCount: number;
+    youthCount: number;
+    firstTimeVisitors: number;
+    newConverts: number;
   } | null;
   finance: {
     tithe: unknown;
@@ -55,6 +60,11 @@ type AggregateTotals = {
   totalAdult: number;
   totalTeenage: number;
   totalChildren: number;
+  totalMen: number;
+  totalWomen: number;
+  totalYouth: number;
+  totalVisitors: number;
+  totalConverts: number;
   totalTithe: number;
   totalOffering: number;
   totalOther: number;
@@ -78,6 +88,11 @@ export class SummariesService {
       totalAdult: 0,
       totalTeenage: 0,
       totalChildren: 0,
+      totalMen: 0,
+      totalWomen: 0,
+      totalYouth: 0,
+      totalVisitors: 0,
+      totalConverts: 0,
       totalTithe: 0,
       totalOffering: 0,
       totalOther: 0,
@@ -90,6 +105,11 @@ export class SummariesService {
       totals.totalAdult += report.attendance.adultCount;
       totals.totalTeenage += report.attendance.teenageCount;
       totals.totalChildren += report.attendance.childrenCount;
+      totals.totalMen += report.attendance.menCount;
+      totals.totalWomen += report.attendance.womenCount;
+      totals.totalYouth += report.attendance.youthCount;
+      totals.totalVisitors += report.attendance.firstTimeVisitors;
+      totals.totalConverts += report.attendance.newConverts;
     }
     if (report.finance) {
       totals.totalTithe += Number(report.finance.tithe);
@@ -103,6 +123,11 @@ export class SummariesService {
     target.totalAdult += source.totalAdult;
     target.totalTeenage += source.totalTeenage;
     target.totalChildren += source.totalChildren;
+    target.totalMen += source.totalMen;
+    target.totalWomen += source.totalWomen;
+    target.totalYouth += source.totalYouth;
+    target.totalVisitors += source.totalVisitors;
+    target.totalConverts += source.totalConverts;
     target.totalTithe += source.totalTithe;
     target.totalOffering += source.totalOffering;
     target.totalOther += source.totalOther;
@@ -188,6 +213,11 @@ export class SummariesService {
         existing.totalAdult === totals.totalAdult &&
         existing.totalTeenage === totals.totalTeenage &&
         existing.totalChildren === totals.totalChildren &&
+        existing.totalMen === totals.totalMen &&
+        existing.totalWomen === totals.totalWomen &&
+        existing.totalYouth === totals.totalYouth &&
+        existing.totalVisitors === totals.totalVisitors &&
+        existing.totalConverts === totals.totalConverts &&
         Number(existing.totalTithe) === totals.totalTithe &&
         Number(existing.totalOffering) === totals.totalOffering &&
         Number(existing.totalOther) === totals.totalOther;
@@ -325,6 +355,11 @@ export class SummariesService {
     totalAdult: number;
     totalTeenage: number;
     totalChildren: number;
+    totalMen: number;
+    totalWomen: number;
+    totalYouth: number;
+    totalVisitors: number;
+    totalConverts: number;
     totalTithe: unknown;
     totalOffering: unknown;
     totalOther: unknown;
@@ -334,6 +369,11 @@ export class SummariesService {
       adult: record.totalAdult,
       teenage: record.totalTeenage,
       children: record.totalChildren,
+      men: record.totalMen,
+      women: record.totalWomen,
+      youth: record.totalYouth,
+      visitors: record.totalVisitors,
+      converts: record.totalConverts,
       tithe: Number(record.totalTithe),
       offering: Number(record.totalOffering),
       other: Number(record.totalOther),

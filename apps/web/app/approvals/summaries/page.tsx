@@ -151,6 +151,15 @@ export default function SummaryApprovalsPage() {
                   adultCount: item.totals.adult,
                   teenageCount: item.totals.teenage,
                   childrenCount: item.totals.children,
+                  menCount: item.totals.men,
+                  womenCount: item.totals.women,
+                  youthCount: item.totals.youth,
+                  midweekAttendance: 0,
+                  firstTimeVisitors: item.totals.visitors,
+                  newConverts: item.totals.converts,
+                  followUpVisits: 0,
+                  unitsActive: 0,
+                  outreachHeld: 0,
                 }}
                 finance={{
                   tithe: item.totals.tithe,

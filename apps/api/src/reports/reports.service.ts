@@ -38,7 +38,7 @@ import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { toFeedbackView } from "./feedback.mapper";
 import { toWeeklyReportView, weeklyReportInclude } from "./reports.mapper";
 
-const HQ_VIEW_ROLES = new Set<Role>([Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN]);
+const HQ_VIEW_ROLES = new Set<Role>([Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR]);
 const FEEDBACK_ROLES = new Set<Role>([
   Role.DISTRICT_PASTOR,
   Role.ZONAL_PASTOR,
@@ -46,7 +46,6 @@ const FEEDBACK_ROLES = new Set<Role>([
   Role.REGIONAL_PASTOR,
   Role.SENIOR_PASTOR,
   Role.RESIDENT_PASTOR,
-  Role.ADMIN,
 ]);
 
 type WeeklyReportWithRelations = Prisma.WeeklyReportGetPayload<{
@@ -101,6 +100,26 @@ export class ReportsService {
     return user.stateId;
   }
 
+  private assertDistrictPastor(user: AuthUser): string {
+    if (user.role !== Role.DISTRICT_PASTOR) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+    if (!user.districtId) {
+      throw new BadRequestException("No district assigned to your account");
+    }
+    return user.districtId;
+  }
+
+  private assertRegionalPastor(user: AuthUser): string {
+    if (user.role !== Role.REGIONAL_PASTOR) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+    if (!user.regionId) {
+      throw new BadRequestException("No region assigned to your account");
+    }
+    return user.regionId;
+  }
+
   private assertHqViewer(user: AuthUser): void {
     if (!HQ_VIEW_ROLES.has(user.role)) {
       throw new ForbiddenException("Insufficient permissions");
@@ -150,9 +169,28 @@ export class ReportsService {
       throw new ForbiddenException("Insufficient permissions");
     }
 
+    if (user.role === Role.DISTRICT_PASTOR) {
+      if (!user.districtId || report.branch.districtId !== user.districtId) {
+        throw new ForbiddenException("Insufficient permissions");
+      }
+      return;
+    }
+
     if (user.role === Role.ZONAL_PASTOR) {
       if (!user.zoneId || report.branch.zoneId !== user.zoneId) {
         throw new ForbiddenException("Insufficient permissions");
+      }
+      if (report.branch.districtId) {
+        const districtRollup = await this.getRollup(
+          SummaryScopeType.DISTRICT,
+          report.branch.districtId,
+          report.weekOf,
+        );
+        if (!isRollupVisibleToUpstream(districtRollup)) {
+          throw new ForbiddenException(
+            "Branch report is not yet available — district has not forwarded",
+          );
+        }
       }
       return;
     }
@@ -172,6 +210,30 @@ export class ReportsService {
       if (!isRollupVisibleToUpstream(zoneRollup)) {
         throw new ForbiddenException(
           "Branch report is not yet available — zone has not forwarded",
+        );
+      }
+      return;
+    }
+
+    if (user.role === Role.REGIONAL_PASTOR) {
+      if (!user.regionId) {
+        throw new ForbiddenException("Insufficient permissions");
+      }
+      const state = await this.prisma.state.findUnique({
+        where: { id: report.branch.stateId },
+        select: { regionId: true },
+      });
+      if (state?.regionId !== user.regionId) {
+        throw new ForbiddenException("Insufficient permissions");
+      }
+      const stateRollup = await this.getRollup(
+        SummaryScopeType.STATE,
+        report.branch.stateId,
+        report.weekOf,
+      );
+      if (!isRollupVisibleToUpstream(stateRollup)) {
+        throw new ForbiddenException(
+          "Branch report is not yet available — state has not forwarded",
         );
       }
       return;
@@ -233,11 +295,33 @@ export class ReportsService {
         if (!report.attendance) return totals;
         return {
           adultCount: totals.adultCount + report.attendance.adultCount,
+          menCount: totals.menCount + report.attendance.menCount,
+          womenCount: totals.womenCount + report.attendance.womenCount,
+          youthCount: totals.youthCount + report.attendance.youthCount,
+          midweekAttendance: totals.midweekAttendance + report.attendance.midweekAttendance,
+          firstTimeVisitors: totals.firstTimeVisitors + report.attendance.firstTimeVisitors,
+          newConverts: totals.newConverts + report.attendance.newConverts,
+          followUpVisits: totals.followUpVisits + report.attendance.followUpVisits,
+          unitsActive: totals.unitsActive + report.attendance.unitsActive,
+          outreachHeld: totals.outreachHeld + report.attendance.outreachHeld,
           teenageCount: totals.teenageCount + report.attendance.teenageCount,
           childrenCount: totals.childrenCount + report.attendance.childrenCount,
         };
       },
-      { adultCount: 0, teenageCount: 0, childrenCount: 0 },
+      {
+        adultCount: 0,
+        teenageCount: 0,
+        childrenCount: 0,
+        menCount: 0,
+        womenCount: 0,
+        youthCount: 0,
+        midweekAttendance: 0,
+        firstTimeVisitors: 0,
+        newConverts: 0,
+        followUpVisits: 0,
+        unitsActive: 0,
+        outreachHeld: 0,
+      },
     );
   }
 
@@ -294,9 +378,11 @@ export class ReportsService {
     const currency = dto.currency ?? "NGN";
     const resolvedNote = resolveNoServiceNote(
       {
-        adultCount: dto.adultCount,
-        teenageCount: dto.teenageCount,
+        menCount: dto.menCount,
+        womenCount: dto.womenCount,
+        youthCount: dto.youthCount,
         childrenCount: dto.childrenCount,
+        midweekAttendance: dto.midweekAttendance ?? 0,
         tithe: dto.tithe,
         offering: dto.offering,
         other: dto.other,
@@ -323,15 +409,25 @@ export class ReportsService {
           status: PrismaReportStatus.SUBMITTED,
           submittedById: user.id,
           noServiceNote: resolvedNote.note,
+          pastoralIssues: dto.pastoralIssues?.trim() || null,
+          prayerRequests: dto.prayerRequests?.trim() || null,
+          nextWeekPlans: dto.nextWeekPlans?.trim() || null,
         },
       });
 
       await tx.attendance.create({
         data: {
           reportId: created.id,
-          adultCount: dto.adultCount,
-          teenageCount: dto.teenageCount,
+          menCount: dto.menCount,
+          womenCount: dto.womenCount,
+          youthCount: dto.youthCount,
           childrenCount: dto.childrenCount,
+          midweekAttendance: dto.midweekAttendance ?? 0,
+          firstTimeVisitors: dto.firstTimeVisitors ?? 0,
+          newConverts: dto.newConverts ?? 0,
+          followUpVisits: dto.followUpVisits ?? 0,
+          unitsActive: dto.unitsActive ?? 0,
+          outreachHeld: dto.outreachHeld ?? 0,
         },
       });
 
@@ -353,9 +449,16 @@ export class ReportsService {
 
     const branch = await this.prisma.branch.findUnique({
       where: { id: branchId },
-      select: { zoneId: true, stateId: true },
+      select: { zoneId: true, stateId: true, districtId: true },
     });
     if (branch) {
+      if (branch.districtId) {
+        await this.markRollupStaleIfForwarded(
+          SummaryScopeType.DISTRICT,
+          branch.districtId,
+          weekOf,
+        );
+      }
       if (branch.zoneId) {
         await this.markRollupStaleIfForwarded(SummaryScopeType.ZONE, branch.zoneId, weekOf);
       }
@@ -407,9 +510,12 @@ export class ReportsService {
     }
 
     const nextTotals = {
-      adultCount: dto.adultCount ?? report.attendance?.adultCount ?? 0,
-      teenageCount: dto.teenageCount ?? report.attendance?.teenageCount ?? 0,
+      menCount: dto.menCount ?? report.attendance?.menCount ?? 0,
+      womenCount: dto.womenCount ?? report.attendance?.womenCount ?? 0,
+      youthCount: dto.youthCount ?? report.attendance?.youthCount ?? 0,
       childrenCount: dto.childrenCount ?? report.attendance?.childrenCount ?? 0,
+      midweekAttendance:
+        dto.midweekAttendance ?? report.attendance?.midweekAttendance ?? 0,
       tithe: dto.tithe ?? Number(report.finance?.tithe ?? 0),
       offering: dto.offering ?? Number(report.finance?.offering ?? 0),
       other: dto.other ?? Number(report.finance?.other ?? 0),
@@ -429,21 +535,36 @@ export class ReportsService {
           ...(serviceDate ? { serviceDate } : {}),
           ...(weekOf ? { weekOf } : {}),
           noServiceNote: resolvedNote.note,
+          ...(dto.pastoralIssues !== undefined
+            ? { pastoralIssues: dto.pastoralIssues?.trim() || null }
+            : {}),
+          ...(dto.prayerRequests !== undefined
+            ? { prayerRequests: dto.prayerRequests?.trim() || null }
+            : {}),
+          ...(dto.nextWeekPlans !== undefined
+            ? { nextWeekPlans: dto.nextWeekPlans?.trim() || null }
+            : {}),
         },
       });
 
-      if (
-        dto.adultCount !== undefined ||
-        dto.teenageCount !== undefined ||
-        dto.childrenCount !== undefined
-      ) {
+      const attendancePatch = {
+        menCount: dto.menCount,
+        womenCount: dto.womenCount,
+        youthCount: dto.youthCount,
+        childrenCount: dto.childrenCount,
+        midweekAttendance: dto.midweekAttendance,
+        firstTimeVisitors: dto.firstTimeVisitors,
+        newConverts: dto.newConverts,
+        followUpVisits: dto.followUpVisits,
+        unitsActive: dto.unitsActive,
+        outreachHeld: dto.outreachHeld,
+      };
+      if (Object.values(attendancePatch).some((v) => v !== undefined)) {
         await tx.attendance.update({
           where: { reportId },
-          data: {
-            ...(dto.adultCount !== undefined ? { adultCount: dto.adultCount } : {}),
-            ...(dto.teenageCount !== undefined ? { teenageCount: dto.teenageCount } : {}),
-            ...(dto.childrenCount !== undefined ? { childrenCount: dto.childrenCount } : {}),
-          },
+          data: Object.fromEntries(
+            Object.entries(attendancePatch).filter(([, v]) => v !== undefined),
+          ),
         });
       }
 
@@ -540,6 +661,9 @@ export class ReportsService {
       const adultCount = report?.attendance?.adultCount ?? 0;
       const teenageCount = report?.attendance?.teenageCount ?? 0;
       const childrenCount = report?.attendance?.childrenCount ?? 0;
+      const menCount = report?.attendance?.menCount ?? 0;
+      const womenCount = report?.attendance?.womenCount ?? 0;
+      const youthCount = report?.attendance?.youthCount ?? 0;
 
       return {
         weekOf: weekKey,
@@ -547,7 +671,10 @@ export class ReportsService {
         adultCount,
         teenageCount,
         childrenCount,
-        total: adultCount + teenageCount + childrenCount,
+        menCount,
+        womenCount,
+        youthCount,
+        total: adultCount + teenageCount + childrenCount + menCount + womenCount + youthCount,
       };
     });
 
@@ -616,7 +743,12 @@ export class ReportsService {
       const weekReports = reportsByWeek.get(weekKey) ?? [];
       const attendance = this.sumAttendance(weekReports);
       const total =
-        attendance.adultCount + attendance.teenageCount + attendance.childrenCount;
+        attendance.adultCount +
+        attendance.teenageCount +
+        attendance.childrenCount +
+        attendance.menCount +
+        attendance.womenCount +
+        attendance.youthCount;
 
       return {
         weekOf: weekKey,
@@ -624,6 +756,9 @@ export class ReportsService {
         adultCount: attendance.adultCount,
         teenageCount: attendance.teenageCount,
         childrenCount: attendance.childrenCount,
+        menCount: attendance.menCount,
+        womenCount: attendance.womenCount,
+        youthCount: attendance.youthCount,
         total,
       };
     });
@@ -693,7 +828,12 @@ export class ReportsService {
       });
       const attendance = this.sumAttendance(weekReports);
       const total =
-        attendance.adultCount + attendance.teenageCount + attendance.childrenCount;
+        attendance.adultCount +
+        attendance.teenageCount +
+        attendance.childrenCount +
+        attendance.menCount +
+        attendance.womenCount +
+        attendance.youthCount;
 
       return {
         weekOf: weekKey,
@@ -701,6 +841,9 @@ export class ReportsService {
         adultCount: attendance.adultCount,
         teenageCount: attendance.teenageCount,
         childrenCount: attendance.childrenCount,
+        menCount: attendance.menCount,
+        womenCount: attendance.womenCount,
+        youthCount: attendance.youthCount,
         total,
       };
     });
@@ -719,6 +862,154 @@ export class ReportsService {
 
     await this.assertCanViewReport(user, report);
     return toWeeklyReportView(report, { editableForUserId: user.id });
+  }
+
+  async forwardDistrictReport(user: AuthUser, weekOf: string) {
+    const districtId = this.assertDistrictPastor(user);
+    const weekOfDate = parseReportDate(weekOf);
+
+    const district = await this.prisma.district.findUnique({
+      where: { id: districtId },
+      include: { branches: true, zone: true },
+    });
+    if (!district) {
+      throw new NotFoundException("District not found");
+    }
+
+    const existing = await this.getRollup(SummaryScopeType.DISTRICT, districtId, weekOfDate);
+    const nextVersion =
+      existing && (existing.status === "FORWARDED" || existing.status === "STALE")
+        ? existing.version + 1
+        : 1;
+    const now = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.hierarchyWeeklyRollup.upsert({
+        where: {
+          scopeType_scopeId_weekOf: {
+            scopeType: PrismaSummaryScopeType.DISTRICT,
+            scopeId: districtId,
+            weekOf: weekOfDate,
+          },
+        },
+        create: {
+          scopeType: PrismaSummaryScopeType.DISTRICT,
+          scopeId: districtId,
+          weekOf: weekOfDate,
+          status: "FORWARDED",
+          version: 1,
+          forwardedAt: now,
+          forwardedById: user.id,
+        },
+        update: {
+          status: "FORWARDED",
+          version: nextVersion,
+          forwardedAt: now,
+          forwardedById: user.id,
+        },
+      });
+
+      await tx.weeklyReport.updateMany({
+        where: {
+          weekOf: weekOfDate,
+          branchId: { in: district.branches.map((branch) => branch.id) },
+          status: PrismaReportStatus.SUBMITTED,
+        },
+        data: { status: PrismaReportStatus.DISTRICT_REVIEWED },
+      });
+
+      const zoneRollup = await tx.hierarchyWeeklyRollup.findUnique({
+        where: {
+          scopeType_scopeId_weekOf: {
+            scopeType: PrismaSummaryScopeType.ZONE,
+            scopeId: district.zoneId,
+            weekOf: weekOfDate,
+          },
+        },
+      });
+      if (zoneRollup?.status === "FORWARDED") {
+        await tx.hierarchyWeeklyRollup.update({
+          where: { id: zoneRollup.id },
+          data: { status: "STALE" },
+        });
+      }
+    });
+
+    const zonalPastors = await this.prisma.user.findMany({
+      where: { role: Role.ZONAL_PASTOR, zoneId: district.zoneId, status: "ACTIVE" },
+      select: { id: true },
+    });
+    void this.notifyRollupForwarded(zonalPastors, district.name, weekOf, user.name);
+
+    return { forwarded: true };
+  }
+
+  async forwardRegionReport(user: AuthUser, weekOf: string) {
+    const regionId = this.assertRegionalPastor(user);
+    const weekOfDate = parseReportDate(weekOf);
+
+    const region = await this.prisma.region.findUnique({
+      where: { id: regionId },
+      include: { states: { include: { branches: true } } },
+    });
+    if (!region) {
+      throw new NotFoundException("Region not found");
+    }
+
+    const existing = await this.getRollup(SummaryScopeType.REGION, regionId, weekOfDate);
+    const nextVersion =
+      existing && (existing.status === "FORWARDED" || existing.status === "STALE")
+        ? existing.version + 1
+        : 1;
+    const now = new Date();
+    const branchIds = region.states.flatMap((s) => s.branches.map((b) => b.id));
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.hierarchyWeeklyRollup.upsert({
+        where: {
+          scopeType_scopeId_weekOf: {
+            scopeType: PrismaSummaryScopeType.REGION,
+            scopeId: regionId,
+            weekOf: weekOfDate,
+          },
+        },
+        create: {
+          scopeType: PrismaSummaryScopeType.REGION,
+          scopeId: regionId,
+          weekOf: weekOfDate,
+          status: "FORWARDED",
+          version: 1,
+          forwardedAt: now,
+          forwardedById: user.id,
+        },
+        update: {
+          status: "FORWARDED",
+          version: nextVersion,
+          forwardedAt: now,
+          forwardedById: user.id,
+        },
+      });
+
+      await tx.weeklyReport.updateMany({
+        where: {
+          weekOf: weekOfDate,
+          branchId: { in: branchIds },
+          status: PrismaReportStatus.STATE_REVIEWED,
+        },
+        data: { status: PrismaReportStatus.REGIONAL_REVIEWED },
+      });
+    });
+
+    const hqViewers = await this.prisma.user.findMany({
+      where: {
+        role: { in: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR] },
+        status: "ACTIVE",
+      },
+      select: { id: true },
+    });
+    void this.notifyRollupForwarded(hqViewers, region.name, weekOf, user.name);
+
+    return { forwarded: true };
   }
 
   async forwardZoneReport(user: AuthUser, weekOf: string) {
@@ -770,7 +1061,9 @@ export class ReportsService {
         where: {
           weekOf: weekOfDate,
           branchId: { in: zone.branches.map((branch) => branch.id) },
-          status: PrismaReportStatus.SUBMITTED,
+          status: {
+            in: [PrismaReportStatus.SUBMITTED, PrismaReportStatus.DISTRICT_REVIEWED],
+          },
         },
         data: { status: PrismaReportStatus.ZONE_REVIEWED },
       });
@@ -812,7 +1105,7 @@ export class ReportsService {
 
     const state = await this.prisma.state.findUnique({
       where: { id: stateId },
-      include: { zones: { include: { branches: true } } },
+      include: { zones: { include: { branches: true } }, branches: true },
     });
     if (!state) {
       throw new NotFoundException("State not found");
@@ -824,7 +1117,10 @@ export class ReportsService {
         ? existing.version + 1
         : 1;
     const now = new Date();
-    const branchIds = state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id));
+    const branchIds = [
+      ...state.zones.flatMap((zone) => zone.branches.map((branch) => branch.id)),
+      ...state.branches.filter((b) => !b.zoneId).map((b) => b.id),
+    ];
 
     await this.prisma.$transaction(async (tx) => {
       await tx.hierarchyWeeklyRollup.upsert({
@@ -860,20 +1156,200 @@ export class ReportsService {
             in: [PrismaReportStatus.ZONE_REVIEWED, PrismaReportStatus.STATE_REVIEWED],
           },
         },
-        data: { status: PrismaReportStatus.HQ_REVIEWED },
+        data: {
+          status: state.regionId
+            ? PrismaReportStatus.STATE_REVIEWED
+            : PrismaReportStatus.HQ_REVIEWED,
+        },
       });
+
+      if (state.regionId) {
+        const regionRollup = await tx.hierarchyWeeklyRollup.findUnique({
+          where: {
+            scopeType_scopeId_weekOf: {
+              scopeType: PrismaSummaryScopeType.REGION,
+              scopeId: state.regionId,
+              weekOf: weekOfDate,
+            },
+          },
+        });
+        if (regionRollup?.status === "FORWARDED") {
+          await tx.hierarchyWeeklyRollup.update({
+            where: { id: regionRollup.id },
+            data: { status: "STALE" },
+          });
+        }
+      }
     });
 
+    const regionalPastors = state.regionId
+      ? await this.prisma.user.findMany({
+          where: {
+            role: Role.REGIONAL_PASTOR,
+            regionId: state.regionId,
+            status: "ACTIVE",
+          },
+          select: { id: true },
+        })
+      : [];
     const hqViewers = await this.prisma.user.findMany({
       where: {
-        role: { in: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR, Role.ADMIN] },
+        role: { in: [Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR] },
         status: "ACTIVE",
       },
       select: { id: true },
     });
-    void this.notifyRollupForwarded(hqViewers, state.name, weekOf, user.name);
+    void this.notifyRollupForwarded(
+      state.regionId ? regionalPastors : hqViewers,
+      state.name,
+      weekOf,
+      user.name,
+    );
 
     return this.getStateSummary(user, weekOf);
+  }
+
+  async getDistrictSummary(user: AuthUser, weekOf: string) {
+    const districtId = this.assertDistrictPastor(user);
+    const weekOfDate = parseReportDate(weekOf);
+
+    const district = await this.prisma.district.findUnique({
+      where: { id: districtId },
+      include: {
+        branches: { orderBy: { name: "asc" } },
+      },
+    });
+    if (!district) {
+      throw new NotFoundException("District not found");
+    }
+
+    const reports = await this.prisma.weeklyReport.findMany({
+      where: {
+        weekOf: weekOfDate,
+        branchId: { in: district.branches.map((branch) => branch.id) },
+      },
+      include: weeklyReportInclude,
+    });
+
+    const branches = this.buildBranchRows(district.branches, reports, weekOf);
+    const rollup = await this.getRollup(SummaryScopeType.DISTRICT, districtId, weekOfDate);
+
+    return {
+      weekOf,
+      district: { id: district.id, name: district.name },
+      rollup: toRollupView(rollup),
+      totals: {
+        attendance: this.sumAttendance(reports),
+        finance: this.sumFinance(reports),
+      },
+      branches,
+      summary: this.countSummary(branches),
+    };
+  }
+
+  async getRegionSummary(user: AuthUser, weekOf: string) {
+    const regionId = this.assertRegionalPastor(user);
+    const weekOfDate = parseReportDate(weekOf);
+
+    const region = await this.prisma.region.findUnique({
+      where: { id: regionId },
+      include: {
+        states: {
+          orderBy: { name: "asc" },
+          include: { branches: { orderBy: { name: "asc" } } },
+        },
+      },
+    });
+    if (!region) {
+      throw new NotFoundException("Region not found");
+    }
+
+    const stateIds = region.states.map((state) => state.id);
+    const branchIds = region.states.flatMap((state) =>
+      state.branches.map((branch) => branch.id),
+    );
+    const [reports, stateRollups, regionRollup] = await Promise.all([
+      this.prisma.weeklyReport.findMany({
+        where: {
+          weekOf: weekOfDate,
+          branchId: { in: branchIds },
+        },
+        include: weeklyReportInclude,
+      }),
+      this.prisma.hierarchyWeeklyRollup.findMany({
+        where: {
+          weekOf: weekOfDate,
+          scopeType: PrismaSummaryScopeType.STATE,
+          scopeId: { in: stateIds },
+        },
+      }),
+      this.getRollup(SummaryScopeType.REGION, regionId, weekOfDate),
+    ]);
+
+    const stateRollupById = new Map(
+      stateRollups.map((rollup) => [rollup.scopeId, rollup]),
+    );
+
+    const states = region.states.map((state) => {
+      const stateRollup = stateRollupById.get(state.id) ?? null;
+      const forwarded = isRollupVisibleToUpstream(stateRollup);
+      const stateReports = reports.filter(
+        (report) => report.branch.stateId === state.id,
+      );
+      const branches = forwarded
+        ? this.buildBranchRows(state.branches, stateReports, weekOf)
+        : [];
+
+      return {
+        state: { id: state.id, name: state.name },
+        rollup: toRollupView(stateRollup),
+        forwarded,
+        totals: forwarded
+          ? {
+              attendance: this.sumAttendance(stateReports),
+              finance: this.sumFinance(stateReports),
+            }
+          : {
+              attendance: {
+                adultCount: 0,
+                teenageCount: 0,
+                childrenCount: 0,
+                menCount: 0,
+                womenCount: 0,
+                youthCount: 0,
+                midweekAttendance: 0,
+                firstTimeVisitors: 0,
+                newConverts: 0,
+                followUpVisits: 0,
+                unitsActive: 0,
+                outreachHeld: 0,
+              },
+              finance: { tithe: 0, offering: 0, other: 0, currency: "NGN" },
+            },
+        branches,
+        summary: forwarded
+          ? this.countSummary(branches)
+          : { total: state.branches.length, submitted: 0, missed: 0, pending: 0 },
+      };
+    });
+
+    const visibleReports = reports.filter((report) => {
+      const stateRollup = stateRollupById.get(report.branch.stateId);
+      return isRollupVisibleToUpstream(stateRollup ?? null);
+    });
+    const allBranches = states.flatMap((state) => state.branches);
+
+    return {
+      weekOf,
+      region: { id: region.id, name: region.name },
+      rollup: toRollupView(regionRollup),
+      totals: {
+        attendance: this.sumAttendance(visibleReports),
+        finance: this.sumFinance(visibleReports),
+      },
+      states,
+      summary: this.countSummary(allBranches),
+    };
   }
 
   async getZoneSummary(user: AuthUser, weekOf: string) {
@@ -981,7 +1457,20 @@ export class ReportsService {
                 finance: this.sumFinance(zoneReports),
               }
             : {
-                attendance: { adultCount: 0, teenageCount: 0, childrenCount: 0 },
+                attendance: {
+              adultCount: 0,
+              teenageCount: 0,
+              childrenCount: 0,
+              menCount: 0,
+              womenCount: 0,
+              youthCount: 0,
+              midweekAttendance: 0,
+              firstTimeVisitors: 0,
+              newConverts: 0,
+              followUpVisits: 0,
+              unitsActive: 0,
+              outreachHeld: 0,
+            },
                 finance: { tithe: 0, offering: 0, other: 0, currency: "NGN" },
               },
           branches,
@@ -1224,6 +1713,9 @@ export class ReportsService {
       adultCount: number;
       teenageCount: number;
       childrenCount: number;
+      menCount: number;
+      womenCount: number;
+      youthCount: number;
       total: number;
     };
 
@@ -1279,13 +1771,24 @@ export class ReportsService {
           adultCount: 0,
           teenageCount: 0,
           childrenCount: 0,
+          menCount: 0,
+          womenCount: 0,
+          youthCount: 0,
           total: 0,
         };
         existing.adultCount += report.attendance.adultCount;
         existing.teenageCount += report.attendance.teenageCount;
         existing.childrenCount += report.attendance.childrenCount;
+        existing.menCount += report.attendance.menCount;
+        existing.womenCount += report.attendance.womenCount;
+        existing.youthCount += report.attendance.youthCount;
         existing.total =
-          existing.adultCount + existing.teenageCount + existing.childrenCount;
+          existing.adultCount +
+          existing.teenageCount +
+          existing.childrenCount +
+          existing.menCount +
+          existing.womenCount +
+          existing.youthCount;
         weekMap.set(stateId, existing);
       }
 
@@ -1324,6 +1827,9 @@ export class ReportsService {
               adultCount: 0,
               teenageCount: 0,
               childrenCount: 0,
+              menCount: 0,
+              womenCount: 0,
+              youthCount: 0,
               total: 0,
             }
           );

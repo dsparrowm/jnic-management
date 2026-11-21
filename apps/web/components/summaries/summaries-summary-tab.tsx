@@ -23,7 +23,7 @@ export function SummariesSummaryTab({ summary }: SummariesSummaryTabProps) {
           icon={Users}
           label="Total attendance"
           value={attendance}
-          hint={`${summary.totals.adult} adults · ${summary.totals.teenage} teens · ${summary.totals.children} children`}
+          hint={`${summary.totals.men} men · ${summary.totals.women} women · ${summary.totals.youth} youth · ${summary.totals.children} children`}
           iconTone="info"
         />
         <OverviewStatCard
@@ -55,6 +55,15 @@ export function SummariesSummaryTab({ summary }: SummariesSummaryTabProps) {
           adultCount: summary.totals.adult,
           teenageCount: summary.totals.teenage,
           childrenCount: summary.totals.children,
+          menCount: summary.totals.men,
+          womenCount: summary.totals.women,
+          youthCount: summary.totals.youth,
+          midweekAttendance: 0,
+          firstTimeVisitors: summary.totals.visitors,
+          newConverts: summary.totals.converts,
+          followUpVisits: 0,
+          unitsActive: 0,
+          outreachHeld: 0,
         }}
         finance={{
           tithe: summary.totals.tithe,

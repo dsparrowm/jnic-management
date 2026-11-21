@@ -48,6 +48,9 @@ export function toWeeklyReportView(
         }
       : null,
     noServiceNote: report.noServiceNote,
+    pastoralIssues: report.pastoralIssues,
+    prayerRequests: report.prayerRequests,
+    nextWeekPlans: report.nextWeekPlans,
     editable,
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
@@ -61,6 +64,7 @@ export const weeklyReportInclude = {
       name: true,
       zoneId: true,
       stateId: true,
+      districtId: true,
       state: { select: { id: true, name: true } },
       zone: { select: { id: true, name: true, stateId: true } },
     },

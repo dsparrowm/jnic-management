@@ -3,8 +3,10 @@ import type { ZoneReportBranchRow } from "./reports";
 
 export function reportStatusLabel(status: string): string {
   if (status === "SUBMITTED") return "Sent";
+  if (status === "DISTRICT_REVIEWED") return "With district pastor";
   if (status === "ZONE_REVIEWED") return "With zonal pastor";
   if (status === "STATE_REVIEWED") return "With state pastor";
+  if (status === "REGIONAL_REVIEWED") return "With regional pastor";
   if (status === "HQ_REVIEWED") return "With HQ";
   return status.replace(/_/g, " ").toLowerCase();
 }

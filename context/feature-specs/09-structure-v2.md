@@ -34,3 +34,22 @@ pastor's assistant).
 `SENIOR_PASTOR` (renamed from `LEAD_PASTOR`), `RESIDENT_PASTOR`,
 `REGIONAL_PASTOR`, `DISTRICT_PASTOR` added. `HQ_PASTOR_ROLES` = SENIOR+RESIDENT.
 Everywhere LEAD_PASTOR was enforced now uses `isHqPastor()`/`HQ_PASTOR_ROLES`.
+
+## Slice B — B1 weekly report v2 (implemented)
+
+- Reporting chain: Branch → District → Zone → State → Region → HQ
+  (SENIOR_PASTOR + RESIDENT_PASTOR). ADMIN is out of the report flow:
+  removed from `HQ_VIEW_ROLES`, `FEEDBACK_ROLES` and rollup-forward
+  notifications; mobile `isHqUser` no longer counts admin.
+- Statuses: `DISTRICT_REVIEWED` and `REGIONAL_REVIEWED` join the chain.
+- B1 attendance fields: men, women, youth, children, midweekAttendance,
+  firstTimeVisitors, newConverts, followUpVisits, unitsActive, outreachHeld;
+  report notes: pastoralIssues, prayerRequests, nextWeekPlans.
+  Legacy adult/teenage/children columns remain for history.
+- Forward endpoints: `POST /reports/district/:weekOf/forward` and
+  `/reports/region/:weekOf/forward`; zone forward sweeps
+  SUBMITTED + DISTRICT_REVIEWED; state forward sweeps ZONE+STATE_REVIEWED to
+  STATE_REVIEWED (region path) or HQ_REVIEWED (no region).
+- Summaries: `/reports/district/summary` and `/reports/region/summary` with
+  rollup gating identical to the zone→state gate.
+- MonthlySummary keeps new totals: totalMen/Women/Youth/Visitors/Converts.

@@ -251,12 +251,16 @@ export default function ZoneReportsPage() {
             <h2 className="text-sm font-semibold text-foreground">Zone totals</h2>
             <dl className="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
               <div>
-                <dt className="text-xs text-muted-foreground">Adults</dt>
-                <dd className="mt-1 font-mono text-sm font-medium">{totals.attendance.adultCount}</dd>
+                <dt className="text-xs text-muted-foreground">Men</dt>
+                <dd className="mt-1 font-mono text-sm font-medium">{totals.attendance.menCount}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Teenagers</dt>
-                <dd className="mt-1 font-mono text-sm font-medium">{totals.attendance.teenageCount}</dd>
+                <dt className="text-xs text-muted-foreground">Women</dt>
+                <dd className="mt-1 font-mono text-sm font-medium">{totals.attendance.womenCount}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Youth</dt>
+                <dd className="mt-1 font-mono text-sm font-medium">{totals.attendance.youthCount}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Children</dt>

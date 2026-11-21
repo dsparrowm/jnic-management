@@ -226,7 +226,10 @@ export class DashboardService {
           total:
             attendance.adultCount +
             attendance.teenageCount +
-            attendance.childrenCount,
+            attendance.childrenCount +
+            (attendance.menCount ?? 0) +
+            (attendance.womenCount ?? 0) +
+            (attendance.youthCount ?? 0),
         },
         finance: {
           ...finance,

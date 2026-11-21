@@ -3,9 +3,20 @@ import type { ReportStatus, RollupStatus } from "./index";
 import type { BranchSubmissionState } from "./week";
 
 export type WeeklyReportAttendance = {
+  // Legacy v1 splits (historical reports).
   adultCount: number;
   teenageCount: number;
   childrenCount: number;
+  // B1 v2 fields.
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
+  midweekAttendance: number;
+  firstTimeVisitors: number;
+  newConverts: number;
+  followUpVisits: number;
+  unitsActive: number;
+  outreachHeld: number;
 };
 
 export type WeeklyReportFinance = {
@@ -28,6 +39,9 @@ export type WeeklyReportRecord = {
   finance: WeeklyReportFinance | null;
   /** Present when the branch marked no service (zeros) for the week. */
   noServiceNote: string | null;
+  pastoralIssues: string | null;
+  prayerRequests: string | null;
+  nextWeekPlans: string | null;
   editable: boolean;
   createdAt: string;
   updatedAt: string;
@@ -42,32 +56,50 @@ export type WeeklyReportListResponse = {
 
 export type WeeklyReportInput = {
   serviceDate: string;
-  adultCount: number;
-  teenageCount: number;
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
   childrenCount: number;
+  midweekAttendance: number;
+  firstTimeVisitors: number;
+  newConverts: number;
+  followUpVisits: number;
+  unitsActive: number;
+  outreachHeld: number;
   tithe: number;
   offering: number;
   other: number;
   currency?: string;
   /** Required when all attendance and finance fields are zero. */
   noServiceNote?: string | null;
+  pastoralIssues?: string | null;
+  prayerRequests?: string | null;
+  nextWeekPlans?: string | null;
 };
 
 export const NO_SERVICE_NOTE_MIN = 3;
 export const NO_SERVICE_NOTE_MAX = 500;
 
+const ATTENDANCE_KEYS = [
+  "menCount",
+  "womenCount",
+  "youthCount",
+  "childrenCount",
+  "midweekAttendance",
+] as const;
+
 export function isZeroWeeklyTotals(input: {
-  adultCount: number;
-  teenageCount: number;
+  menCount: number;
+  womenCount: number;
+  youthCount: number;
   childrenCount: number;
+  midweekAttendance: number;
   tithe: number;
   offering: number;
   other: number;
 }): boolean {
   return (
-    input.adultCount +
-      input.teenageCount +
-      input.childrenCount +
+    ATTENDANCE_KEYS.reduce((sum, key) => sum + (input[key] ?? 0), 0) +
       input.tithe +
       input.offering +
       input.other ===
@@ -78,9 +110,11 @@ export function isZeroWeeklyTotals(input: {
 /** Normalize note for persistence; returns null when the week had a service. */
 export function resolveNoServiceNote(
   totals: {
-    adultCount: number;
-    teenageCount: number;
+    menCount: number;
+    womenCount: number;
+    youthCount: number;
     childrenCount: number;
+    midweekAttendance: number;
     tithe: number;
     offering: number;
     other: number;
@@ -183,6 +217,43 @@ export type NationalSummaryResponse = {
   summary: ReportCountSummary;
   /** Every branch this week, including ones not yet forwarded to HQ. */
   coverage: ReportCountSummary;
+};
+
+
+export type DistrictSummaryResponse = {
+  weekOf: string;
+  district: { id: string; name: string };
+  rollup: RollupInfo;
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  branches: ZoneReportBranchRow[];
+  summary: ReportCountSummary;
+};
+
+export type RegionStateSummary = {
+  state: { id: string; name: string };
+  rollup: RollupInfo;
+  forwarded: boolean;
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  branches: ZoneReportBranchRow[];
+  summary: ReportCountSummary;
+};
+
+export type RegionSummaryResponse = {
+  weekOf: string;
+  region: { id: string; name: string };
+  rollup: RollupInfo;
+  totals: {
+    attendance: WeeklyReportAttendance;
+    finance: WeeklyReportFinance;
+  };
+  states: RegionStateSummary[];
+  summary: ReportCountSummary;
 };
 
 export type GrowthMetric = {
