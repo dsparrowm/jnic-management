@@ -28,6 +28,25 @@ export function recordMove(
   });
 }
 
+/** territoryLabel for a user record carrying nested scope relations. */
+export function territoryLabelFromUser(user: {
+  role: string;
+  region?: { name: string } | null;
+  state?: { name: string } | null;
+  zone?: { name: string } | null;
+  district?: { name: string } | null;
+  branch?: { name: string } | null;
+}): string {
+  return territoryLabel({
+    role: user.role,
+    branchName: user.branch?.name,
+    districtName: user.district?.name,
+    zoneName: user.zone?.name,
+    stateName: user.state?.name,
+    regionName: user.region?.name,
+  });
+}
+
 /** "Branch Pastor — VI Main Campus" / "Zonal Pastor — Lagos Zone" */
 export function territoryLabel(user: {
   role: string;
