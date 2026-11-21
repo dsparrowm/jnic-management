@@ -128,6 +128,29 @@ async function seedReportTemplates() {
   console.log("Seeded report templates for all directorates");
 }
 
+/** Charters every branch unit type at every branch — each branch gets the full
+ *  unit roster and marks which were active on its weekly report. Safe to re-run. */
+async function seedServiceUnits() {
+  const [branches, unitTypes] = await Promise.all([
+    prisma.branch.findMany({ select: { id: true } }),
+    prisma.branchUnitType.findMany({ select: { id: true } }),
+  ]);
+  let created = 0;
+  for (const branch of branches) {
+    for (const unitType of unitTypes) {
+      await prisma.serviceUnit.upsert({
+        where: {
+          branchId_unitTypeId: { branchId: branch.id, unitTypeId: unitType.id },
+        },
+        update: {},
+        create: { branchId: branch.id, unitTypeId: unitType.id },
+      });
+      created += 1;
+    }
+  }
+  console.log(`Chartered ${created} service units across ${branches.length} branches`);
+}
+
 const DEFAULT_SEED_PASSWORD = "ChangeMe123!";
 
 function resolveSeedPassword(envName: string, requiredInProduction = false): string | null {
@@ -203,6 +226,7 @@ async function main() {
 
   await seedDirectorates();
   await seedReportTemplates();
+  await seedServiceUnits();
 
   // Catch-all region until real regions are announced; existing states fold into it.
   const nationalRegion = await prisma.region.upsert({
