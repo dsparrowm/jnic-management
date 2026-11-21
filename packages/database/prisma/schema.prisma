@@ -158,6 +158,7 @@ model User {
   orgChangeRequests        OrgChangeRequest[]        @relation("OrgChangeRequestedBy")
   orgChangeReviews         OrgChangeRequest[]        @relation("OrgChangeReviewedBy")
   summaryApprovals         MonthlySummary[]          @relation("SummaryApprovedBy")
+  summaryFilings           MonthlySummary[]          @relation("SummaryFiledBy")
   rollupsForwarded         HierarchyWeeklyRollup[]   @relation("RollupForwardedBy")
   refreshTokens            RefreshToken[]
   conversationParticipants ConversationParticipant[]
@@ -397,6 +398,13 @@ model MonthlySummary {
   returnedById  String?
   returnedAt    DateTime?
   returnNote    String?
+  // B4 filing — the scope pastor's narrative on the consolidated report.
+  newChurches   Int                  @default(0)
+  welfareNote   String?
+  plansNote     String?
+  filedById     String?
+  filedBy       User?                @relation("SummaryFiledBy", fields: [filedById], references: [id])
+  filedAt       DateTime?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 

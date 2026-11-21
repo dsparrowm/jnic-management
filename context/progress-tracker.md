@@ -502,3 +502,11 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - `GET /users` (full account list) stays ADMIN-only; org-structure CRUD stays ADMIN-only — the admin is the Administration directorate's ICT desk, i.e. the platform operator.
 - `GET /users/me` now returns `hrPersonnel: boolean` so clients can render HR powers.
 - Mobile: `AuthUser.hrPersonnel`; directorate detail shows Assign seat / remove for HR personnel; Pastors screen gates Onboard / Resend / Reassign / Deactivate to admin-or-HR.
+
+## Structure v2 — Slice D: Consolidation & council (2026-11-21)
+
+- **B4 territory filing**: `MonthlySummary` gains `newChurches`, `welfareNote`, `plansNote`, `filedById`, `filedAt` (migration `20261121130000_b4_filing_fields`). `POST /summaries/monthly/:id/file` — only the scope's own pastor files (zone→ZONAL_PASTOR on that zoneId, etc.; HQ→senior/resident). Blocked on APPROVED summaries.
+- **B5 quarterly council view**: `GET /summaries/quarterly?quarter&year` (SENIOR_PASTOR/RESIDENT_PASTOR) — quarter totals from HQ monthly summaries, per-month rows with filing state, territory filing checklist for the latest month, and directorate report counts grouped per directorate.
+- **Submission-rate KPI**: `GET /summaries/monthly` items now carry `reportingRate` (branchesReporting/branchesTotal × 100) and `filing` metadata.
+- **Reminders module** (`@nestjs/schedule`, server-local time): Mon 11:00 nudges branch pastors whose branch has no B1 for the current week; 3rd 09:00 nudges every seated directorate member for monthly D-forms; 7th 09:00 nudges zonal/state/regional pastors whose scope B4 is unfiled. Deduped per day via `REPORT_MISSED` notification title.
+- **Mobile**: Summaries tab shows reporting rate + B4 filing state; eligible scope pastors get a "File B4" sheet (new churches, welfare note, plans). HQ users get a "Council" header link → `app/council.tsx` (quarter/year picker, quarter totals, month rows, territory filings, directorate report counts).

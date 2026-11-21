@@ -19,6 +19,7 @@ import {
 } from "@repo/types";
 import { AuthUser } from "../common/auth.types";
 import { PrismaService } from "../prisma/prisma.service";
+import { FileMonthlySummaryDto } from "./dto/file-monthly-summary.dto";
 
 export const HQ_SCOPE_ID = "hq";
 
@@ -693,6 +694,7 @@ export class SummariesService {
               year,
             },
           },
+          include: { filedBy: { select: { name: true } } },
         });
 
         if (!record) {
@@ -734,6 +736,17 @@ export class SummariesService {
           totals: this.mapSummaryTotals(record),
           weeks,
           coverage,
+          reportingRate:
+            coverage.branchesTotal > 0
+              ? Math.round((coverage.branchesReporting / coverage.branchesTotal) * 100)
+              : null,
+          filing: {
+            newChurches: record.newChurches,
+            welfareNote: record.welfareNote,
+            plansNote: record.plansNote,
+            filedAt: record.filedAt?.toISOString() ?? null,
+            filedByName: record.filedBy?.name ?? null,
+          },
           ...(stateBreakdown ? { stateBreakdown } : {}),
         };
       }),
@@ -782,6 +795,169 @@ export class SummariesService {
         },
       })),
     };
+  }
+
+  /** B5: assembled quarterly council view for Senior/Resident Pastor. */
+  async getQuarterlyCouncil(user: AuthUser, quarter: number, year: number) {
+    if (!isHqPastor(user.role)) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+    if (quarter < 1 || quarter > 4) {
+      throw new BadRequestException("Quarter must be 1–4");
+    }
+
+    const months = [quarter * 3 - 2, quarter * 3 - 1, quarter * 3];
+
+    const summaries = await this.prisma.monthlySummary.findMany({
+      where: { year, month: { in: months } },
+      include: { filedBy: { select: { name: true } } },
+      orderBy: [{ month: "asc" }],
+    });
+
+    // Quarter totals from the national (HQ) monthly summaries.
+    const hqMonths = summaries.filter(
+      (s) => s.scopeType === PrismaSummaryScopeType.HQ,
+    );
+    const totals = hqMonths.reduce(
+      (acc, s) => ({
+        men: acc.men + s.totalMen,
+        women: acc.women + s.totalWomen,
+        youth: acc.youth + s.totalYouth,
+        children: acc.children + s.totalChildren,
+        visitors: acc.visitors + s.totalVisitors,
+        converts: acc.converts + s.totalConverts,
+        newChurches: acc.newChurches + s.newChurches,
+        tithe: acc.tithe + Number(s.totalTithe),
+        offering: acc.offering + Number(s.totalOffering),
+        other: acc.other + Number(s.totalOther),
+        currency: s.currency,
+      }),
+      {
+        men: 0,
+        women: 0,
+        youth: 0,
+        children: 0,
+        visitors: 0,
+        converts: 0,
+        newChurches: 0,
+        tithe: 0,
+        offering: 0,
+        other: 0,
+        currency: "NGN",
+      },
+    );
+
+    // B4 filing compliance across territory scopes for the quarter's latest month.
+    const latestMonth = months[months.length - 1];
+    const latestSummaries = summaries.filter(
+      (s) => s.month === latestMonth && s.scopeType !== PrismaSummaryScopeType.BRANCH,
+    );
+    const territoryFilings = await Promise.all(
+      latestSummaries.map(async (s) => ({
+        scopeType: s.scopeType,
+        scopeId: s.scopeId,
+        scopeName: await this.resolveScopeName(
+          s.scopeType as unknown as SummaryScopeType,
+          s.scopeId,
+        ),
+        filed: s.filedAt != null,
+        filedByName: s.filedBy?.name ?? null,
+        filedAt: s.filedAt?.toISOString() ?? null,
+        status: s.status,
+      })),
+    );
+
+    // Directorate report submissions for the quarter (monthly + quarterly period keys).
+    const periodKeys = [
+      ...months.map((m) => `${year}-${String(m).padStart(2, "0")}`),
+      `${year}-Q${quarter}`,
+    ];
+    const templateReports = await this.prisma.templateReport.findMany({
+      where: { periodKey: { in: periodKeys } },
+      select: {
+        directorateId: true,
+        status: true,
+        directorate: { select: { name: true } },
+      },
+    });
+    const byDirectorate = new Map<
+      string,
+      { name: string; submitted: number; reviewed: number }
+    >();
+    for (const r of templateReports) {
+      const entry =
+        byDirectorate.get(r.directorateId) ??
+        { name: r.directorate.name, submitted: 0, reviewed: 0 };
+      entry.submitted += 1;
+      if (r.status !== "SUBMITTED") entry.reviewed += 1;
+      byDirectorate.set(r.directorateId, entry);
+    }
+
+    return {
+      quarter,
+      year,
+      label: `Q${quarter} ${year}`,
+      months: hqMonths.map((s) => ({
+        month: s.month,
+        monthLabel: this.formatMonthLabel(s.month, s.year),
+        totals: this.mapSummaryTotals(s),
+        filing: {
+          filed: s.filedAt != null,
+          filedByName: s.filedBy?.name ?? null,
+          filedAt: s.filedAt?.toISOString() ?? null,
+          newChurches: s.newChurches,
+          welfareNote: s.welfareNote,
+          plansNote: s.plansNote,
+        },
+        status: s.status,
+      })),
+      totals,
+      territoryFilings,
+      directorateReports: [...byDirectorate.entries()].map(
+        ([directorateId, entry]) => ({ directorateId, ...entry }),
+      ),
+    };
+  }
+
+  async fileMonthlySummary(
+    user: AuthUser,
+    id: string,
+    dto: FileMonthlySummaryDto,
+  ): Promise<MonthlySummary> {
+    const summary = await this.prisma.monthlySummary.findUnique({ where: { id } });
+    if (!summary) {
+      throw new NotFoundException("Monthly summary not found");
+    }
+    if (summary.status === PrismaMonthlySummaryStatus.APPROVED) {
+      throw new BadRequestException("Approved summaries cannot be re-filed");
+    }
+
+    const ownsScope =
+      (summary.scopeType === PrismaSummaryScopeType.ZONE &&
+        user.role === Role.ZONAL_PASTOR &&
+        user.zoneId === summary.scopeId) ||
+      (summary.scopeType === PrismaSummaryScopeType.STATE &&
+        user.role === Role.STATE_PASTOR &&
+        user.stateId === summary.scopeId) ||
+      (summary.scopeType === PrismaSummaryScopeType.REGION &&
+        user.role === Role.REGIONAL_PASTOR &&
+        user.regionId === summary.scopeId) ||
+      (summary.scopeType === PrismaSummaryScopeType.HQ && isHqPastor(user.role));
+
+    if (!ownsScope) {
+      throw new ForbiddenException("Only the scope's pastor files its B4 report");
+    }
+
+    return this.prisma.monthlySummary.update({
+      where: { id },
+      data: {
+        newChurches: dto.newChurches ?? summary.newChurches,
+        welfareNote: dto.welfareNote?.trim() || null,
+        plansNote: dto.plansNote?.trim() || null,
+        filedById: user.id,
+        filedAt: new Date(),
+      },
+    });
   }
 
   async approveMonthlySummary(user: AuthUser, id: string): Promise<MonthlySummary> {

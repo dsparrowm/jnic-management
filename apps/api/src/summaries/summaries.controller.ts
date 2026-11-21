@@ -6,7 +6,9 @@ import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { AuthUser } from "../common/auth.types";
+import { FileMonthlySummaryDto } from "./dto/file-monthly-summary.dto";
 import { ListMonthlySummariesDto } from "./dto/list-monthly-summaries.dto";
+import { QuarterlyCouncilDto } from "./dto/quarterly-council.dto";
 import { ReturnMonthlySummaryDto } from "./dto/return-monthly-summary.dto";
 import { SummariesService } from "./summaries.service";
 
@@ -39,6 +41,30 @@ export class SummariesController {
       scopeType: query.scopeType,
       scopeId: query.scopeId,
     });
+  }
+
+  @Get("quarterly")
+  @UseGuards(RolesGuard)
+  @Roles(Role.SENIOR_PASTOR, Role.RESIDENT_PASTOR)
+  quarterlyCouncil(@CurrentUser() user: AuthUser, @Query() query: QuarterlyCouncilDto) {
+    return this.summariesService.getQuarterlyCouncil(user, query.quarter, query.year);
+  }
+
+  @Post("monthly/:id/file")
+  @UseGuards(RolesGuard)
+  @Roles(
+    Role.ZONAL_PASTOR,
+    Role.STATE_PASTOR,
+    Role.REGIONAL_PASTOR,
+    Role.SENIOR_PASTOR,
+    Role.RESIDENT_PASTOR,
+  )
+  fileMonthly(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: FileMonthlySummaryDto,
+  ): Promise<MonthlySummary> {
+    return this.summariesService.fileMonthlySummary(user, id, dto);
   }
 
   @Post("monthly/:id/approve")
