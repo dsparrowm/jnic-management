@@ -526,3 +526,7 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - Members appear in the people directory (`DIRECTORY_ROLES`) and can use chat (`MESSAGING_ROLES`).
 - Template engine needed no change — it already keys off seats (unit coordinatorId + directorateAssignment office), not roles.
 - Mobile: `MemberHome` (hero, my-directorate seat card, due-from-me templates, review-queue nudge, activity); MEMBER routed there from the home tab. Weekly screen drops the week picker for MEMBER. Onboard sheet gains MEMBER section: directorate, office, desk (for desk offices), free service unit.
+
+## HR desk access fix — global RolesGuard (2026-11-21)
+
+- `RolesGuard` is registered globally (`APP_GUARD`), so it enforced `@Roles` on every route before the method-level `RolesOrHrPersonnelGuard` could allow HR seats — MEMBER-role HR personnel got 403 on every HR endpoint. `RolesOrHrPersonnelGuard` is removed; the global `RolesGuard` now honors an `@AllowHrPersonnel()` marker (`allow-hr-personnel.decorator.ts`) by falling back to `isHrPersonnel` when the role check fails. Applied to the 11 HR routes: org tree/areas, users pastors/get/deactivate/reassign, directorate assignment create/update/delete, onboarding users/resend.
