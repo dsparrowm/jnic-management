@@ -21,7 +21,13 @@ export class DashboardController {
   }
 
   @Get("pastor")
-  @Roles(Role.BRANCH_PASTOR, Role.ZONAL_PASTOR, Role.STATE_PASTOR)
+  @Roles(
+    Role.BRANCH_PASTOR,
+    Role.DISTRICT_PASTOR,
+    Role.ZONAL_PASTOR,
+    Role.STATE_PASTOR,
+    Role.REGIONAL_PASTOR,
+  )
   getPastorDashboard(
     @CurrentUser() user: AuthUser,
     @Query() query: PastorDashboardQueryDto,
