@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { AppraisalsModule } from "./appraisals/appraisals.module";
 import { AuthModule } from "./auth/auth.module";
 import { CasesModule } from "./cases/cases.module";
 import { ChatModule } from "./chat/chat.module";
@@ -37,6 +38,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     HealthModule,
     AuthModule,
     CasesModule,
+    AppraisalsModule,
     ChatModule,
     DashboardModule,
     DirectoratesModule,

@@ -554,3 +554,9 @@ Per the governing documents, the HR directorate (not the admin) owns recruitment
 - Access: admin, HR leadership, and the matching desk head/deputy (`isHrCaseOfficer` — Pastoral Welfare and Care desk → WELFARE, Ethics/Conduct/Discipline desk → DISCIPLINE).
 - `GET /cases/counts` returns non-identifying opened/closed/openNow per month — the numbers the D2-D6 fields ask for; names never leave the register.
 - `GET /cases/my-registers` drives mobile visibility; HR desk section gains "Case registers" → `/cases` (kind tabs, this-month counts card, status filter, open/resolve/close).
+
+### Appraisal records (2026-11-23)
+
+- `PersonnelAppraisal` (period MID_YEAR|YEAR_END, year, subject → User, score 1-5, strengths/development/recommendation, draft vs submitted) + `/appraisals` API — upsert on (subject, period, year), list, update, counts.
+- Access: admin, HR leadership, Records and Appraisal desk head/deputy.
+- `GET /appraisals/counts` — non-identifying totals ("Appraisals completed" feeds D-report fields); `GET /appraisals/my-access` drives mobile visibility; `/appraisals` screen + HR desk entry.

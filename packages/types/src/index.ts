@@ -96,6 +96,11 @@ export enum PersonnelCaseStatus {
   CLOSED = "CLOSED",
 }
 
+export enum AppraisalPeriod {
+  MID_YEAR = "MID_YEAR",
+  YEAR_END = "YEAR_END",
+}
+
 export { ConversationType, ChatReceiptStatus } from "./chat";
 export type {
   ChatInboxResponse,

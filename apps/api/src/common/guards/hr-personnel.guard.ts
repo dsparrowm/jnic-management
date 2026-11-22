@@ -34,10 +34,12 @@ export async function isHrPersonnel(
 
 const HR_WELFARE_DESK = "Pastoral Welfare and Care";
 const HR_DISCIPLINE_DESK = "Ethics, Conduct and Discipline";
+const HR_RECORDS_DESK = "Records and Appraisal";
 
 const CASE_DESK: Record<string, string> = {
   WELFARE: HR_WELFARE_DESK,
   DISCIPLINE: HR_DISCIPLINE_DESK,
+  APPRAISAL: HR_RECORDS_DESK,
 };
 
 /** True for HR leadership or a head/deputy of the desk owning this case kind. */
