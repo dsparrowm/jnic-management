@@ -8,7 +8,10 @@ import { hashToken } from "../common/hash-token";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthResponse, AuthUser, TokenPair } from "../common/auth.types";
 import { toAuthUser } from "../common/user.mapper";
-import { isHrPersonnel } from "../common/guards/hr-personnel.guard";
+import {
+  hrAccessFlags,
+  isHrPersonnel,
+} from "../common/guards/hr-personnel.guard";
 
 @Injectable()
 export class AuthService {
@@ -85,6 +88,7 @@ export class AuthService {
     const authUser: AuthUser = {
       ...toAuthUser(withOrg ?? user),
       hrPersonnel: await isHrPersonnel(this.prisma, user.id),
+      hrAccess: await hrAccessFlags(this.prisma, user.id),
     };
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, email: user.email, role: user.role },

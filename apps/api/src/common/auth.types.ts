@@ -27,6 +27,12 @@ export interface AuthUser {
   branchName?: string | null;
   directorate?: DirectorateFacet | null;
   hrPersonnel?: boolean;
+  hrAccess?: {
+    personnel: boolean;
+    welfare: boolean;
+    discipline: boolean;
+    appraisals: boolean;
+  };
   profilePicUrl: string | null;
 }
 
