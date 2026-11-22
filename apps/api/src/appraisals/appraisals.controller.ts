@@ -33,6 +33,11 @@ export class AppraisalsController {
     return this.appraisalsService.counts(user, query);
   }
 
+  @Get("subjects")
+  subjects(@CurrentUser() user: AuthUser) {
+    return this.appraisalsService.subjects(user);
+  }
+
   @Get()
   list(@CurrentUser() user: AuthUser, @Query() query: ListAppraisalsQuery) {
     return this.appraisalsService.list(user, query);

@@ -30,6 +30,16 @@ export class AppraisalsService {
     throw new ForbiddenException("You do not manage appraisals");
   }
 
+  /** Minimal people list for the subject picker — appraisal desks don't get the full roster. */
+  async subjects(user: AuthUser) {
+    await this.assertOfficer(user);
+    return this.prisma.user.findMany({
+      where: { status: "ACTIVE", role: { notIn: [Role.MEMBER] } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, role: true, title: true },
+    });
+  }
+
   /** One record per person per period — upsert keyed on (subject, period, year). */
   async upsert(user: AuthUser, dto: UpsertAppraisalDto) {
     await this.assertOfficer(user);
