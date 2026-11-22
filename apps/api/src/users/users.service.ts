@@ -8,7 +8,10 @@ import { ONBOARDABLE_ROLES, PersonnelMoveKind, Role } from "@repo/types";
 import { FilesService } from "../files/files.service";
 import { resolveAndValidateOrgAssignment } from "../common/org-assignment";
 import { PrismaService } from "../prisma/prisma.service";
-import { isHrPersonnel } from "../common/guards/hr-personnel.guard";
+import {
+  hrAccessFlags,
+  isHrPersonnel,
+} from "../common/guards/hr-personnel.guard";
 import {
   recordMove,
   territoryLabelFromUser,
@@ -123,6 +126,7 @@ export class UsersService {
     return {
       ...sanitizeUser(user),
       hrPersonnel: await isHrPersonnel(this.prisma, userId),
+      hrAccess: await hrAccessFlags(this.prisma, userId),
     };
   }
 

@@ -65,3 +65,25 @@ export async function isHrCaseOfficer(
   });
   return seat !== null;
 }
+
+export interface HrAccess {
+  /** Recruitment & Deployment desk or leadership — roster, onboarding, seats. */
+  personnel: boolean;
+  welfare: boolean;
+  discipline: boolean;
+  appraisals: boolean;
+}
+
+/** Per-desk HR capability flags for the client to gate surfaces with. */
+export async function hrAccessFlags(
+  prisma: PrismaService,
+  userId: string,
+): Promise<HrAccess> {
+  const [personnel, welfare, discipline, appraisals] = await Promise.all([
+    isHrPersonnel(prisma, userId),
+    isHrCaseOfficer(prisma, userId, "WELFARE"),
+    isHrCaseOfficer(prisma, userId, "DISCIPLINE"),
+    isHrCaseOfficer(prisma, userId, "APPRAISAL"),
+  ]);
+  return { personnel, welfare, discipline, appraisals };
+}
